@@ -28,6 +28,7 @@ jobs:
       - run: node --test tests/extension.test.cjs
       - run: python tools/build_windows.py
       - run: python tools/build_extensions.py
+      - run: python tools/build_store_bundle.py
       - name: Publish complete release
         shell: pwsh
         env:

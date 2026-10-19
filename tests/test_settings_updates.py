@@ -101,6 +101,31 @@ class SettingsUpdateTests(unittest.TestCase):
             self.updates._auto_tick(None)
         download.assert_called_once()
 
+    def test_one_click_update_downloads_without_web_polling(self):
+        info={'version':'2.0.0','url':'https://example.com/update.zip','sha256':'a'*64}
+        def check():
+            self.updates.available=info
+            self.updates._set(state='available')
+        with patch.object(self.updates,'_start',side_effect=lambda state,operation:operation()),patch.object(self.updates,'_check',side_effect=check),patch.object(self.updates,'_download') as download:
+            self.updates.run_update()
+        download.assert_called_once_with(info)
+        self.assertTrue(self.updates.install_requested)
+
+    def test_one_click_up_to_date_does_not_download(self):
+        with patch.object(self.updates,'_start',side_effect=lambda state,operation:operation()),patch.object(self.updates,'_check',side_effect=lambda:self.updates._set(state='up_to_date')),patch.object(self.updates,'_download') as download:
+            self.updates.run_update()
+        download.assert_not_called()
+        self.assertFalse(self.updates.install_requested)
+
+    def test_explicit_update_finishes_even_when_automatic_install_is_disabled(self):
+        self.preferences.set(update_feed='https://github.com/XOmongoose/DownloadNow',auto_install_updates=False)
+        self.updates.install_requested=True
+        self.updates._set(state='ready')
+        prompts=SavePrompts(self.manager,lambda *_:None)
+        with patch('updater.sys.frozen',True,create=True),patch('updater.sys.platform','win32'),patch.object(self.updates,'install') as install:
+            self.updates._auto_tick(prompts)
+        install.assert_called_once_with(prompts)
+
     def test_automatic_update_waits_for_queue_and_pending_dialog(self):
         self.preferences.set(update_feed='https://github.com/XOmongoose/DownloadNow',auto_install_updates=True)
         self.updates._set(state='ready')
@@ -236,8 +261,10 @@ class SettingsUpdateTests(unittest.TestCase):
         self.updates._prepare(self.package())
         self.updates.on_install=MagicMock()
         prompts=SavePrompts(self.manager,chooser=lambda *_:None)
-        with patch('updater.sys.frozen',True,create=True),patch('updater.sys.platform','win32'),patch('updater.shutil.copy2'),patch('updater.subprocess.Popen'):
+        with patch('updater.sys.frozen',True,create=True),patch('updater.sys.platform','win32'),patch('updater.shutil.copy2'),patch('updater.subprocess.Popen') as launch:
             self.updates.install(prompts)
+        self.assertEqual(launch.call_args.kwargs['env']['PYINSTALLER_RESET_ENVIRONMENT'],'1')
+        self.assertIn('--update-data',launch.call_args.args[0])
         self.updates.on_install.assert_called_once()
         self.assertEqual(self.updates.snapshot()['state'],'installing')
 
@@ -250,11 +277,13 @@ class SettingsUpdateTests(unittest.TestCase):
         kernel.OpenProcess.return_value=0
         backup=self.manager.root/'backup'
         with patch('updater.ctypes.WinDLL',return_value=kernel),patch('updater.sys.platform','win32'),patch('updater.subprocess.Popen') as launch:
-            result=apply_update(self.updates.staged,self.home,backup,123456)
+            result=apply_update(self.updates.staged,self.home,backup,123456,port=8876,data=self.manager.root)
         self.assertEqual(result,0)
         self.assertEqual((backup/'DownloadNow.exe').read_bytes(),b'old-executable')
         self.assertEqual((self.home/'data'/'preferences.json').read_text(),'keep')
         launch.assert_called_once()
+        self.assertEqual(launch.call_args.kwargs['env']['PYINSTALLER_RESET_ENVIRONMENT'],'1')
+        self.assertEqual(launch.call_args.args[0][1:],['--port','8876','--data',str(self.manager.root)])
 
     def test_helper_rolls_back_if_copy_fails(self):
         self.updates._prepare(self.package())

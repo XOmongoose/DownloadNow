@@ -141,6 +141,8 @@ class UpdateService:
         self.staged = None
         self.stop = threading.Event()
         self.on_install = None
+        self.install_requested = False
+        self.restart_port = 8765
 
     def snapshot(self):
         with self.lock:
@@ -166,6 +168,16 @@ class UpdateService:
 
     def check(self):
         self._start('checking',self._check)
+
+    def run_update(self):
+        """User requested pipeline survives closing the web dialog."""
+        def run():
+            self._check()
+            if self.snapshot()['state']=='available':
+                self._set(state='downloading')
+                self._download(dict(self.available))
+                self.install_requested=True
+        self._start('checking',run)
 
     def _check(self):
         feed = self.preferences.get()['update_feed']
@@ -297,7 +309,9 @@ class UpdateService:
             backup=self.work/('backup-'+uuid.uuid4().hex)
             subprocess.Popen([str(helper),'--apply-update','--update-parent',str(os.getpid()),
                 '--update-source',str(self.staged),'--update-destination',str(self.app_home),
-                '--update-backup',str(backup)],creationflags=subprocess.CREATE_NO_WINDOW)
+                '--update-backup',str(backup),'--update-port',str(self.restart_port),
+                '--update-data',str(self.manager.root)],creationflags=subprocess.CREATE_NO_WINDOW,
+                env={**os.environ,'PYINSTALLER_RESET_ENVIRONMENT':'1'})
             self.state['state']='installing'
             self.manager.shutdown.set()
             if self.on_install is not None:
@@ -306,7 +320,7 @@ class UpdateService:
     def _auto_tick(self,prompts):
         values=self.preferences.get()
         state=self.snapshot()['state']
-        if values.get('auto_install_updates') and values['update_feed']:
+        if (self.install_requested or values.get('auto_install_updates')) and values['update_feed']:
             if state=='available':
                 self.download()
                 return
@@ -325,13 +339,13 @@ class UpdateService:
 
     def start_auto_check(self,prompts=None):
         def run():
-            while not self.stop.wait(30):
+            while not self.stop.wait(5):
                 try:self._auto_tick(prompts)
                 except Exception as error:self._set(state='error',error=str(error))
         threading.Thread(target=run,daemon=True).start()
 
 
-def apply_update(source,destination,backup,parent_id):
+def apply_update(source,destination,backup,parent_id,port=8765,data=None):
     """Private helper mode: wait, back up, replace only application files, restart."""
     source,destination,backup = Path(source).resolve(),Path(destination).resolve(),Path(backup).resolve()
     log=source.parent/'update.log'
@@ -384,7 +398,10 @@ def apply_update(source,destination,backup,parent_id):
                     time.sleep(1)
             copied.append(name)
         log.write_text('Update installed successfully.\n',encoding='utf-8')
-        subprocess.Popen([str(destination/'DownloadNow.exe')],cwd=destination,creationflags=subprocess.CREATE_NEW_CONSOLE)
+        arguments=[str(destination/'DownloadNow.exe'),'--port',str(port)]
+        if data is not None:arguments+=['--data',str(data)]
+        subprocess.Popen(arguments,cwd=destination,creationflags=subprocess.CREATE_NEW_CONSOLE,
+                         env={**os.environ,'PYINSTALLER_RESET_ENVIRONMENT':'1'})
         return 0
     except Exception as error:
         for name in copied:

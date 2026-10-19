@@ -32,6 +32,7 @@ bridge.runtime.onInstalled.addListener(async()=>{
   if(values.capture===undefined)await bridge.storage.local.set({capture:true});
   if(values.intercept===undefined)await bridge.storage.local.set({intercept:false});
   await syncInterception();
+  if(bridge.tabs)await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
  }catch(e){await record(e.message,true);}
 });
 bridge.runtime.onStartup.addListener(()=>syncInterception().catch(e=>record(e.message,true)));
@@ -101,6 +102,19 @@ bridge.downloads.onCreated.addListener(item=>{captureDownload(item).catch(e=>rec
 
 bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  const fromPage=!!sender.tab;
+ if(message.type==='pair-app'){
+  (async()=>{
+   const address=new URL(sender.url||'');
+   if(!fromPage || sender.frameId!==0 || !['http://127.0.0.1:8765','http://localhost:8765'].includes(address.origin) || !/^[A-Za-z0-9_-]{20,200}$/.test(message.token||''))throw Error('Trang ghép nối không hợp lệ.');
+   const response=await fetch('http://127.0.0.1:8765/api/info',{headers:{Authorization:'Bearer '+message.token},signal:AbortSignal.timeout(5000)});
+   if(!response.ok)throw Error('Không xác minh được ứng dụng.');
+   const info=await response.json();
+   if(typeof info.version!=='string')throw Error('Phản hồi ứng dụng không hợp lệ.');
+   await bridge.storage.local.set({token:message.token,lastError:'',lastStatus:'Đã tự kết nối ứng dụng v'+info.version});
+   await record('Đã tự kết nối ứng dụng v'+info.version);
+   return {ok:true,version:info.version};
+  })().then(reply).catch(e=>reply({error:e.message}));return true;
+ }
  if(message.type==='capture-link'){
   (async()=>{
    const {capture,intercept,token}=await bridge.storage.local.get(['capture','intercept','token']);

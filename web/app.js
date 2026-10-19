@@ -120,13 +120,14 @@ async function installUpdate(){
 }
 async function readUpdateStatus(){
  if(installingUpdate)return;
- try{updateState=await api('update/status');const s=updateState;$('#update-current').textContent='Đang dùng v'+s.current_version;$('#update-state').textContent=(updateLabels[s.state]||s.state)+(s.version?' · v'+s.version:'')+(s.error?' '+s.error:'');$('#update-notes').textContent=s.notes||'';$('#update-label').textContent=['available','ready'].includes(s.state)?'Cập nhật ●':'Cập nhật';const busy=['checking','downloading','importing','installing'].includes(s.state);$('#update-check').disabled=busy;$('#update-import').disabled=busy;$('#update-download').disabled=s.state!=='available';$('#update-install').disabled=s.state!=='ready'||!s.can_install;
+ try{updateState=await api('update/status');const s=updateState;$('#update-current').textContent='Đang dùng v'+s.current_version;$('#update-state').textContent=(updateLabels[s.state]||s.state)+(s.version?' · v'+s.version:'')+(s.error?' '+s.error:'');$('#update-notes').textContent=s.notes||'';$('#update-label').textContent=['available','ready'].includes(s.state)?'Cập nhật ●':'Cập nhật';const busy=['checking','downloading','importing','installing'].includes(s.state);$('#update-run').disabled=busy;$('#update-check').disabled=busy;$('#update-import').disabled=busy;$('#update-download').disabled=s.state!=='available';$('#update-install').disabled=s.state!=='ready'||!s.can_install;
   if(s.state==='error')installAfterDownload=false;
   if(s.state==='ready'&&installAfterDownload){installAfterDownload=false;if(s.can_install)await installUpdate();else notice('Gói đã chuẩn bị. Cài tự động dùng trong bản EXE Windows.');}
  }catch(e){if($('#update-dialog').open)$('#update-state').textContent='Chưa kết nối được máy chủ ứng dụng.';}
 }
-$('#update-open').onclick=async()=>{$('#update-dialog').showModal();try{await readSettings();await readUpdateStatus();}catch(e){notice(e.message);}};
+$('#update-open').onclick=async()=>{$('#update-dialog').showModal();try{await readSettings();await readUpdateStatus();if(['idle','up_to_date','error'].includes(updateState.state)&&$('#update-feed').value){await api('update/check',{});await readUpdateStatus();}}catch(e){notice(e.message);}};
 $('#settings-form').onsubmit=async e=>{e.preventDefault();try{await saveSettings();notice('Đã lưu tùy chọn.');await readSettings();}catch(error){notice(error.message);}};
+$('#update-run').onclick=async()=>{try{await api('update/run',{});notice('Ứng dụng tự kiểm tra, tải và cài khi hàng đợi đã dừng. Bạn có thể đóng hộp thoại.');await readUpdateStatus();}catch(e){notice(e.message);}};
 $('#update-check').onclick=async()=>{try{await saveSettings();await api('update/check',{});await readUpdateStatus();}catch(e){notice(e.message);}};
 $('#update-download').onclick=async()=>{try{installAfterDownload=true;await api('update/download',{});await readUpdateStatus();}catch(e){installAfterDownload=false;notice(e.message);}};
 $('#update-install').onclick=installUpdate;

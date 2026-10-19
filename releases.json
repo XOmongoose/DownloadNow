@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.9.0",
+      "date": "2026-10-19",
+      "title": "Cập nhật một bước và tự ghép nối tiện ích",
+      "changes": [
+        "Kiểm tra, tải, xác minh và chờ cài cập nhật trong ứng dụng, không phụ thuộc hộp thoại web còn mở.",
+        "Khởi động bộ cập nhật và ứng dụng mới trong môi trường PyInstaller độc lập, giữ đúng cổng và dữ liệu.",
+        "Tiện ích tự xác minh và ghép nối khi mở trang ứng dụng cục bộ; mã thủ công chỉ dùng dự phòng.",
+        "Bổ sung biểu tượng và bộ hồ sơ ZIP nộp Chrome Web Store, Edge Add-ons và Firefox Add-ons."
+      ]
+    },
+    {
       "version": "1.8.2",
       "date": "2026-10-19",
       "title": "Hoàn thiện xóa đồng loạt và cập nhật tự động",

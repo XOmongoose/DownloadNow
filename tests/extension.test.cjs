@@ -14,11 +14,25 @@ function harness({online=true,capture=true,token='test-token',state='in_progress
   permissions:{async contains(){return true;}},contextMenus:{onClicked:event(),async removeAll(){},create(){}},
   action:{async setBadgeText(){},async setBadgeBackgroundColor(){}},
   downloads:{onCreated:event(),async pause(){calls.push('pause');},async search(){return [{url:'https://files.example/file.zip',filename:'C:\\Downloads\\file.zip',state}];},async cancel(){calls.push('cancel');},async resume(){calls.push('resume');}}};
- const context=vm.createContext({chrome:bridge,crypto:require('node:crypto').webcrypto,AbortSignal,console,Map,Date,setTimeout:fn=>fn(),
-  fetch:async(url,options)=>{if(url.includes('/api/prompts/')){calls.push('poll');return {ok:true,json:async()=>({state:promptOutcome,id:'job-1'})};}calls.push('send');if(!online)throw Error('offline');assert.ok(url.endsWith('/api/capture'));assert.ok(JSON.parse(options.body).request_id);assert.equal(JSON.parse(options.body).ask_save,true);return {ok:true,json:async()=>promptOutcome?({prompt_id:'prompt-1'}):({id:'job-1'})};}});
+ const context=vm.createContext({chrome:bridge,URL,crypto:require('node:crypto').webcrypto,AbortSignal,console,Map,Date,setTimeout:fn=>fn(),
+  fetch:async(url,options)=>{if(url.endsWith('/api/info')){calls.push('verify-pair');if(!online)throw Error('offline');return {ok:true,json:async()=>({version:'1.9.0'})};}if(url.includes('/api/prompts/')){calls.push('poll');return {ok:true,json:async()=>({state:promptOutcome,id:'job-1'})};}calls.push('send');if(!online)throw Error('offline');assert.ok(url.endsWith('/api/capture'));assert.ok(JSON.parse(options.body).request_id);assert.equal(JSON.parse(options.body).ask_save,true);return {ok:true,json:async()=>promptOutcome?({prompt_id:'prompt-1'}):({id:'job-1'})};}});
  vm.runInContext(background,context);
  return {context,bridge,calls,settings};
 }
+
+function pair(h,url='http://127.0.0.1:8765/',frameId=0){return new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'pair-app',token:'new-valid-connection-token-12345'},{tab:{id:1},url,frameId},resolve));}
+test('local application pairs automatically only after verifying token',async()=>{
+ const h=harness();const result=await pair(h);assert.equal(result.ok,true);assert.equal(h.settings.token,'new-valid-connection-token-12345');assert.deepEqual(h.calls,['verify-pair']);
+});
+test('external pages and child frames cannot replace connection token',async()=>{
+ for(const [url,frame] of [['https://evil.example',0],['http://127.0.0.1:8765.evil.example',0],['http://127.0.0.1:8765/',1]]){const h=harness();assert.ok((await pair(h,url,frame)).error);assert.equal(h.settings.token,'test-token');assert.deepEqual(h.calls,[]);}
+});
+test('failed verification preserves previous connection',async()=>{
+ const h=harness({online:false});assert.ok((await pair(h)).error);assert.equal(h.settings.token,'test-token');
+});
+test('invalid token is not stored during automatic pairing',async()=>{
+ const h=harness();h.context.fetch=async()=>({ok:false});assert.ok((await pair(h)).error);assert.equal(h.settings.token,'test-token');
+});
 test('browser download pauses, sends, then cancels only after acceptance',async()=>{
  const h=harness();await h.context.captureDownload({id:1,url:'https://files.example/file.zip',state:'in_progress'});
  assert.deepEqual(h.calls,['pause','send','cancel']);

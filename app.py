@@ -180,6 +180,9 @@ def make_server(manager, port=8765):
                 if path == '/api/update/check':
                     updates.check()
                     return self.reply({'ok':True},202)
+                if path == '/api/update/run':
+                    updates.run_update()
+                    return self.reply({'ok':True},202)
                 if path == '/api/update/download':
                     updates.download()
                     return self.reply({'ok':True},202)
@@ -214,6 +217,7 @@ def make_server(manager, port=8765):
     server = LocalHTTPServer(('127.0.0.1', port), Handler)
     server.updates = updates
     server.prompts = prompts
+    updates.restart_port = server.server_port
     updates.on_install = lambda: threading.Timer(.7,server.shutdown).start()
     return server
 
@@ -232,11 +236,13 @@ def main():
     parser.add_argument('--update-destination',help=argparse.SUPPRESS)
     parser.add_argument('--update-backup',help=argparse.SUPPRESS)
     parser.add_argument('--update-parent',type=int,help=argparse.SUPPRESS)
+    parser.add_argument('--update-port',type=int,default=8765,help=argparse.SUPPRESS)
+    parser.add_argument('--update-data',type=Path,help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.apply_update:
         if not all((args.update_source,args.update_destination,args.update_backup,args.update_parent)):
             return 1
-        return apply_update(args.update_source,args.update_destination,args.update_backup,args.update_parent)
+        return apply_update(args.update_source,args.update_destination,args.update_backup,args.update_parent,args.update_port,args.update_data)
     try:
         storage_lock = lock_data(args.data.resolve())
     except OSError:

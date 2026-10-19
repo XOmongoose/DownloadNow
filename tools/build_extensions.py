@@ -50,8 +50,8 @@ Bắt tự động yêu cầu ứng dụng Windows portable v1.6.0 trở lên. C
 ## Ghép nối sau khi cài
 
 1. Chạy DownloadNow.exe, mở http://127.0.0.1:8765.
-2. Trong ứng dụng chọn **Tiện ích trình duyệt**, sao chép mã kết nối.
-3. Mở popup Download Now Bridge trên trình duyệt, dán mã và nhấn **Lưu kết nối**.
+2. Mở trang ứng dụng trong trình duyệt đã cài tiện ích mới; tiện ích tự ghép nối.
+3. Nếu cần nối lại, nhấn **Tự kết nối / Mở trang ứng dụng** trong popup. Mã kết nối chỉ dùng dự phòng.
 4. Dán liên kết trực tiếp rồi nhấn **Gửi tải xuống**, hoặc dùng menu chuột phải.
 5. Bật **Tự bắt lượt tải của trình duyệt**. Tùy chọn này lưu ngay khi đổi.
 6. Bật **Bắt link tệp ngay khi bấm**, cấp quyền truy cập HTTP/HTTPS khi trình duyệt hỏi.
@@ -176,8 +176,8 @@ https://developer.apple.com/safari/extensions/
 - Firefox: đọc `huong-dan/firefox.md`, nạp tạm thư mục `firefox`; XPI hiện chưa ký.
 - Safari: chưa có gói cài; đọc `huong-dan/safari.md` về yêu cầu macOS/Xcode.
 
-Các ZIP riêng có manifest.json ở gốc để giải nén/nộp store. Cài xong phải ghép nối
-mã kết nối với ứng dụng Download Now đang chạy. Đã kèm hướng dẫn từng bước.
+Các ZIP riêng có manifest.json ở gốc để giải nén/nộp store. Cài xong mở trang ứng dụng cục bộ để tự ghép nối, không cần sao chép mã.
+Mã kết nối thủ công chỉ dùng dự phòng. Đã kèm hướng dẫn từng bước.
 Gói không chứa EXE ứng dụng, token, hàng đợi hoặc dữ liệu cá nhân.
 ''', encoding='utf-8')
     readable_guides(out)

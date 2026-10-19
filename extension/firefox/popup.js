@@ -1,6 +1,10 @@
 const bridge=globalThis.browser||globalThis.chrome;
 const status=document.querySelector('#status');
 const capture=document.querySelector('#capture'),intercept=document.querySelector('#intercept');
+document.querySelector('#connect').onclick=async()=>{
+ await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
+ status.textContent='Trang ứng dụng sẽ tự ghép nối. Nếu chưa mở được trang, hãy chạy DownloadNow.exe.';
+};
 function state(){document.querySelector('#capture-state').textContent=capture.checked?'● Tự bắt tải: BẬT':'○ Tự bắt tải: TẮT';}
 bridge.storage.local.get(['token','capture','intercept','lastError','lastStatus']).then(data=>{document.querySelector('#token').value=data.token||'';capture.checked=data.capture!==false;intercept.checked=!!data.intercept;status.textContent=data.lastError||data.lastStatus||'Ghép nối để bắt đầu bắt tải.';state();});
 document.querySelector('#save').onclick=async()=>{await bridge.storage.local.set({token:document.querySelector('#token').value.trim(),capture:capture.checked,lastError:''});status.textContent='Đã lưu kết nối. Bật bắt link khi bấm nếu muốn chuyển trước khi trình duyệt tải.';state();};
