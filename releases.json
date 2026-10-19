@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.8.0",
+      "date": "2026-10-19",
+      "title": "Điều khiển tải và xóa lịch sử",
+      "changes": [
+        "Hiển thị nút Dừng, Tiếp tục và Hủy kèm biểu tượng trên từng lượt tải.",
+        "Hủy kết nối, dọn phần tải dở và ghi nhớ trạng thái đã hủy qua lần khởi động lại.",
+        "Xóa từng mục hoặc toàn bộ lịch sử hoàn tất và đã hủy, giữ nguyên tệp trên máy và lượt còn có thể tiếp tục."
+      ]
+    },
+    {
       "version": "1.7.0",
       "date": "2026-10-19",
       "title": "Tự phát hành và cập nhật qua GitHub",

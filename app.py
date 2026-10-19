@@ -190,6 +190,9 @@ def make_server(manager, port=8765):
                 if path == '/api/action':
                     manager.action(data['id'], data['action'])
                     return self.reply({'ok': True})
+                if path == '/api/history/clear':
+                    if set(data)-{'id'}:raise ValueError('Tham số xóa lịch sử không hợp lệ.')
+                    return self.reply({'removed':manager.clear_history(data.get('id'))})
                 if path == '/api/open-folder':
                     return self.reply({'path': open_download_folder(manager, data['id'])})
                 return self.reply({'error': 'Not found'}, 404)

@@ -113,6 +113,9 @@ class Manager:
             # Fail visibly on corruption: never silently discard a user's queue.
             self.jobs = json.loads(state.read_text('utf-8'))
             for j in self.jobs.values():
+                if j.get('cancel_requested'):
+                    self._discard_partial(j)
+                    j.update(status='cancelled', done=0, ranges=[])
                 if j['status'] in ('downloading', 'probing', 'pausing'):
                     j['status'] = 'queued'
         self.scheduler = threading.Thread(target=self._schedule, daemon=True)
@@ -237,6 +240,9 @@ class Manager:
     def action(self, ident, action):
         with self.lock:
             j = self.jobs[ident]
+            if j['status'] in ('cancelled','cancelling'):
+                if action=='cancel':return
+                raise ValueError('Lượt tải đã hủy. Hãy thêm liên kết để tải lại.')
             if action == 'pause':
                 if ident in self.running:
                     j['status'] = 'pausing'
@@ -249,9 +255,41 @@ class Manager:
                 if j['status'] == 'completed':
                     return
                 j.update(status='queued', error='', start_at=None, stop_at=None)
+            elif action == 'cancel':
+                if j['status']=='completed':
+                    raise ValueError('Tệp đã hoàn tất. Bạn có thể xóa lịch sử tải.')
+                j['cancel_requested']=True
+                if ident in self.running:
+                    j['status']='cancelling'
+                    self.running[ident][0].set()
+                else:
+                    self._discard_partial(j)
+                    j.update(status='cancelled', done=0, ranges=[], error='')
             else:
                 raise ValueError('Thao tác không hợp lệ.')
             self.save()
+
+    def _discard_partial(self,j):
+        folder=self.parts/j['id']
+        for part in folder.glob('*.part'):
+            part.unlink(missing_ok=True)
+        (folder/'assembled.tmp').unlink(missing_ok=True)
+        if folder.exists():folder.rmdir()
+        (self.output_for(j)/f'.downloadnow-{j["id"]}.tmp').unlink(missing_ok=True)
+
+    def clear_history(self,ident=None):
+        """Forget terminal records only; never delete completed user files."""
+        with self.lock:
+            if ident is not None and ident not in self.jobs:
+                raise ValueError('Không tìm thấy lượt tải.')
+            eligible=[key for key,j in self.jobs.items() if j['status'] in ('completed','cancelled') and key not in self.running and (ident is None or key==ident)]
+            if ident is not None and not eligible:
+                raise ValueError('Chỉ xóa lịch sử lượt tải đã hoàn tất hoặc đã hủy.')
+            for key in eligible:
+                del self.jobs[key]
+                self.samples.pop(key,None)
+            self.save()
+            return len(eligible)
 
     def _schedule(self):
         while not self.shutdown.wait(.3):
@@ -259,7 +297,7 @@ class Manager:
                 now = time.time()
                 for ident, (event, _) in list(self.running.items()):
                     j = self.jobs[ident]
-                    if j['stop_at'] and now >= j['stop_at']:
+                    if not j.get('cancel_requested') and j['stop_at'] and now >= j['stop_at']:
                         j['status'] = 'pausing'
                         event.set()
                 # Queue at most two simultaneous files; eight connections per file.
@@ -317,6 +355,7 @@ class Manager:
         folder.mkdir(exist_ok=True)
         try:
             total, ranged, etag, modified, suggested_name = self._probe(j, stop)
+            if stop.is_set():raise Paused()
             with self.lock:
                 # Resolve the final server filename once, before publishing a file.
                 # Old queues keep their existing names during upgrades.
@@ -367,16 +406,17 @@ class Manager:
                             out.write(data)
                 out.flush()
                 os.fsync(out.fileno())
-            try:
-                if os.name == 'nt':
-                    os.rename(assembled, target)
-                else:
-                    os.link(assembled, target)
-            except FileExistsError:
-                if not filecmp.cmp(assembled, target, shallow=False):
-                    raise ValueError('Tệp đích đã tồn tại với nội dung khác. Hãy đổi tên lượt tải mới.')
-            assembled.unlink(missing_ok=True)
             with self.lock:
+                if stop.is_set():raise Paused()
+                try:
+                    if os.name == 'nt':
+                        os.rename(assembled, target)
+                    else:
+                        os.link(assembled, target)
+                except FileExistsError:
+                    if not filecmp.cmp(assembled, target, shallow=False):
+                        raise ValueError('Tệp đích đã tồn tại với nội dung khác. Hãy đổi tên lượt tải mới.')
+                assembled.unlink(missing_ok=True)
                 j.update(status='completed', done=target.stat().st_size)
                 self.save()
             for part in folder.glob('*.part'):
@@ -391,6 +431,12 @@ class Manager:
                 j.update(status='error', error=str(ex))
         finally:
             with self.lock:
+                if j.get('cancel_requested') and j['status']!='completed':
+                    try:
+                        self._discard_partial(j)
+                        j.update(status='cancelled',done=0,ranges=[],error='')
+                    except OSError as ex:
+                        j.update(status='error',error='Không dọn được tệp tải dở: '+str(ex))
                 self.running.pop(j['id'], None)
                 self.save()
 

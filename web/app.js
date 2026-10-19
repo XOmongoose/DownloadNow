@@ -1,6 +1,7 @@
 const token = document.querySelector('meta[name="bridge-token"]').content;
 const $ = s => document.querySelector(s);
 const iconPaths = {
+ trash:['M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7'],stop:['M5 5h14v14H5z'],
  plus:['M12 5v14M5 12h14'],download:['M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5'],
  pause:['M8 5v14M16 5v14'],play:['m8 5 11 7-11 7Z'],retry:['M20 7v5h-5','M19 12a7 7 0 1 0-2 5'],
  grid:['M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'],
@@ -20,9 +21,9 @@ function icon(name) {
  return svg;
 }
 document.querySelectorAll('[data-icon]').forEach(element=>element.replaceChildren(icon(element.dataset.icon)));
-const labels = {queued:'Trong hàng đợi', probing:'Đang kết nối', downloading:'Đang tải', pausing:'Đang dừng…', paused:'Tạm dừng', completed:'Hoàn tất', error:'Cần kiểm tra'};
+const labels = {queued:'Trong hàng đợi', probing:'Đang kết nối', downloading:'Đang tải', pausing:'Đang dừng…', paused:'Đã dừng', cancelling:'Đang hủy…', cancelled:'Đã hủy', completed:'Hoàn tất', error:'Cần kiểm tra'};
 let jobs = [], filter = 'all', noticeTimer;
-const active = j => ['probing','downloading','pausing'].includes(j.status);
+const active = j => ['probing','downloading','pausing','cancelling'].includes(j.status);
 function bytes(n) {if (!n) return '0 B';const k=Math.min(4,Math.floor(Math.log(n)/Math.log(1024)));return `${(n/1024**k).toFixed(k?1:0)} ${['B','KB','MB','GB','TB'][k]}`;}
 function notice(message) {$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('#toast').hidden=true,5000);}
 async function api(path, data) {const r=await fetch('/api/'+path,{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})});const value=await r.json();if(!r.ok) throw Error(value.error||'Không thể kết nối.');return value;}
@@ -39,7 +40,15 @@ async function waitSavePrompt(result){
 }
 function text(tag, value, className) {const e=document.createElement(tag);e.textContent=value;if(className)e.className=className;return e;}
 function choose(value) {filter=value;document.querySelectorAll('[data-filter]').forEach(e=>e.classList.toggle('active',e.dataset.filter===value));document.querySelectorAll('[data-tab]').forEach(e=>e.classList.toggle('active',e.dataset.tab===value));render();}
+function actionButton(job,label,symbol,operation,disabled=false){
+ const button=text('button',label,'row-action labeled-action');button.prepend(icon(symbol));button.title=label+' · '+job.name;button.setAttribute('aria-label',button.title);button.disabled=disabled;
+ button.onclick=async()=>{button.disabled=true;try{await api('action',{id:job.id,action:operation});await refresh();}catch(e){notice(e.message);button.disabled=false;}};
+ return button;
+}
+let historyId=null;
+function openHistory(ident=null){historyId=ident;$('#history-message').textContent=ident?'Xóa lượt tải này khỏi lịch sử? Tệp đã tải vẫn được giữ trên máy.':'Xóa lịch sử các lượt đã hoàn tất và đã hủy? Tệp đã tải vẫn được giữ. Các lượt đang tải, đã dừng và bị lỗi vẫn còn để tiếp tục.';$('#history-dialog').showModal();}
 function render() {
+ $('#history-clear').disabled=!jobs.some(j=>['completed','cancelled'].includes(j.status));
  const counts={all:jobs.length,active:jobs.filter(active).length,queued:jobs.filter(j=>j.status==='queued').length,completed:jobs.filter(j=>j.status==='completed').length};
  Object.entries(counts).forEach(([k,v])=>$('#count-'+k).textContent=v);
  $('#tab-count').textContent=jobs.length;$('#stat-active').replaceChildren(document.createTextNode(counts.active+' '),text('small','tệp'));$('#stat-completed').replaceChildren(document.createTextNode(counts.completed+' '),text('small','tệp'));
@@ -60,15 +69,23 @@ function render() {
   if(active(j)){const bar=text('div','','progress'),fill=text('div','','progress-fill');fill.style.width=pct+'%';bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuenow',pct.toFixed(0));bar.setAttribute('aria-label',j.name);bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','100');bar.append(fill);info.append(bar);}
   cell.append(info);td.append(cell);tr.append(td,text('td',j.total===null?'Chưa xác định':bytes(j.total)));
   const status=document.createElement('td');status.append(text('span',labels[j.status],`status ${j.status}`));tr.append(status,text('td',j.speed?bytes(j.speed)+'/s':'—'));
-  const actions=document.createElement('td');if(j.status!=='completed'){const pause=active(j)||j.status==='queued',b=text('button','','row-action');b.append(icon(pause?'pause':j.status==='error'?'retry':'play'));b.title=pause?'Tạm dừng':'Tiếp tục';b.setAttribute('aria-label',b.title+' '+j.name);b.disabled=j.status==='pausing';b.onclick=async()=>{b.disabled=true;try{await api('action',{id:j.id,action:pause?'pause':'resume'});await refresh();}catch(e){notice(e.message);b.disabled=false;}};actions.append(b);}else {
+  const actions=document.createElement('td');actions.className='download-actions';if(!['completed','cancelled'].includes(j.status)){
+   const group=text('div','','file-actions'),stopping=['pausing','cancelling'].includes(j.status),pause=active(j)||j.status==='queued';
+   group.append(actionButton(j,pause?'Dừng':'Tiếp tục',pause?'pause':'play',pause?'pause':'resume',stopping),actionButton(j,'Hủy','close','cancel',j.status==='cancelling'));
+   actions.append(group);
+  }else if(j.status==='completed') {
    const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'),document.createTextNode('Thư mục'));folder.title='Mở thư mục chứa '+j.name;folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
    const location=text('button','','row-action');location.append(icon('copy'));location.title='Xem và sao chép đường dẫn tệp';location.setAttribute('aria-label',location.title+' '+j.name);location.onclick=()=>{$('#file-location-path').value=j.file_path||'';$('#file-location-name').textContent=j.name;$('#file-location-dialog').showModal();};group.append(folder,location);actions.append(group);
-  }tr.append(actions);return tr;
+  }
+  if(['completed','cancelled'].includes(j.status)){const remove=text('button','Xóa lịch sử','row-action labeled-action');remove.prepend(icon('trash'));remove.setAttribute('aria-label','Xóa lịch sử '+j.name);remove.onclick=()=>openHistory(j.id);actions.append(remove);}
+  tr.append(actions);return tr;
  });$('#job-list').replaceChildren(...rows);
 }
 async function refresh(){try{jobs=await api('jobs');$('#connection-state').textContent='Đã kết nối · sẵn sàng';render();}catch(e){$('#connection-state').textContent='Mất kết nối · đang thử lại';}}
 function openAdd(schedule=false){$('#form-error').textContent='';if(schedule){const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());$('#add-form').elements.start_at.value=d.toISOString().slice(0,16);}$('#add-dialog').showModal();}
 $('#add-open').onclick=()=>openAdd();$('#empty-add').onclick=()=>openAdd();$('#schedule-nav').onclick=()=>openAdd(true);$('#schedule-card').onclick=()=>openAdd(true);
+$('#history-clear').onclick=()=>openHistory();
+$('#history-confirm').onclick=async()=>{const button=$('#history-confirm');button.disabled=true;try{const result=await api('history/clear',historyId?{id:historyId}:{});$('#history-dialog').close();await refresh();notice('Đã xóa '+result.removed+' lượt khỏi lịch sử. Tệp trên máy được giữ lại.');}catch(e){notice(e.message);}finally{button.disabled=false;}};
 document.querySelectorAll('.close-dialog').forEach(e=>e.onclick=()=>e.closest('dialog').close());document.querySelectorAll('[data-filter]').forEach(e=>e.onclick=()=>choose(e.dataset.filter));document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>choose(e.dataset.tab));$('#search').oninput=render;
 $('#add-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector('[type="submit"]');b.disabled=true;$('#form-error').textContent='';try{const data=Object.fromEntries(new FormData(form));data.ask_save=true;data.connections=Number(data.connections);for(const field of ['start_at','stop_at'])data[field]=data[field]?new Date(data[field]).toISOString():null;const result=await waitSavePrompt(await api('jobs',data));if(result.state==='cancelled'){notice('Đã hủy chọn nơi lưu. Chưa tạo lượt tải.');return;}form.reset();$('#add-dialog').close();choose('all');await refresh();notice('Đã thêm tệp vào hàng đợi.');}catch(ex){$('#form-error').textContent=ex.message;}finally{b.disabled=false;}};
 $('#extension-nav').onclick=()=>{$('#pair-token').value=token;$('#extension-dialog').showModal();};$('#copy-token').onclick=async()=>{try{await navigator.clipboard.writeText(token);notice('Đã sao chép mã kết nối.');}catch(e){$('#pair-token').select();notice('Nhấn Ctrl+C để sao chép mã.');}};

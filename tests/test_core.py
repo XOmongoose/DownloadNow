@@ -84,6 +84,63 @@ class CoreTests(fixtures.DownloadTests):
         with self.assertRaises(ValueError):
             self.manager.add(self.url, connections=9)
 
+    def test_cancel_paused_removes_partial_and_cannot_resume(self):
+        ident=self.pause_partial()
+        self.assertTrue((self.manager.parts/ident).exists())
+        self.manager.action(ident,'cancel')
+        self.assertEqual(self.manager.jobs[ident]['status'],'cancelled')
+        self.assertFalse((self.manager.parts/ident).exists())
+        with self.assertRaises(ValueError):self.manager.action(ident,'resume')
+
+    def test_cancel_running_waits_for_workers_and_removes_partial(self):
+        Source.slow=True
+        ident=self.manager.add(self.url+'/cancel.zip')
+        end=time.monotonic()+5
+        while time.monotonic()<end:
+            if self.manager.jobs[ident]['status']=='downloading' and self.manager._done(self.manager.jobs[ident])>0:break
+            time.sleep(.01)
+        else:self.fail('Download never started')
+        self.manager.action(ident,'cancel')
+        self.assertEqual(self.wait(ident,statuses=('cancelled',))['status'],'cancelled')
+        self.assertFalse((self.manager.parts/ident).exists())
+        self.assertFalse((self.manager.output/'cancel.zip').exists())
+
+    def test_restart_finishes_pending_cancellation(self):
+        ident=self.pause_partial()
+        self.manager.close()
+        self.manager.jobs[ident].update(status='cancelling',cancel_requested=True)
+        self.manager.save()
+        self.manager=Manager(self.temp.name)
+        self.assertEqual(self.manager.jobs[ident]['status'],'cancelled')
+        self.assertFalse((self.manager.parts/ident).exists())
+
+    def test_clear_history_keeps_downloaded_file_and_resumable_jobs(self):
+        completed=self.manager.add(self.url+'/keep.zip')
+        self.verify(completed)
+        paused=self.pause_partial()
+        cancelled=self.manager.add(self.url+'/cancelled.zip',start_at=time.time()+3600)
+        self.manager.action(cancelled,'cancel')
+        self.assertEqual(self.manager.clear_history(),2)
+        self.assertEqual(set(self.manager.jobs),{paused})
+        self.assertEqual((self.manager.output/'keep.zip').read_bytes(),PAYLOAD)
+        self.assertTrue((self.manager.parts/paused).exists())
+        self.manager.close()
+        self.manager=Manager(self.temp.name)
+        self.assertEqual(set(self.manager.jobs),{paused})
+
+    def test_clear_one_history_record_only(self):
+        first=self.manager.add(self.url+'/first.zip',start_at=time.time()+3600)
+        second=self.manager.add(self.url+'/second.zip',start_at=time.time()+3600)
+        self.manager.action(first,'cancel')
+        self.manager.action(second,'cancel')
+        self.assertEqual(self.manager.clear_history(first),1)
+        self.assertIn(second,self.manager.jobs)
+
+    def test_history_cannot_remove_resumable_download(self):
+        ident=self.manager.add(self.url+'/waiting.zip',start_at=time.time()+3600)
+        with self.assertRaises(ValueError):self.manager.clear_history(ident)
+        self.assertIn(ident,self.manager.jobs)
+
     def test_restart_recovers_running_job_automatically(self):
         ident = self.pause_partial()
         self.manager.close()
