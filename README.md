@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.8.1**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.8.2**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.8.1-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.8.2-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.8.1.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.8.2.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -62,7 +62,7 @@ Server chỉ lắng nghe `127.0.0.1`. API yêu cầu token riêng tại `data/br
 
 `python -m unittest discover -s tests -v`
 
-Bộ mặc định gồm 72 kiểm thử lõi/cập nhật với HTTP transport mô phỏng trong bộ nhớ: đối chiếu byte Range, mất kết nối, tạm dừng/khởi động lại, thay đổi ETag, không hỗ trợ Range, lịch tải và tên tệp an toàn. Trạng thái và phần tải vẫn ghi xuống đĩa thật. Các kiểm thử này đã qua trên Python 3.14, bao gồm tên tệp và kiểm tra mở đúng thư mục mà không thực thi tệp tải.
+Bộ mặc định gồm 73 kiểm thử lõi/cập nhật với HTTP transport mô phỏng trong bộ nhớ: đối chiếu byte Range, mất kết nối, tạm dừng/khởi động lại, thay đổi ETag, không hỗ trợ Range, lịch tải và tên tệp an toàn. Trạng thái và phần tải vẫn ghi xuống đĩa thật. Các kiểm thử này đã qua trên Python 3.14, bao gồm tên tệp và kiểm tra mở đúng thư mục mà không thực thi tệp tải.
 
 Kiểm thử tích hợp qua socket thật: `python -m unittest discover -s tests -p integration_downloads.py -v`. Bộ này bổ sung kiểm tra xác thực API và Host. Trong môi trường xây dựng Windows hiện tại, một số ca bị reset/timeout socket kể cả trên loopback; bộ tích hợp **chưa qua toàn bộ**. Chưa kiểm chứng giao diện trực tiếp hoặc cài tiện ích trong từng trình duyệt. Cần chạy bộ tích hợp và kiểm thử trình duyệt trong môi trường triển khai trước khi xem đây là bản phát hành ổn định.
 

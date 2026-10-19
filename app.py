@@ -188,7 +188,6 @@ def make_server(manager, port=8765):
                     return self.reply({'ok':True},202)
                 if path == '/api/update/install':
                     updates.install(prompts)
-                    threading.Timer(.7,server.shutdown).start()
                     return self.reply({'ok':True},202)
                 if path in ('/api/jobs','/api/capture') and data.pop('ask_save',False):
                     return self.reply({'prompt_id':prompts.start(data,automatic=path=='/api/capture')},202)
@@ -215,6 +214,7 @@ def make_server(manager, port=8765):
     server = LocalHTTPServer(('127.0.0.1', port), Handler)
     server.updates = updates
     server.prompts = prompts
+    updates.on_install = lambda: threading.Timer(.7,server.shutdown).start()
     return server
 
 

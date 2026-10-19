@@ -140,6 +140,7 @@ class UpdateService:
         self.available = None
         self.staged = None
         self.stop = threading.Event()
+        self.on_install = None
 
     def snapshot(self):
         with self.lock:
@@ -299,6 +300,8 @@ class UpdateService:
                 '--update-backup',str(backup)],creationflags=subprocess.CREATE_NO_WINDOW)
             self.state['state']='installing'
             self.manager.shutdown.set()
+            if self.on_install is not None:
+                self.on_install()
 
     def _auto_tick(self,prompts):
         values=self.preferences.get()

@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.8.2",
+      "date": "2026-10-19",
+      "title": "Hoàn thiện xóa đồng loạt và cập nhật tự động",
+      "changes": [
+        "Bao gồm chọn nhiều mục lịch sử và hộp thoại tùy chọn xóa luôn tệp, mặc định giữ tệp.",
+        "Đóng máy chủ khi cài tự động để bộ cập nhật thay tệp và mở lại ứng dụng thành công."
+      ]
+    },
+    {
       "version": "1.8.1",
       "date": "2026-10-19",
       "title": "Xóa lịch sử đồng loạt và tùy chọn xóa tệp",

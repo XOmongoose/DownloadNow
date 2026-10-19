@@ -232,6 +232,15 @@ class SettingsUpdateTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.updates.install(prompts)
             launch.assert_not_called()
 
+    def test_install_notifies_server_to_exit_for_automatic_updates(self):
+        self.updates._prepare(self.package())
+        self.updates.on_install=MagicMock()
+        prompts=SavePrompts(self.manager,chooser=lambda *_:None)
+        with patch('updater.sys.frozen',True,create=True),patch('updater.sys.platform','win32'),patch('updater.shutil.copy2'),patch('updater.subprocess.Popen'):
+            self.updates.install(prompts)
+        self.updates.on_install.assert_called_once()
+        self.assertEqual(self.updates.snapshot()['state'],'installing')
+
     def test_helper_backs_up_and_keeps_data(self):
         self.updates._prepare(self.package())
         (self.home/'DownloadNow.exe').write_bytes(b'old-executable')
