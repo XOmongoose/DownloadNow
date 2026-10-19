@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import secrets
 import signal
+import socket
 import sys
 import subprocess
 import threading
@@ -18,6 +19,16 @@ from updater import UpdateService, update_source, apply_update
 
 BASE = Path(__file__).resolve().parent
 APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
+
+
+class LocalHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = False
+    allow_reuse_port = False
+
+    def server_bind(self):
+        if sys.platform=='win32':
+            self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+        super().server_bind()
 
 
 def version():
@@ -191,8 +202,8 @@ def make_server(manager, port=8765):
                     manager.action(data['id'], data['action'])
                     return self.reply({'ok': True})
                 if path == '/api/history/clear':
-                    if set(data)-{'id'}:raise ValueError('Tham số xóa lịch sử không hợp lệ.')
-                    return self.reply({'removed':manager.clear_history(data.get('id'))})
+                    if set(data)-{'id','ids','delete_files'}:raise ValueError('Tham số xóa lịch sử không hợp lệ.')
+                    return self.reply({'removed':manager.clear_history(data.get('id'),data.get('ids'),data.get('delete_files',False))})
                 if path == '/api/open-folder':
                     return self.reply({'path': open_download_folder(manager, data['id'])})
                 return self.reply({'error': 'Not found'}, 404)
@@ -201,7 +212,7 @@ def make_server(manager, port=8765):
             except Exception:
                 return self.reply({'error': 'Không thể lưu dữ liệu. Kiểm tra quyền ghi và dung lượng đĩa.'}, 500)
 
-    server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    server = LocalHTTPServer(('127.0.0.1', port), Handler)
     server.updates = updates
     server.prompts = prompts
     return server

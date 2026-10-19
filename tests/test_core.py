@@ -141,6 +141,79 @@ class CoreTests(fixtures.DownloadTests):
         with self.assertRaises(ValueError):self.manager.clear_history(ident)
         self.assertIn(ident,self.manager.jobs)
 
+    def history_file(self,name):
+        ident=self.manager.add(self.url+'/'+name,start_at=time.time()+3600)
+        self.manager.jobs[ident].update(status='completed',done=4)
+        path=self.manager.output/name
+        path.write_bytes(b'keep')
+        self.manager.save()
+        return ident,path
+
+    def test_bulk_history_only_removes_selected_and_keeps_files_by_default(self):
+        first,path=self.history_file('selected.zip')
+        second,other=self.history_file('unselected.zip')
+        self.assertEqual(self.manager.clear_history(ids=[first,first]),1)
+        self.assertIn(second,self.manager.jobs)
+        self.assertEqual(path.read_bytes(),b'keep')
+        self.assertTrue(other.exists())
+
+    def test_bulk_history_can_delete_completed_files(self):
+        first,path=self.history_file('delete-one.zip')
+        second,other=self.history_file('delete-two.zip')
+        self.assertEqual(self.manager.clear_history(ids=[first,second],delete_files=True),2)
+        self.assertFalse(path.exists())
+        self.assertFalse(other.exists())
+        self.assertFalse(self.manager.jobs)
+
+    def test_bulk_invalid_selection_does_not_delete_any_file(self):
+        completed,path=self.history_file('safe.zip')
+        queued=self.manager.add(self.url+'/queued.zip',start_at=time.time()+3600)
+        with self.assertRaises(ValueError):self.manager.clear_history(ids=[completed,queued],delete_files=True)
+        self.assertTrue(path.exists())
+        self.assertIn(completed,self.manager.jobs)
+
+    def test_history_failed_file_deletion_keeps_failed_record(self):
+        first,path=self.history_file('delete-ok.zip')
+        second,locked=self.history_file('locked.zip')
+        unlink=Path.unlink
+        def remove(file,*args,**kwargs):
+            if file==locked:raise PermissionError('File in use')
+            return unlink(file,*args,**kwargs)
+        with patch.object(Path,'unlink',remove),self.assertRaisesRegex(ValueError,'Đã xóa 1 mục'):
+            self.manager.clear_history(ids=[first,second],delete_files=True)
+        self.assertNotIn(first,self.manager.jobs)
+        self.assertIn(second,self.manager.jobs)
+        self.assertTrue(locked.exists())
+        self.assertFalse(path.exists())
+
+    def test_history_missing_file_still_removes_record(self):
+        ident,path=self.history_file('already-gone.zip')
+        path.unlink()
+        self.assertEqual(self.manager.clear_history(ids=[ident],delete_files=True),1)
+
+    def test_history_deletion_rejects_path_outside_download_directory(self):
+        ident,path=self.history_file('original.zip')
+        outside=self.manager.root/'outside.txt'
+        outside.write_bytes(b'keep')
+        self.manager.jobs[ident]['name']='../outside.txt'
+        with self.assertRaises(ValueError):self.manager.clear_history(ids=[ident],delete_files=True)
+        self.assertEqual(outside.read_bytes(),b'keep')
+        self.assertIn(ident,self.manager.jobs)
+
+    def test_history_cancelled_record_does_not_delete_an_existing_user_file(self):
+        ident=self.manager.add(self.url+'/cancel-name.zip',start_at=time.time()+3600)
+        self.manager.action(ident,'cancel')
+        path=self.manager.output/'cancel-name.zip'
+        path.write_bytes(b'keep')
+        self.assertEqual(self.manager.clear_history(ids=[ident],delete_files=True),1)
+        self.assertEqual(path.read_bytes(),b'keep')
+
+    def test_history_delete_option_requires_boolean_and_nonempty_ids(self):
+        ident,path=self.history_file('validate.zip')
+        for arguments in ({'ids':[]},{'ids':'all'},{'ids':[ident],'delete_files':'false'}):
+            with self.assertRaises(ValueError):self.manager.clear_history(**arguments)
+        self.assertTrue(path.exists())
+
     def test_restart_recovers_running_job_automatically(self):
         ident = self.pause_partial()
         self.manager.close()

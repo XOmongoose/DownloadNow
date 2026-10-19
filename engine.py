@@ -277,19 +277,39 @@ class Manager:
         if folder.exists():folder.rmdir()
         (self.output_for(j)/f'.downloadnow-{j["id"]}.tmp').unlink(missing_ok=True)
 
-    def clear_history(self,ident=None):
-        """Forget terminal records only; never delete completed user files."""
+    def clear_history(self,ident=None,ids=None,delete_files=False):
+        """Remove selected terminal records, optionally their exact completed files."""
+        if not isinstance(delete_files,bool):raise ValueError('Tùy chọn xóa tệp không hợp lệ.')
+        if ident is not None and ids is not None:raise ValueError('Chỉ chọn một danh sách lịch sử.')
+        if ids is not None and (not isinstance(ids,list) or not ids or any(not isinstance(key,str) for key in ids)):
+            raise ValueError('Danh sách lịch sử không hợp lệ.')
+        requested=set(ids) if ids is not None else ({ident} if ident is not None else None)
         with self.lock:
-            if ident is not None and ident not in self.jobs:
+            if requested is not None and any(key not in self.jobs for key in requested):
                 raise ValueError('Không tìm thấy lượt tải.')
-            eligible=[key for key,j in self.jobs.items() if j['status'] in ('completed','cancelled') and key not in self.running and (ident is None or key==ident)]
-            if ident is not None and not eligible:
+            eligible=[key for key,j in self.jobs.items() if j['status'] in ('completed','cancelled') and key not in self.running and (requested is None or key in requested)]
+            if requested is not None and set(eligible)!=requested:
                 raise ValueError('Chỉ xóa lịch sử lượt tải đã hoàn tất hoặc đã hủy.')
+            removed,failed=0,[]
             for key in eligible:
+                job=self.jobs[key]
+                if delete_files and job['status']=='completed':
+                    try:
+                        directory=self.output_for(job)
+                        path=directory/job['name']
+                        if path.resolve().parent!=directory or path.is_dir():
+                            raise ValueError('Đường dẫn tệp không hợp lệ.')
+                        path.unlink(missing_ok=True)
+                    except (OSError,ValueError):
+                        failed.append(job['name'])
+                        continue
                 del self.jobs[key]
                 self.samples.pop(key,None)
+                removed+=1
             self.save()
-            return len(eligible)
+            if failed:
+                raise ValueError(f'Đã xóa {removed} mục. Không xóa được {len(failed)} tệp; các mục này vẫn được giữ trong lịch sử. Tệp có thể đang mở hoặc không có quyền xóa.')
+            return removed
 
     def _schedule(self):
         while not self.shutdown.wait(.3):

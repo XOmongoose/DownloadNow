@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.8.1",
+      "date": "2026-10-19",
+      "title": "Xóa lịch sử đồng loạt và tùy chọn xóa tệp",
+      "changes": [
+        "Chọn từng mục hoặc tất cả mục đang hiển thị để xóa lịch sử đồng loạt.",
+        "Hộp thoại xác nhận có tùy chọn xóa luôn tệp đã tải trên máy, mặc định bỏ chọn.",
+        "Giữ mục lịch sử khi không xóa được tệp và bảo vệ các lượt còn có thể tiếp tục.",
+        "Chặn hai bản ứng dụng cùng dùng một cổng trên Windows để tránh giao diện nối nhầm bản cũ."
+      ]
+    },
+    {
       "version": "1.8.0",
       "date": "2026-10-19",
       "title": "Điều khiển tải và xóa lịch sử",
