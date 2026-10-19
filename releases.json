@@ -1,0 +1,142 @@
+{
+  "releases": [
+    {
+      "version": "1.7.0",
+      "date": "2026-10-19",
+      "title": "Tự phát hành và cập nhật qua GitHub",
+      "changes": [
+        "Thêm GitHub Actions kiểm thử, đóng gói Windows và tiện ích, phát hành khi đẩy tag phiên bản.",
+        "Thêm tùy chọn tự tải, xác minh và cài bản mới khi hàng đợi đã dừng, không còn hộp thoại chờ.",
+        "Giữ dữ liệu và cơ chế sao lưu, tự mở lại sau cập nhật; có thể tắt tự cài trong tùy chọn."
+      ]
+    },
+    {
+      "version": "1.6.3",
+      "date": "2026-10-19",
+      "title": "Giữ đúng tên tệp từ link tải chung",
+      "changes": [
+        "Lấy tên tệp thật từ trình duyệt, Content-Disposition hoặc link chuyển hướng trước khi mở hộp thoại lưu.",
+        "Ưu tiên tên Unicode filename* để giữ tên tiếng Việt, phần mở rộng và khoảng trắng.",
+        "Không tự lưu thành download khi máy chủ chưa cung cấp tên; giữ tên người dùng chủ động nhập."
+      ]
+    },
+    {
+      "version": "1.6.2",
+      "date": "2026-10-19",
+      "title": "Gắn kho cập nhật XOmongoose",
+      "changes": [
+        "Cấu hình nguồn mặc định XOmongoose/DownloadNow cho bản cài mới.",
+        "Hiển thị hướng dẫn khi kho chưa công khai hoặc chưa có Release."
+      ]
+    },
+    {
+      "version": "1.6.1",
+      "date": "2026-10-19",
+      "title": "Cập nhật qua GitHub Releases",
+      "changes": [
+        "Nhận địa chỉ kho GitHub để kiểm tra Release ổn định mới nhất.",
+        "Tự chọn đúng gói Windows x64 và SHA-256 do GitHub cung cấp hoặc tệp checksum kèm theo.",
+        "Chặn bản thử nghiệm, gói sai kho và gói thiếu kiểm tra toàn vẹn."
+      ]
+    },
+    {
+      "version": "1.6.0",
+      "date": "2026-10-19",
+      "title": "Hộp thoại tải & cập nhật",
+      "changes": [
+        "Thêm cửa sổ thông tin tải kiểu IDM: địa chỉ, tên tệp, thư mục, Duyệt và Bắt đầu tải.",
+        "Giữ tên tệp trong link và ghi nhớ thư mục lưu theo lựa chọn người dùng.",
+        "Thêm nút cập nhật, kiểm tra tự động hằng ngày, nguồn HTTPS và nhập gói ZIP.",
+        "Xác minh gói, sao lưu tệp ứng dụng, giữ dữ liệu và chặn cài khi đang tải."
+      ]
+    },
+    {
+      "version": "1.5.0",
+      "date": "2026-10-19",
+      "title": "Chọn nơi lưu trước khi tải",
+      "changes": [
+        "Mở hộp thoại Windows Lưu thành để chọn thư mục và tên tệp khi bấm tải.",
+        "Áp dụng cả tải thủ công và link bắt từ tiện ích; hủy chọn thì không tạo lượt tải.",
+        "Lưu đường dẫn riêng cho từng tệp và hỗ trợ ghép tệp sang ổ đĩa khác."
+      ]
+    },
+    {
+      "version": "1.4.0",
+      "date": "2026-10-19",
+      "title": "Bắt link tải tự động",
+      "changes": [
+        "Bắt link tệp khi bấm qua quyền truy cập trang tùy chọn.",
+        "Tạm dừng lượt tải trình duyệt, chỉ hủy sau khi ứng dụng xác nhận nhận tải; thử tiếp tục khi chuyển lỗi.",
+        "Kiểm tra link truy cập được trước khi chuyển, chống tạo trùng và hiển thị trạng thái kết nối."
+      ]
+    },
+    {
+      "version": "1.3.0",
+      "date": "2026-10-19",
+      "title": "Vị trí tệp & tên tải chính xác",
+      "changes": [
+        "Thêm nút mở thư mục, xem và sao chép đường dẫn cho tệp hoàn tất.",
+        "Hiển thị đường dẫn lưu thực tế.",
+        "Giữ tên tệp từ link, giải mã tên tiếng Việt và tham số filename; lấy tên máy chủ cho link tải chung."
+      ]
+    },
+    {
+      "version": "1.2.3",
+      "date": "2026-10-19",
+      "title": "Hướng dẫn dễ mở trên Windows",
+      "changes": [
+        "Bổ sung BAT-DAU.txt để mở bằng Notepad.",
+        "Bổ sung BAT-DAU.html và hướng dẫn từng trình duyệt dạng HTML/TXT."
+      ]
+    },
+    {
+      "version": "1.2.2",
+      "date": "2026-10-19",
+      "title": "Gói tiện ích trình duyệt",
+      "changes": [
+        "Đóng gói ZIP riêng cho Chrome, Edge và Opera.",
+        "Đóng gói Firefox ZIP/XPI chưa ký để thử nghiệm và nộp ký Mozilla.",
+        "Bổ sung hướng dẫn cài, ghép nối, nâng cấp và kiểm tra toàn vẹn gói tiện ích."
+      ]
+    },
+    {
+      "version": "1.2.1",
+      "date": "2026-10-19",
+      "title": "Gói Windows portable",
+      "changes": [
+        "Đóng gói EXE Windows x64 chạy không cần cài Python.",
+        "Tự mở trình duyệt và lưu dữ liệu cạnh tệp EXE.",
+        "Bổ sung biểu tượng ứng dụng, thông tin phiên bản Windows và mã SHA-256 cho gói phát hành."
+      ]
+    },
+    {
+      "version": "1.2.0",
+      "date": "2026-10-19",
+      "title": "Biểu tượng & lịch sử phiên bản",
+      "changes": [
+        "Thêm bộ icon SVG đồng bộ cho nút, menu và thao tác tải.",
+        "Hiển thị phiên bản hiện tại và hộp thoại lịch sử nâng cấp.",
+        "Đồng bộ số phiên bản giữa ứng dụng và tiện ích trình duyệt."
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-10-19",
+      "title": "Giao diện vàng",
+      "changes": [
+        "Đổi màu chủ đạo sang #F1AF00.",
+        "Điều chỉnh màu chữ và trạng thái rê chuột để dễ đọc."
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-10-19",
+      "title": "Phiên bản đầu tiên",
+      "changes": [
+        "Bổ sung bộ máy tải nhiều kết nối, khôi phục, hàng đợi và lịch tải.",
+        "Tạo giao diện tiếng Việt và mã tiện ích trình duyệt."
+      ]
+    }
+  ],
+  "update_repository": "XOmongoose/DownloadNow"
+}

@@ -1,0 +1,49 @@
+name: Build and publish Download Now
+on:
+  push:
+    tags: ['v*.*.*']
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify tag matches release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content releases.json -Raw | ConvertFrom-Json).releases[0].version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and releases.json version differ' }
+      - run: python -m pip install -r requirements-build.txt
+      - run: python -m unittest discover -s tests -v
+      - run: node --test tests/extension.test.cjs
+      - run: python tools/build_windows.py
+      - run: python tools/build_extensions.py
+      - name: Publish complete release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $release = (Get-Content releases.json -Raw | ConvertFrom-Json).releases[0]
+          $existing = gh release view $tag --json id 2>$null
+          if ($LASTEXITCODE -eq 0) { throw 'Release already exists; use a new version' }
+          $notes = "$($release.title)`n`n" + (($release.changes | ForEach-Object { "- $_" }) -join "`n")
+          $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          Set-Content -LiteralPath $notesPath -Value $notes -Encoding utf8
+          gh release create $tag --verify-tag --draft --title "Download Now $tag" --notes-file $notesPath
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot create draft release' }
+          $assets = @(Get-ChildItem dist -File | Where-Object { $_.Name -match '\.(zip|sha256|xpi)$' } | ForEach-Object { $_.FullName })
+          gh release upload $tag @assets
+          if ($LASTEXITCODE -ne 0) { throw 'Upload failed; release remains a draft' }
+          gh release edit $tag --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot publish release' }

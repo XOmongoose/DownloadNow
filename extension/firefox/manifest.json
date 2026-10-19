@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Download Now Bridge",
+  "version": "1.7.0",
+  "description": "Gửi liên kết tải HTTP(S) tới Download Now trên máy của bạn.",
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Download Now"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "download-now@local.invalid",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}
