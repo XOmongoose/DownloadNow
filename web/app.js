@@ -46,19 +46,30 @@ function actionButton(job,label,symbol,operation,disabled=false){
  return button;
 }
 let historyIds=[];
+let historyCandidates={selected:[],all:[]};
 const selectedHistory=new Set();
 const canClearHistory=j=>['completed','cancelled'].includes(j.status);
-function openHistory(ids=null){
- historyIds=ids?[...ids]:jobs.filter(canClearHistory).map(j=>j.id);
- if(!historyIds.length)return;
- $('#history-message').textContent='Xóa '+historyIds.length+' mục lịch sử đã chọn? Các lượt đang tải, đã dừng và bị lỗi vẫn được giữ để tiếp tục. Bỏ chọn ô bên dưới để giữ tệp trên máy.';
- $('#history-delete-files').checked=false;$('#history-confirm').textContent='Xóa lịch sử';$('#history-dialog').showModal();
+function updateHistorySummary(){
+ const eligible=new Set(jobs.filter(canClearHistory).map(j=>j.id));
+ const selected=historyCandidates.selected.filter(id=>eligible.has(id)),all=historyCandidates.all.filter(id=>eligible.has(id));
+ $('#history-scope-selected-count').textContent=selected.length;$('#history-scope-all-count').textContent=all.length;
+ $('#history-scope-selected').disabled=!selected.length;
+ historyIds=$('#history-scope-selected').checked?selected:all;
+ $('#history-message').textContent='Sẽ xóa '+historyIds.length+' mục lịch sử. Các lượt đang tải, đã dừng và bị lỗi vẫn được giữ để tiếp tục.';
+ $('#history-confirm').disabled=!historyIds.length;
+ $('#history-confirm').textContent='Xóa '+historyIds.length+' mục'+($('#history-delete-files').checked?' và tệp':'');
+}
+function openHistory(){
+ historyCandidates={selected:[...selectedHistory],all:jobs.filter(canClearHistory).map(j=>j.id)};
+ if(!historyCandidates.all.length)return;
+ $('#history-scope-selected').checked=historyCandidates.selected.length>0;$('#history-scope-all').checked=!historyCandidates.selected.length;
+ $('#history-delete-files').checked=false;updateHistorySummary();$('#history-dialog').showModal();
 }
 function render() {
  $('#history-clear').disabled=!jobs.some(j=>['completed','cancelled'].includes(j.status));
  const eligibleIds=new Set(jobs.filter(canClearHistory).map(j=>j.id));
  for(const id of selectedHistory)if(!eligibleIds.has(id))selectedHistory.delete(id);
- $('#history-selected').disabled=!selectedHistory.size;$('#history-selected-count').textContent=selectedHistory.size;
+ if($('#history-dialog').open)updateHistorySummary();
  const counts={all:jobs.length,active:jobs.filter(active).length,queued:jobs.filter(j=>j.status==='queued').length,completed:jobs.filter(j=>j.status==='completed').length};
  Object.entries(counts).forEach(([k,v])=>$('#count-'+k).textContent=v);
  $('#tab-count').textContent=jobs.length;$('#stat-active').replaceChildren(document.createTextNode(counts.active+' '),text('small','tệp'));$('#stat-completed').replaceChildren(document.createTextNode(counts.completed+' '),text('small','tệp'));
@@ -93,7 +104,6 @@ function render() {
   }
   if(['completed','cancelled'].includes(j.status)){
    const again=text('button','Tải lại','row-action labeled-action');again.prepend(icon('retry'));again.setAttribute('aria-label','Tải lại '+j.name);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};actions.append(again);
-   const remove=text('button','Xóa lịch sử','row-action labeled-action');remove.prepend(icon('trash'));remove.setAttribute('aria-label','Xóa lịch sử '+j.name);remove.onclick=()=>openHistory([j.id]);actions.append(remove);
   }
   tr.append(actions);return tr;
  });$('#job-list').replaceChildren(...rows);
@@ -102,8 +112,9 @@ async function refresh(){try{jobs=await api('jobs');$('#connection-state').textC
 function openAdd(schedule=false){$('#form-error').textContent='';if(schedule){const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());$('#add-form').elements.start_at.value=d.toISOString().slice(0,16);}$('#add-dialog').showModal();}
 $('#add-open').onclick=()=>openAdd();$('#empty-add').onclick=()=>openAdd();$('#schedule-nav').onclick=()=>openAdd(true);$('#schedule-card').onclick=()=>openAdd(true);
 $('#history-clear').onclick=()=>openHistory();
-$('#history-selected').onclick=()=>openHistory(selectedHistory);
-$('#history-delete-files').onchange=()=>{$('#history-confirm').textContent=$('#history-delete-files').checked?'Xóa lịch sử và tệp':'Xóa lịch sử';};
+$('#history-scope-selected').onchange=updateHistorySummary;
+$('#history-scope-all').onchange=updateHistorySummary;
+$('#history-delete-files').onchange=updateHistorySummary;
 $('#history-confirm').onclick=async()=>{const button=$('#history-confirm'),deleteFiles=$('#history-delete-files').checked;button.disabled=true;try{const result=await api('history/clear',{ids:historyIds,delete_files:deleteFiles});$('#history-dialog').close();await refresh();notice('Đã xóa '+result.removed+' mục.'+(deleteFiles?' Đã xóa tệp tương ứng trên máy.':' Tệp trên máy được giữ lại.'));}catch(e){$('#history-dialog').close();await refresh();notice(e.message);}finally{button.disabled=false;}};
 document.querySelectorAll('.close-dialog').forEach(e=>e.onclick=()=>e.closest('dialog').close());document.querySelectorAll('[data-filter]').forEach(e=>e.onclick=()=>choose(e.dataset.filter));document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>choose(e.dataset.tab));$('#search').oninput=render;
 $('#add-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector('[type="submit"]');b.disabled=true;$('#form-error').textContent='';try{const data=Object.fromEntries(new FormData(form));data.ask_save=true;data.connections=Number(data.connections);for(const field of ['start_at','stop_at'])data[field]=data[field]?new Date(data[field]).toISOString():null;const result=await waitSavePrompt(await api('jobs',data));if(result.state==='cancelled'){notice('Đã hủy chọn nơi lưu. Chưa tạo lượt tải.');return;}form.reset();$('#add-dialog').close();choose('all');await refresh();notice('Đã thêm tệp vào hàng đợi.');}catch(ex){$('#form-error').textContent=ex.message;}finally{b.disabled=false;}};

@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.9.4",
+      "date": "2026-10-20",
+      "title": "Gom quản lý xóa lịch sử vào một nút",
+      "changes": [
+        "Chỉ giữ một nút Xóa lịch sử trên thanh công cụ, bỏ các nút xóa lặp lại ở từng dòng.",
+        "Chọn xóa các mục đã đánh dấu hoặc tất cả mục hoàn tất/đã hủy trong cùng hộp thoại, hiển thị số lượng trước khi xác nhận.",
+        "Tùy chọn xóa luôn tệp nằm trong hộp thoại và luôn bỏ chọn khi mở lại."
+      ]
+    },
+    {
       "version": "1.9.3",
       "date": "2026-10-20",
       "title": "Chỉ hiện cửa sổ tải của Download Now",
