@@ -163,6 +163,16 @@ class CoreTests(fixtures.DownloadTests):
         self.assertIsNone(self.manager.jobs[fresh]['start_at'])
         self.assertEqual(self.manager.jobs[original]['status'],'cancelled')
 
+    def test_redownload_works_while_completed_worker_cleans_up(self):
+        original,path=self.history_file('cleanup.zip')
+        # Keep a completed worker registered while it finishes private cleanup.
+        with self.manager.lock,patch.object(self.manager,'running',{original:(threading.Event(),MagicMock())}):
+            fresh=self.manager.redownload(original)
+            self.assertNotEqual(fresh,original)
+            self.assertEqual(self.manager.jobs[original]['status'],'completed')
+        self.verify(fresh)
+        self.assertEqual(path.read_bytes(),b'keep')
+
     def test_redownload_does_not_duplicate_resumable_job(self):
         original=self.pause_partial()
         before=set(self.manager.jobs)

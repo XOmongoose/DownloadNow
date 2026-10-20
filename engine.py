@@ -273,7 +273,9 @@ class Manager:
         """Create a fresh job; preserve the previous record and completed file."""
         with self.lock:
             original=self.jobs[ident]
-            if original['status'] not in ('completed','cancelled') or ident in self.running:
+            # A completed file is already published and closed. Its old worker
+            # may still be cleaning its own part directory; the new ID is safe.
+            if original['status'] not in ('completed','cancelled'):
                 raise ValueError('Dùng Tiếp tục cho lượt chưa hoàn tất. Tải lại dùng cho lượt đã hoàn tất hoặc đã hủy.')
             return self.add(original['url'],name=original['name'],connections=original['connections'],save_dir=str(self.output_for(original)))
 

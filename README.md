@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.9.1**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.9.2**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.9.1-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.9.2-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.9.1.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.9.2.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -62,7 +62,7 @@ Server chỉ lắng nghe `127.0.0.1`. API yêu cầu token riêng tại `data/br
 
 `python -m unittest discover -s tests -v`
 
-Bộ mặc định gồm 81 kiểm thử lõi/cập nhật với HTTP transport mô phỏng trong bộ nhớ: đối chiếu byte Range, mất kết nối, tạm dừng/khởi động lại, thay đổi ETag, không hỗ trợ Range, lịch tải và tên tệp an toàn. Trạng thái và phần tải vẫn ghi xuống đĩa thật. Các kiểm thử này đã qua trên Python 3.14, bao gồm tên tệp và kiểm tra mở đúng thư mục mà không thực thi tệp tải.
+Bộ mặc định gồm 82 kiểm thử lõi/cập nhật với HTTP transport mô phỏng trong bộ nhớ: đối chiếu byte Range, mất kết nối, tạm dừng/khởi động lại, thay đổi ETag, không hỗ trợ Range, lịch tải và tên tệp an toàn. Trạng thái và phần tải vẫn ghi xuống đĩa thật. Các kiểm thử này đã qua trên Python 3.14, bao gồm tên tệp và kiểm tra mở đúng thư mục mà không thực thi tệp tải.
 
 Kiểm thử tích hợp qua socket thật: `python -m unittest discover -s tests -p integration_downloads.py -v`. Bộ này bổ sung kiểm tra xác thực API và Host. Trong môi trường xây dựng Windows hiện tại, một số ca bị reset/timeout socket kể cả trên loopback; bộ tích hợp **chưa qua toàn bộ**. Chưa kiểm chứng giao diện trực tiếp hoặc cài tiện ích trong từng trình duyệt. Cần chạy bộ tích hợp và kiểm thử trình duyệt trong môi trường triển khai trước khi xem đây là bản phát hành ổn định.
 
@@ -213,7 +213,7 @@ Tiện ích mới tự ghép nối khi mở trang ứng dụng http://127.0.0.1:
 
 Tự cập nhật tiện ích lâu dài cần cài từ cửa hàng. Chưa có tài khoản nhà phát triển hay niêm yết được duyệt, nên chưa thể tự cài hoặc tự phát hành lên cửa hàng. Bộ DownloadNow-Store-Submission-1.9.0.zip gồm ZIP riêng cho Chrome/Edge/Firefox, bản mô tả, khai báo quyền và chính sách quyền riêng tư. Xem store/SUBMISSION.md; còn cần tài khoản, ảnh chụp thực tế và xét duyệt. Không chỉnh chính sách doanh nghiệp hoặc sửa hồ sơ trình duyệt để ép cài tiện ích.
 
-## Tải lại và tiện ích tự tìm bản mới (v1.9.1)
+## Tải lại và tiện ích tự tìm bản mới (v1.9.2)
 
 Bấm Tải lại ở lượt hoàn tất hoặc đã hủy để tạo một lượt mới từ URL cũ, giữ số kết nối và thư mục. Không ghi đè tệp cũ. Link có token hết hạn vẫn cần lấy URL mới từ trang nguồn.
 
