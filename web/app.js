@@ -122,29 +122,20 @@ $('#extension-nav').onclick=()=>{$('#pair-token').value=token;$('#extension-dial
 $('#version-open').onclick=()=>$('#version-dialog').showModal();
 $('#copy-file-path').onclick=async()=>{try{await navigator.clipboard.writeText($('#file-location-path').value);notice('Đã sao chép đường dẫn tệp.');}catch(e){$('#file-location-path').focus();$('#file-location-path').select();notice('Nhấn Ctrl+C để sao chép đường dẫn.');}};
 api('storage').then(data=>{$('#storage-path').textContent='Lưu tại '+data.directory;$('#storage-path').title=data.directory;}).catch(()=>{});
-let updateState={},installAfterDownload=false,installingUpdate=false;
-const updateLabels={idle:'Sẵn sàng kiểm tra cập nhật.',unconfigured:'Chưa có nguồn cập nhật. Nhập URL hoặc chọn gói ZIP trên máy.',checking:'Đang kiểm tra phiên bản…',available:'Có phiên bản mới.',up_to_date:'Bạn đang dùng phiên bản mới nhất từ nguồn đã cấu hình.',downloading:'Đang tải và xác minh gói cập nhật…',importing:'Chọn gói ZIP trong hộp thoại Windows…',ready:'Gói đã được kiểm tra, sẵn sàng cài đặt.',installing:'Đang cập nhật. Ứng dụng sẽ tự mở lại.',error:'Không thể cập nhật.'};
-async function readSettings(){const s=await api('settings');$('#update-feed').value=s.update_feed;$('#auto-check-updates').checked=s.auto_check_updates;$('#auto-install-updates').checked=s.auto_install_updates;$('#remember-save-folder').checked=s.remember_save_dir;$('#remembered-folder').value=s.last_save_dir;}
-async function saveSettings(){await api('settings',{update_feed:$('#update-feed').value.trim(),auto_check_updates:$('#auto-check-updates').checked,auto_install_updates:$('#auto-install-updates').checked,remember_save_dir:$('#remember-save-folder').checked});}
-async function installUpdate(){
- if(installingUpdate)return;
- try{await api('update/install',{});installingUpdate=true;$('#update-state').textContent=updateLabels.installing;notice('Đang cài bản mới, dữ liệu của bạn sẽ được giữ lại.');
-  const reconnect=async()=>{try{const info=await api('info');if(info.version===updateState.version){location.reload();return;}}catch(e){}setTimeout(reconnect,2500);};setTimeout(reconnect,5000);
- }catch(e){notice(e.message);$('#update-state').textContent=e.message;}
-}
+let updateState={},updateOpening=false,serverVersion=null;
+const updateLabels={idle:'Sẵn sàng kiểm tra cập nhật.',unconfigured:'Chưa cấu hình nguồn cập nhật trong tùy chọn nâng cao.',checking:'Đang kiểm tra phiên bản…',available:'Có phiên bản mới. Bạn có muốn cập nhật không?',up_to_date:'Bạn đang dùng phiên bản mới nhất.',downloading:'Đang tải và xác minh gói cập nhật…',importing:'Đang chuẩn bị gói…',ready:'Đã xác minh gói cập nhật.',installing:'Đang cài cập nhật. Ứng dụng sẽ tự mở lại.',error:'Không thể cập nhật.'};
+async function readSettings(){const s=await api('settings');$('#update-feed').value=s.update_feed;$('#auto-check-updates').checked=s.auto_check_updates;$('#remember-save-folder').checked=s.remember_save_dir;$('#remembered-folder').value=s.last_save_dir;}
+async function saveSettings(){await api('settings',{update_feed:$('#update-feed').value.trim(),auto_check_updates:$('#auto-check-updates').checked,auto_install_updates:false,remember_save_dir:$('#remember-save-folder').checked});}
 async function readUpdateStatus(){
- if(installingUpdate)return;
- try{updateState=await api('update/status');const s=updateState;$('#update-current').textContent='Đang dùng v'+s.current_version;$('#update-state').textContent=(updateLabels[s.state]||s.state)+(s.version?' · v'+s.version:'')+(s.error?' '+s.error:'');$('#update-notes').textContent=s.notes||'';$('#update-label').textContent=['available','ready'].includes(s.state)?'Cập nhật ●':'Cập nhật';const busy=['checking','downloading','importing','installing'].includes(s.state);$('#update-run').disabled=busy;$('#update-check').disabled=busy;$('#update-import').disabled=busy;$('#update-download').disabled=s.state!=='available';$('#update-install').disabled=s.state!=='ready'||!s.can_install;
-  if(s.state==='error')installAfterDownload=false;
-  if(s.state==='ready'&&installAfterDownload){installAfterDownload=false;if(s.can_install)await installUpdate();else notice('Gói đã chuẩn bị. Cài tự động dùng trong bản EXE Windows.');}
- }catch(e){if($('#update-dialog').open)$('#update-state').textContent='Chưa kết nối được máy chủ ứng dụng.';}
+ try{const s=updateState=await api('update/status');if(serverVersion&&serverVersion!==s.current_version){location.reload();return;}serverVersion=s.current_version;$('#update-current').textContent='Đang dùng v'+s.current_version;$('#update-state').textContent=(updateLabels[s.state]||s.state)+(s.version?' · v'+s.version:'')+(s.error?' '+s.error:'');$('#update-notes').textContent=s.notes||'';$('#update-label').textContent=['available','ready'].includes(s.state)?'Cập nhật ●':'Cập nhật';$('#update-confirm').hidden=!['available','ready'].includes(s.state)||s.install_requested;$('#update-question').textContent=s.install_requested?'Đã đồng ý cập nhật. Ứng dụng sẽ tự cài khi hàng đợi đã dừng; bạn có thể đóng hộp thoại.':'Chỉ tải và cài sau khi bạn đồng ý. Ứng dụng sẽ tự mở lại và giữ dữ liệu.';
+ }catch(e){if($('#update-dialog').open)$('#update-state').textContent='Đang chờ ứng dụng kết nối lại…';}
 }
-$('#update-open').onclick=async()=>{$('#update-dialog').showModal();try{await readSettings();await readUpdateStatus();if(['idle','up_to_date','error'].includes(updateState.state)&&$('#update-feed').value){await api('update/check',{});await readUpdateStatus();}}catch(e){notice(e.message);}};
-$('#settings-form').onsubmit=async e=>{e.preventDefault();try{await saveSettings();notice('Đã lưu tùy chọn.');await readSettings();}catch(error){notice(error.message);}};
-$('#update-run').onclick=async()=>{try{await api('update/run',{});notice('Ứng dụng tự kiểm tra, tải và cài khi hàng đợi đã dừng. Bạn có thể đóng hộp thoại.');await readUpdateStatus();}catch(e){notice(e.message);}};
-$('#update-check').onclick=async()=>{try{await saveSettings();await api('update/check',{});await readUpdateStatus();}catch(e){notice(e.message);}};
-$('#update-download').onclick=async()=>{try{installAfterDownload=true;await api('update/download',{});await readUpdateStatus();}catch(e){installAfterDownload=false;notice(e.message);}};
-$('#update-install').onclick=installUpdate;
-$('#update-import').onclick=async()=>{try{installAfterDownload=false;await api('update/import',{});await readUpdateStatus();}catch(e){notice(e.message);}};
+$('#update-open').onclick=async()=>{if(updateOpening)return;updateOpening=true;$('#update-dialog').showModal();$('#update-confirm').hidden=true;try{await readSettings();await readUpdateStatus();if(!['checking','downloading','importing','installing'].includes(updateState.state)&&!updateState.install_requested){await api('update/check',{});await readUpdateStatus();}}catch(e){notice(e.message);}finally{updateOpening=false;}};
+$('#settings-form').onsubmit=async e=>{e.preventDefault();try{await saveSettings();notice('Đã lưu tùy chọn.');}catch(error){notice(error.message);}};
+$('#update-confirm').onclick=async()=>{const button=$('#update-confirm');button.disabled=true;try{await api('update/accept',{version:updateState.version});await readUpdateStatus();}catch(e){notice(e.message);}finally{button.disabled=false;}};
+$('#extension-folder').onclick=async()=>{try{const result=await api('extension/open-folder',{});$('#extension-folder-status').textContent='Nạp thư mục này một lần trong trình duyệt: '+result.path;}catch(e){notice(e.message);}};
 async function pollUpdates(){await readUpdateStatus();setTimeout(pollUpdates,$('#update-dialog').open?1500:10000);}pollUpdates();
 async function poll(){await refresh();setTimeout(poll,1200);}poll();
+
+if(new URLSearchParams(location.search).has("update"))$("#update-open").click();
+if(new URLSearchParams(location.search).has("extensions"))$("#extension-nav").click();

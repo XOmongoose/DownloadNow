@@ -11,9 +11,13 @@ class Preferences:
         self.lock = threading.RLock()
         self.values = {'remember_save_dir':True, 'last_save_dir':'',
                        'update_feed':default_feed, 'auto_check_updates':bool(default_feed),
-                       'auto_install_updates':bool(default_feed), 'last_update_check':0}
+                       'auto_install_updates':False, 'last_update_check':0}
         if self.path.exists():
             self.values.update(json.loads(self.path.read_text('utf-8')))
+        # New update flow always asks before downloading, including old installs.
+        if self.values.get('update_confirmation_version')!=1:
+            if self.path.exists():self.set(auto_install_updates=False,update_confirmation_version=1)
+            else:self.values.update(auto_install_updates=False,update_confirmation_version=1)
 
     def get(self):
         with self.lock:

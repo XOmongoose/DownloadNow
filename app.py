@@ -183,6 +183,16 @@ def make_server(manager, port=8765):
                 if path == '/api/update/run':
                     updates.run_update()
                     return self.reply({'ok':True},202)
+                if path == '/api/update/accept':
+                    if set(data)!={'version'} or not isinstance(data['version'],str):raise ValueError('Phiên bản không hợp lệ.')
+                    updates.accept(data['version'])
+                    return self.reply({'ok':True},202)
+                if path == '/api/extension/open-folder':
+                    folder=APP_HOME/'extension'/'chromium'
+                    if not (folder/'manifest.json').is_file():raise ValueError('Không tìm thấy tiện ích kèm ứng dụng. Hãy giải nén đầy đủ gói ứng dụng.')
+                    if sys.platform!='win32':raise ValueError('Mở thư mục tự động chỉ hỗ trợ Windows.')
+                    os.startfile(str(folder))
+                    return self.reply({'path':str(folder)})
                 if path == '/api/update/download':
                     updates.download()
                     return self.reply({'ok':True},202)

@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.9.5",
+      "date": "2026-10-20",
+      "title": "Cập nhật có xác nhận và tiện ích theo ứng dụng",
+      "changes": [
+        "Một nút Cập nhật: kiểm tra, thông báo phiên bản mới và chỉ tải/cài khi đồng ý.",
+        "Tắt tự tải/cài nền từ tùy chọn cũ; giữ hàng đợi và dữ liệu khi cập nhật.",
+        "Chrome/Edge/Opera: nạp thư mục tiện ích cạnh EXE một lần để cập nhật cùng ứng dụng và tự nạp lại; không cần gỡ/cài mỗi lần. Firefox vẫn cần gói được Mozilla ký để cập nhật chính thức."
+      ]
+    },
+    {
       "version": "1.9.4",
       "date": "2026-10-20",
       "title": "Gom quản lý xóa lịch sử vào một nút",

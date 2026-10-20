@@ -150,6 +150,7 @@ class UpdateService:
             if not self.preferences.get()['update_feed'] and result['state']=='idle':
                 result['state']='unconfigured'
             result['can_install']=bool(getattr(sys,'frozen',False) and sys.platform=='win32')
+            result['install_requested']=self.install_requested
             return result
 
     def _set(self,**values):
@@ -167,7 +168,22 @@ class UpdateService:
         threading.Thread(target=run,daemon=True).start()
 
     def check(self):
+        self.install_requested=False
         self._start('checking',self._check)
+
+    def accept(self,version):
+        """Download exactly the release the user has just approved."""
+        with self.lock:
+            if not self.available or self.state['state'] not in ('available','ready') or self.available['version']!=version:
+                raise ValueError('Phiên bản đã thay đổi. Hãy kiểm tra cập nhật lại.')
+            info=dict(self.available)
+            if self.state['state']=='ready':
+                self.install_requested=True
+                return
+            def run():
+                self._download(info)
+                self.install_requested=True
+            self._start('downloading',run)
 
     def run_update(self):
         """User requested pipeline survives closing the web dialog."""

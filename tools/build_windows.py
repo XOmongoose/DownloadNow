@@ -70,6 +70,8 @@ def main():
     package.mkdir()
     shutil.copy2(work/'exe/DownloadNow.exe',package/'DownloadNow.exe')
     shutil.copytree(ROOT/'extension',package/'extension', ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+    # Only this stable folder is replaced by the application updater.
+    (package/'extension/chromium/managed.json').write_text(json.dumps({'managed':True,'version':version}),encoding='utf-8')
     shutil.copy2(ROOT/'releases.json',package/'releases.json')
     shutil.copy2(ROOT/'README.md',package/'README.md')
     (package/'HUONG-DAN.txt').write_text(f'''DOWNLOAD NOW v{version} — WINDOWS x64 PORTABLE
@@ -81,7 +83,7 @@ def main():
 
 Du lieu va hang doi: thu muc data canh DownloadNow.exe.
 Tep hoan tat: data/files. Khong xoa data neu muon tiep tuc tai.
-Nang cap: tat ban cu, thay EXE va extension, giu nguyen thu muc data.
+Nang cap: bam Cap nhat trong ung dung, dong y de tai/kiem tra/cai ban moi.
 Co the sao chep data tu ban chay ma nguon sau khi da tat ca hai ban.
 
 Neu cong 8765 dang dung, dong ban Download Now cu truoc khi mo ban nay.
@@ -94,7 +96,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-82 kiem thu loi/cap nhat va 36 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+85 kiem thu loi/cap nhat va 37 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     entries = sorted(p for p in package.rglob('*') if p.is_file())

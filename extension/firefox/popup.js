@@ -14,15 +14,15 @@ async function readExtensionUpdate(force=false){
   const link=document.querySelector('#extension-latest-link');link.href=info.page;link.textContent='Mở bản phát hành v'+info.version;
  }catch(e){label.textContent=e.message;button.disabled=true;}
 }
-bridge.storage.local.get('extensionAutoDownload').then(data=>{document.querySelector('#extension-auto-download').checked=!!data.extensionAutoDownload;});
-document.querySelector('#extension-auto-download').onchange=async event=>{
- await bridge.storage.local.set({extensionAutoDownload:event.target.checked});await readExtensionUpdate();
-};
 document.querySelector('#extension-update-check').onclick=()=>readExtensionUpdate(true);
 document.querySelector('#extension-update-download').onclick=async()=>{
  const button=document.querySelector('#extension-update-download');button.disabled=true;
- try{const result=await bridge.runtime.sendMessage({type:'extension-update-download'});if(result.error)throw Error(result.error);document.querySelector('#extension-update-status').textContent=result.upToDate?'Bạn đang dùng bản mới nhất.':'Gói v'+result.version+' đang tải vào Downloads/DownloadNow. Giải nén rồi Reload tiện ích để áp dụng.';}
- catch(e){document.querySelector('#extension-update-status').textContent=e.message;button.disabled=false;}
+ try{
+  if(bridge.runtime.getBrowserInfo)throw Error('Firefox cần bản ký Mozilla để tự cập nhật. Bản tạm thời hiện tại vẫn phải nạp lại; xem hướng dẫn phát hành trong gói ứng dụng.');
+  const mode=await bridge.runtime.sendMessage({type:'extension-update-mode'});
+  if(mode.managed){const result=await bridge.runtime.sendMessage({type:'extension-update-apply'});if(result.error)throw Error(result.error);document.querySelector('#extension-update-status').textContent='Xác nhận cập nhật trong trang Download Now. Tiện ích sẽ tự nạp lại sau khi ứng dụng cập nhật.';}
+  else {await bridge.tabs.create({url:'http://127.0.0.1:8765/?extensions=1'});document.querySelector('#extension-update-status').textContent='Chuyển sang thư mục tiện ích trong ứng dụng một lần. Sau đó không cần tải ZIP hoặc xóa tiện ích khi cập nhật.';}
+ }catch(e){document.querySelector('#extension-update-status').textContent=e.message;}finally{button.disabled=false;}
 };
 readExtensionUpdate();
 document.querySelector('#connect').onclick=async()=>{

@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.9.4**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.9.5**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.9.4-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.9.5-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.9.4.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.9.5.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -229,6 +229,11 @@ Cần cài hoặc Reload tiện ích v1.9.3; chỉ cập nhật EXE không thay 
 
 Tài liệu API: https://developer.chrome.com/docs/extensions/reference/api/downloads#event-onDeterminingFilename
 
-## Một nút xóa lịch sử (v1.9.4)
+## Một nút xóa lịch sử (v1.9.5)
 
 Thanh công cụ chỉ còn một nút Xóa lịch sử, không có nút xóa riêng ở từng dòng. Đánh dấu mục trong bảng rồi mở hộp thoại để chọn Các mục đã chọn hoặc Tất cả mục hoàn tất và đã hủy. Có số lượng trước khi xác nhận và ô Xóa luôn tệp mặc định bỏ chọn. Phạm vi được chốt khi mở hộp thoại, không tự thêm lượt vừa hoàn tất trong lúc người dùng đang chọn.
+
+### Cập nhật có xác nhận
+Bấm Cập nhật để kiểm tra. Nếu có phiên bản mới, chọn Đồng ý cập nhật để tải, xác minh SHA-256 và tự cài khi hàng đợi rảnh. Không tự tải khi chưa đồng ý.
+
+Chrome/Edge/Opera: dùng Load unpacked để nạp `extension/chromium` cạnh DownloadNow.exe một lần. Thư mục này được thay cùng ứng dụng; tiện ích kiểm tra mỗi phút và tự reload khi không có lượt chuyển tải đang chờ. Nếu đang nạp từ Downloads/ZIP riêng, chuyển sang thư mục này một lần. Không gỡ tiện ích mỗi lần nâng cấp; giữ nguyên thư mục và dữ liệu kết nối. Firefox bản tạm thời không hỗ trợ cách này; cần phát hành hoặc ký qua Mozilla.

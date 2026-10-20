@@ -117,6 +117,29 @@ class SettingsUpdateTests(unittest.TestCase):
         download.assert_not_called()
         self.assertFalse(self.updates.install_requested)
 
+    def test_approval_rejects_changed_release_without_download(self):
+        self.updates.available={'version':'2.0.0'}
+        self.updates._set(state='available')
+        with patch.object(self.updates,'_download') as download:
+            with self.assertRaises(ValueError):self.updates.accept('1.9.9')
+        download.assert_not_called()
+        self.assertFalse(self.updates.install_requested)
+
+    def test_approval_downloads_exact_release_and_requests_install(self):
+        info={'version':'2.0.0','url':'https://example.com/update.zip','sha256':'a'*64}
+        self.updates.available=info
+        self.updates._set(state='available')
+        with patch.object(self.updates,'_start',side_effect=lambda state,operation:operation()),patch.object(self.updates,'_download') as download:
+            self.updates.accept('2.0.0')
+        download.assert_called_once_with(info)
+        self.assertTrue(self.updates.install_requested)
+
+    def test_old_auto_install_preference_migrates_to_confirmation(self):
+        root=self.manager.root/'old-settings'
+        root.mkdir()
+        (root/'preferences.json').write_text('{"auto_install_updates": true}',encoding='utf-8')
+        self.assertFalse(Preferences(root).get()['auto_install_updates'])
+
     def test_explicit_update_finishes_even_when_automatic_install_is_disabled(self):
         self.preferences.set(update_feed='https://github.com/XOmongoose/DownloadNow',auto_install_updates=False)
         self.updates.install_requested=True

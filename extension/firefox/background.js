@@ -7,6 +7,30 @@ const origins = ['http://*/*', 'https://*/*'];
 let interceptionSync=Promise.resolve();
 let updateDownloadInFlight=null;
 
+async function managedExtension(){
+ try{
+  const response=await fetch(bridge.runtime.getURL('managed.json'),{cache:'no-store'});
+  if(!response.ok)return null;
+  const marker=await response.json();
+  return marker.managed===true&&/^\d+\.\d+\.\d+$/.test(marker.version)?marker:null;
+ }catch(e){return null;}
+}
+async function reloadManagedExtension(){
+ const marker=await managedExtension();
+ if(!marker||inFlight.size)return false;
+ // Read the installed files, not the running manifest cached by the browser.
+ const response=await fetch(bridge.runtime.getURL('manifest.json'),{cache:'no-store'});
+ if(!response.ok)return false;
+ const manifest=await response.json(),current=bridge.runtime.getManifest().version;
+ if(manifest.version!==marker.version)return false;
+ const {token}=await bridge.storage.local.get('token');
+ if(!token)return false;
+ const app=await fetch('http://127.0.0.1:8765/api/info',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(5000)});
+ if(!app.ok||(await app.json()).version!==marker.version)return false;
+ const newer=manifest.version.split('.').map(Number).some((part,i,parts)=>parts.slice(0,i).every((v,j)=>v===Number(current.split('.')[j]))&&part>Number(current.split('.')[i]));
+ if(newer){bridge.runtime.reload();return true;}
+ return false;
+}
 async function downloadExtensionUpdate(){
  if(updateDownloadInFlight)return updateDownloadInFlight;
  updateDownloadInFlight=(async()=>{
@@ -25,11 +49,13 @@ async function checkExtensionUpdate(force=false){
  const values=await bridge.storage.local.get(['extensionAutoDownload','extensionDownloadedVersion']);
  if(info.newer){
   await bridge.action.setBadgeText({text:'NEW'});
-  if(values.extensionAutoDownload&&values.extensionDownloadedVersion!==info.version)await downloadExtensionUpdate();
+  // Updates now require approval in the application; never download ZIPs silently.
  }
  return info;
 }
 if(bridge.alarms){
+ bridge.alarms.get('managed-extension-reload').then(alarm=>{if(!alarm)bridge.alarms.create('managed-extension-reload',{periodInMinutes:1});}).catch(()=>{});
+ bridge.alarms.onAlarm.addListener(alarm=>{if(alarm.name==='managed-extension-reload')reloadManagedExtension().catch(()=>{});});
  bridge.alarms.get('extension-update-check').then(alarm=>{if(!alarm)bridge.alarms.create('extension-update-check',{periodInMinutes:360});}).catch(()=>{});
  bridge.alarms.onAlarm.addListener(alarm=>{if(alarm.name==='extension-update-check')checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));});
 }
@@ -207,6 +233,18 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   })().then(reply).catch(e=>reply({error:e.message}));return true;
  }
  if(fromPage)return;
+ if(message.type==='extension-update-mode'){
+  managedExtension().then(marker=>reply({managed:!!marker}));return true;
+ }
+ if(message.type==='extension-update-apply'){
+  (async()=>{
+   if(await reloadManagedExtension())return {reloading:true};
+   if(!await managedExtension())throw Error('Chuyển sang thư mục tiện ích cạnh DownloadNow.exe một lần để dùng cập nhật tự động.');
+   // Ask the application to check; its own dialog obtains user approval.
+   await bridge.tabs.create({url:'http://127.0.0.1:8765/?update=1'});
+   return {ok:true};
+  })().then(reply).catch(e=>reply({error:e.message}));return true;
+ }
  if(message.type==='extension-update-check'){
   checkExtensionUpdate(!!message.force).then(info=>reply({info})).catch(e=>reply({error:e.message}));return true;
  }

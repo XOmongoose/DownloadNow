@@ -177,3 +177,16 @@ test('strict handoff failure never bypasses the filename gate on a later downloa
 test('strict mode without a connection token cancels instead of opening browser Save As',async()=>{
  const h=harness({filenameGate:true,exclusive:true,token:''});await filenameGate(h);assert.deepEqual(h.calls,['cancel','suggest']);
 });
+
+test('managed extension reloads only matching completed newer files and waits for handoff',async()=>{
+ const h=harness();let reloads=0,version='2.0.0',manifestVersion='2.0.0',managed=true;
+ h.context.chrome.runtime.getURL=name=>'chrome-extension://test/'+name;
+ h.context.chrome.runtime.getManifest=()=>({version:'1.9.5'});
+ h.context.chrome.runtime.reload=()=>reloads++;
+ h.context.fetch=async url=>({ok:true,json:async()=>url.endsWith('managed.json')?{managed,version}:url.endsWith('/api/info')?{version}:{version:manifestVersion}});
+ managed=false;assert.equal(await h.context.reloadManagedExtension(),false);
+ managed=true;manifestVersion='1.9.5';assert.equal(await h.context.reloadManagedExtension(),false);
+ manifestVersion='2.0.0';vm.runInContext("inFlight.set('pending',{})",h.context);assert.equal(await h.context.reloadManagedExtension(),false);
+ vm.runInContext('inFlight.clear()',h.context);assert.equal(await h.context.reloadManagedExtension(),true);assert.equal(reloads,1);
+ version=manifestVersion='1.8.0';assert.equal(await h.context.reloadManagedExtension(),false);assert.equal(reloads,1);
+});

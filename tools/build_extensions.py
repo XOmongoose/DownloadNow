@@ -94,6 +94,7 @@ từng trình duyệt. Đã kiểm tra cú pháp JavaScript, manifest, tài nguy
 
 Giải nén bản mới vào vị trí cố định rồi tải lại tiện ích trong trang quản lý.
 Không xóa thư mục tiện ích sau khi nạp bản giải nén.
+Muốn cập nhật cùng ứng dụng (Chrome/Edge/Opera): nạp extension/chromium cạnh DownloadNow.exe thay vì thư mục ZIP riêng. Thực hiện một lần; sau đó cập nhật ứng dụng sẽ thay cả tiện ích và tiện ích tự nạp lại. Firefox cần gói được Mozilla ký để cập nhật chính thức.
 Muốn gỡ: mở trang quản lý tiện ích, chọn Download Now Bridge → Xóa/Remove.
 Việc gỡ tiện ích không xóa tệp đã tải hoặc hàng đợi trong ứng dụng.
 '''
