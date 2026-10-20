@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.9.2**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.9.3**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.9.2-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.9.3-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.9.2.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.9.3.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -218,3 +218,13 @@ Tự cập nhật tiện ích lâu dài cần cài từ cửa hàng. Chưa có t
 Bấm Tải lại ở lượt hoàn tất hoặc đã hủy để tạo một lượt mới từ URL cũ, giữ số kết nối và thư mục. Không ghi đè tệp cũ. Link có token hết hạn vẫn cần lấy URL mới từ trang nguồn.
 
 Popup tiện ích tự lấy thông tin Release công khai trên GitHub, chọn ZIP đúng Chrome/Edge/Opera/Firefox hoặc dùng bộ tổng hợp nếu bản cũ chưa có gói riêng. Có nút Kiểm tra, Tải gói mới, liên kết Release và tùy chọn Tự tải gói mới (mặc định tắt). Kiểm tra nền mỗi 6 giờ khi trình duyệt hoạt động; dữ liệu Release được lưu đệm để tránh giới hạn GitHub. Gói tải nằm trong Downloads/DownloadNow, không bị chuyển lại sang ứng dụng. Gói ZIP vẫn cần giải nén và Reload/cài qua giao diện trình duyệt; chưa có tự cài như bản cửa hàng.
+
+## Chỉ dùng cửa sổ Download Now (v1.9.3)
+
+Trên Chrome/Edge/Opera, tiện ích dùng downloads.onDeterminingFilename để chờ hộp thoại Download Now, hủy lượt tải trình duyệt rồi gọi suggest đúng một lần. Không chạy đồng thời lớp onCreated để tránh hai hộp thoại và hai lượt tải. Link tải Google Drive thông dụng được nhận diện trước khi điều hướng.
+
+Chế độ Chỉ dùng cửa sổ Download Now mặc định bật trong popup. Nếu chuyển lỗi, thông báo yêu cầu mở ứng dụng/thử lại thay vì tự bật Save As của trình duyệt. Bỏ chọn để cho phép trình duyệt tải khi lỗi. Tắt bắt tải hoặc giữ Alt khi bấm link là cách tải riêng bằng trình duyệt. Gói cập nhật do tiện ích tải vẫn đi thẳng vào Downloads.
+
+Cần cài hoặc Reload tiện ích v1.9.3; chỉ cập nhật EXE không thay mã đang chạy trong trình duyệt. Nếu dùng bắt link khi bấm, bật tùy chọn và cấp quyền trang rồi tải lại trang nguồn. Firefox không có cùng API filename nên dùng bắt link khi bấm/lớp onCreated dự phòng; chưa đảm bảo loại bỏ hộp thoại của Firefox cho mọi kiểu tải. Chưa kiểm thử hộp thoại Chrome thực tế trên hồ sơ người dùng; 36 ca mô phỏng tiện ích kiểm tra thứ tự chuyển, hủy trước suggest, lỗi, hủy, bỏ qua cập nhật và link Drive.
+
+Tài liệu API: https://developer.chrome.com/docs/extensions/reference/api/downloads#event-onDeterminingFilename

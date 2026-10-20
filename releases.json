@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.9.3",
+      "date": "2026-10-20",
+      "title": "Chỉ hiện cửa sổ tải của Download Now",
+      "changes": [
+        "Chrome/Edge/Opera giữ bước xác định tên, chuyển sang cửa sổ Download Now rồi hủy lượt trình duyệt trước khi giải phóng bước đó.",
+        "Thêm chế độ Chỉ dùng cửa sổ Download Now, mặc định bật; chuyển lỗi sẽ báo lỗi thay vì tự mở Save As của trình duyệt.",
+        "Bắt sớm liên kết tải Google Drive dạng download?id hoặc uc?export=download; có thể tắt chế độ riêng để khôi phục chuyển về trình duyệt."
+      ]
+    },
+    {
       "version": "1.9.2",
       "date": "2026-10-20",
       "title": "Tải lại và tự tìm gói tiện ích mới",

@@ -6,14 +6,15 @@ const path=require('node:path');
 const background=fs.readFileSync(path.join(__dirname,'../extension/chromium/background.js'),'utf8');
 const content=fs.readFileSync(path.join(__dirname,'../extension/chromium/content.js'),'utf8');
 const event=()=>({listeners:[],addListener(fn){this.listeners.push(fn);}});
-function harness({online=true,capture=true,token='test-token',state='in_progress',promptOutcome=null}={}){
- const calls=[],settings={capture,token,intercept:true};
+function harness({online=true,capture=true,token='test-token',state='in_progress',promptOutcome=null,exclusive=false,filenameGate=false}={}){
+ const calls=[],settings={capture,token,intercept:true,downloadNowOnly:exclusive};
  const bridge={storage:{local:{async get(){return settings;},async set(data){Object.assign(settings,data);}},onChanged:event()},
   runtime:{onInstalled:event(),onStartup:event(),onMessage:event()},
   scripting:{async getRegisteredContentScripts(){return [];},async registerContentScripts(){},async unregisterContentScripts(){}},
   permissions:{async contains(){return true;}},contextMenus:{onClicked:event(),async removeAll(){},create(){}},
   action:{async setBadgeText(){},async setBadgeBackgroundColor(){}},
   downloads:{onCreated:event(),async pause(){calls.push('pause');},async search(){return [{url:'https://files.example/file.zip',filename:'C:\\Downloads\\file.zip',state}];},async cancel(){calls.push('cancel');},async resume(){calls.push('resume');}}};
+ if(filenameGate)bridge.downloads.onDeterminingFilename=event();
  const context=vm.createContext({chrome:bridge,URL,crypto:require('node:crypto').webcrypto,AbortSignal,console,Map,Date,setTimeout:fn=>fn(),
   fetch:async(url,options)=>{if(url.endsWith('/api/info')){calls.push('verify-pair');if(!online)throw Error('offline');return {ok:true,json:async()=>({version:'1.9.0'})};}if(url.includes('/api/prompts/')){calls.push('poll');return {ok:true,json:async()=>({state:promptOutcome,id:'job-1'})};}calls.push('send');if(!online)throw Error('offline');assert.ok(url.endsWith('/api/capture'));assert.ok(JSON.parse(options.body).request_id);assert.equal(JSON.parse(options.body).ask_save,true);return {ok:true,json:async()=>promptOutcome?({prompt_id:'prompt-1'}):({id:'job-1'})};}});
  vm.runInContext(background,context);
@@ -56,10 +57,10 @@ test('browser waits for Save As selection before cancelling its download',async(
 test('cancelling Save As cancels browser download without enqueueing or resuming',async()=>{
  const h=harness({promptOutcome:'cancelled'});await h.context.captureDownload({id:1,url:'https://files.example/file.zip',state:'in_progress'});assert.deepEqual(h.calls,['pause','send','poll','cancel']);
 });
-function pageHarness({ok=true,cancelled=false}={}){
+function pageHarness({ok=true,cancelled=false,exclusive=false}={}){
  let listener,messages=[],fallbackClicks=0;
  const make=()=>({style:{},setAttribute(){},append(){},remove(){},attachShadow(){return {append(){}};},click(){fallbackClicks++;}});
- const bridge={storage:{local:{async get(){return {capture:true,intercept:true,token:'secret'};}},onChanged:event()},runtime:{async sendMessage(m){messages.push(m);return ok?{ok:true,cancelled}:{error:'offline'};}}};
+ const bridge={storage:{local:{async get(){return {capture:true,intercept:true,token:'secret',downloadNowOnly:exclusive};}},onChanged:event()},runtime:{async sendMessage(m){messages.push(m);return ok?{ok:true,cancelled}:{error:'offline'};}}};
  const document={createElement:make,body:{append(){}},addEventListener(name,fn){listener=fn;}};
  vm.runInNewContext(content,{chrome:bridge,document,URL,crypto:require('node:crypto').webcrypto,setTimeout(){}});
  const click=async(url,options={})=>{
@@ -124,4 +125,55 @@ test('extension update ZIP bypasses capture and concurrent download requests sha
 });
 test('downloads created by this extension are not intercepted',async()=>{
  const h=harness();h.bridge.runtime.id='our-extension';await h.context.captureDownload({id:42,url:'https://example.com/file.zip',byExtensionId:'our-extension',state:'in_progress'});assert.deepEqual(h.calls,[]);
+});
+function filenameItem(options={}){return {id:7,url:'https://files.example/file.zip',filename:'file.zip',state:'in_progress',...options};}
+async function filenameGate(h,item=filenameItem()){
+ let count=0;
+ const completed=new Promise(resolve=>{const returned=h.bridge.downloads.onDeterminingFilename.listeners[0](item,()=>{count++;h.calls.push('suggest');resolve();});assert.equal(returned,true);});
+ await completed;return count;
+}
+test('filename gate cancels browser before releasing Save As and does not register duplicate onCreated handler',async()=>{
+ const h=harness({filenameGate:true,exclusive:true});let accept;
+ h.context.automaticSend=()=>{h.calls.push('send');return new Promise(resolve=>{accept=resolve;});};
+ const completed=filenameGate(h);
+ await new Promise(setImmediate);
+ assert.deepEqual(h.calls,['pause','send']);assert.equal(h.bridge.downloads.onCreated.listeners.length,0);
+ accept({id:'job'});assert.equal(await completed,1);assert.deepEqual(h.calls,['pause','send','cancel','suggest']);
+});
+test('strict filename gate cancels instead of opening browser Save As when application is offline',async()=>{
+ const h=harness({filenameGate:true,exclusive:true,online:false});assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['pause','send','cancel','suggest']);
+});
+test('filename gate permits browser fallback only when explicitly enabled',async()=>{
+ const h=harness({filenameGate:true,exclusive:false,online:false});await filenameGate(h);assert.deepEqual(h.calls,['pause','send','resume','suggest']);
+});
+test('disabled capture releases filename determination exactly once',async()=>{
+ const h=harness({filenameGate:true,capture:false});assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['suggest']);
+});
+test('extension own update releases filename determination without opening application dialog',async()=>{
+ const h=harness({filenameGate:true});h.bridge.runtime.id='self';await filenameGate(h,filenameItem({byExtensionId:'self'}));assert.deepEqual(h.calls,['suggest']);
+});
+test('cancelling application dialog cancels browser before Save As is released',async()=>{
+ const h=harness({filenameGate:true,exclusive:true,promptOutcome:'cancelled'});await filenameGate(h);assert.deepEqual(h.calls,['pause','send','poll','cancel','suggest']);
+});
+test('strict click interception never starts browser fallback on handoff failure',async()=>{
+ const h=pageHarness({ok:false,exclusive:true});const click=await h.click('https://files.example/file.zip');assert.equal(click.defaultPrevented,true);assert.equal(h.fallbackClicks(),0);
+});
+test('Google Drive generic download endpoints are intercepted before navigation',async()=>{
+ for(const url of ['https://drive.usercontent.google.com/download?id=file-123&export=download','https://drive.google.com/uc?id=file-123&export=download']){const h=pageHarness();const click=await h.click(url);assert.equal(click.defaultPrevented,true);assert.equal(h.messages.length,1);}
+ const h=pageHarness();const click=await h.click('https://drive.google.com.evil.example/download?id=file-123');assert.equal(click.defaultPrevented,false);
+});
+test('strict legacy download capture cancels instead of resuming on failure',async()=>{
+ const h=harness({exclusive:true,online:false});await h.context.captureDownload(filenameItem());assert.deepEqual(h.calls,['pause','send','cancel']);
+});
+test('filename determination is released even if settings cannot be read',async()=>{
+ const h=harness({filenameGate:true});h.bridge.storage.local.get=async()=>{throw Error('storage unavailable');};assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['suggest']);
+});
+test('strict handoff failure never bypasses the filename gate on a later download attempt',async()=>{
+ const h=harness({filenameGate:true,exclusive:true,online:false});
+ const url='https://files.example/file.zip';
+ const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'capture-link',url,requestId:'retry-001'},{tab:{id:1}},resolve));
+ assert.ok(result.error);await filenameGate(h);assert.deepEqual(h.calls,['send','pause','send','cancel','suggest']);
+});
+test('strict mode without a connection token cancels instead of opening browser Save As',async()=>{
+ const h=harness({filenameGate:true,exclusive:true,token:''});await filenameGate(h);assert.deepEqual(h.calls,['cancel','suggest']);
 });

@@ -1,12 +1,13 @@
 (() => {
  const bridge=globalThis.browser||globalThis.chrome;
- let enabled=false;
+ let enabled=false,exclusive=true;
  const types=/\.(?:zip|rar|7z|tar|gz|bz2|xz|zst|exe|msi|iso|dmg|pkg|apk|pdf|epub|docx?|xlsx?|pptx?|csv|txt|mp4|mkv|webm|mov|avi|mp3|wav|flac|ogg|m4a)$/i;
- const refresh=()=>bridge.storage.local.get(['capture','intercept','token']).then(s=>{enabled=!!(s.capture&&s.intercept&&s.token);});
+ const refresh=()=>bridge.storage.local.get(['capture','intercept','token','downloadNowOnly']).then(s=>{enabled=!!(s.capture&&s.intercept&&s.token);exclusive=s.downloadNowOnly!==false;});
  refresh();
- bridge.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&(changes.capture||changes.intercept||changes.token))refresh();});
+ bridge.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&(changes.capture||changes.intercept||changes.token||changes.downloadNowOnly))refresh();});
  function isDownload(anchor,url) {
   if(anchor.hasAttribute('download'))return true;
+  if(['drive.usercontent.google.com','drive.google.com','docs.google.com'].includes(url.hostname)&&url.searchParams.has('id')&&(url.pathname==='/download'||url.pathname==='/uc'&&url.searchParams.get('export')==='download'))return true;
   if(types.test(decodeURIComponent(url.pathname)))return true;
   for(const key of ['filename','file_name','download_filename','file','name'])if(types.test(url.searchParams.get(key)||''))return true;
   return false;
@@ -34,6 +35,7 @@
    if(result.cancelled){showNotice('Đã hủy tải.');return;}
    showNotice('Đã thêm vào Download Now.');
   }catch(e){
+   if(exclusive){showNotice('Không chuyển được sang Download Now. Hãy mở ứng dụng và thử lại; không tự tải bằng trình duyệt.');return;}
    showNotice('Không chuyển được. Tiếp tục bằng trình duyệt.');
    fallback.hidden=true;(document.body||document.documentElement).append(fallback);fallback.click();fallback.remove();
   }

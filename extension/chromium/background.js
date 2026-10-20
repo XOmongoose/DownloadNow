@@ -110,10 +110,11 @@ bridge.contextMenus.onClicked.addListener(info=>{
 });
 
 async function captureDownload(item) {
- let pausedByUs=false;
+ let pausedByUs=false,exclusive=true;
  try{
   if(item.byExtensionId&&item.byExtensionId===bridge.runtime.id)return;
-  const {capture,token}=await bridge.storage.local.get(['capture','token']);
+  const {capture,token,downloadNowOnly}=await bridge.storage.local.get(['capture','token','downloadNowOnly']);
+  exclusive=downloadNowOnly!==false;
   const original=item.finalUrl||item.url;
   if(!capture || !token || !/^https?:\/\//i.test(original) || item.state==='complete' || item.paused || item.danger && item.danger!=='safe')return;
   const bypassUntil=fallbackUrls.get(original)||fallbackUrls.get(item.url)||0;
@@ -130,11 +131,57 @@ async function captureDownload(item) {
    await record('Đã chuyển sang ứng dụng; kiểm tra danh sách tải vì trình duyệt có thể còn một bản.');
   }
  }catch(e){
+  if(exclusive){
+   try{await bridge.downloads.cancel(item.id);}catch(ignore){}
+   await record('Không chuyển được sang Download Now. Lượt trình duyệt đã hủy; mở ứng dụng và thử lại. '+e.message,true);return;
+  }
   if(pausedByUs){try{await bridge.downloads.resume(item.id);}catch(resumeError){await record('Chuyển tải thất bại. Mở danh sách tải của trình duyệt để tiếp tục: '+e.message,true);return;}}
   await record('Trình duyệt tiếp tục tải. '+e.message,true);
  }
 }
-bridge.downloads.onCreated.addListener(item=>{captureDownload(item).catch(e=>record(e.message,true));});
+async function captureBeforeSaveAs(item,suggest){
+ try{
+  const {capture,token,downloadNowOnly}=await bridge.storage.local.get(['capture','token','downloadNowOnly']);
+  const url=item.finalUrl||item.url;
+  if(!capture||!/^https?:\/\//i.test(url)||item.state==='complete'||item.danger&&item.danger!=='safe'||item.byExtensionId===bridge.runtime.id&&item.byExtensionId)return;
+  if((fallbackUrls.get(url)||fallbackUrls.get(item.url)||0)>Date.now()){
+   fallbackUrls.delete(url);fallbackUrls.delete(item.url);return;
+  }
+  if(!token){
+   if(downloadNowOnly!==false){await bridge.downloads.cancel(item.id);await record('Chưa kết nối Download Now. Mở trang ứng dụng để tự ghép nối rồi thử lại; không mở Save As của trình duyệt.',true);}
+   return;
+  }
+  let paused=false;
+  try{
+   try{await bridge.downloads.pause(item.id);paused=true;}catch(ignore){}
+   const result=await automaticSend(url,(item.filename||'').split(/[\\/]/).pop(),crypto.randomUUID());
+   // Finish the browser job before releasing filename determination. This
+   // keeps its Save As prompt from competing with our native download dialog.
+   await bridge.downloads.cancel(item.id);
+   if(result.cancelled)await record('Đã hủy tải trong Download Now.');
+  }catch(error){
+   if(downloadNowOnly!==false){
+    await bridge.downloads.cancel(item.id);
+    await record('Không chuyển được sang Download Now. Lượt tải trình duyệt đã hủy để không hiện Save As. Mở ứng dụng rồi thử lại. '+error.message,true);
+   }else{
+    if(paused)await bridge.downloads.resume(item.id);
+    await record('Trình duyệt tiếp tục tải. '+error.message,true);
+   }
+  }
+ }finally{
+  // Chrome requires every filename listener to answer exactly once, including
+  // skipped and cancelled downloads. Never strand an ordinary browser download.
+  try{suggest();}catch(ignore){}
+ }
+}
+if(bridge.downloads.onDeterminingFilename){
+ bridge.downloads.onDeterminingFilename.addListener((item,suggest)=>{
+  captureBeforeSaveAs(item,suggest).catch(e=>record(e.message,true));
+  return true;
+ });
+}else{
+ bridge.downloads.onCreated.addListener(item=>{captureDownload(item).catch(e=>record(e.message,true));});
+}
 
 bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  const fromPage=!!sender.tab;
@@ -153,10 +200,10 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  }
  if(message.type==='capture-link'){
   (async()=>{
-   const {capture,intercept,token}=await bridge.storage.local.get(['capture','intercept','token']);
+   const {capture,intercept,token,downloadNowOnly}=await bridge.storage.local.get(['capture','intercept','token','downloadNowOnly']);
    if(!capture || !intercept || !token)return {error:'Bắt link đang tắt hoặc chưa ghép nối.'};
    try{const result=await automaticSend(message.url,message.name||'',message.requestId);return {ok:true,cancelled:!!result.cancelled};}
-   catch(e){fallbackUrls.set(message.url,Date.now()+20000);await record(e.message,true);return {error:e.message};}
+   catch(e){if(downloadNowOnly===false)fallbackUrls.set(message.url,Date.now()+20000);await record(e.message,true);return {error:e.message};}
   })().then(reply).catch(e=>reply({error:e.message}));return true;
  }
  if(fromPage)return;

@@ -1,6 +1,8 @@
 const bridge=globalThis.browser||globalThis.chrome;
 const status=document.querySelector('#status');
 const capture=document.querySelector('#capture'),intercept=document.querySelector('#intercept');
+bridge.storage.local.get('downloadNowOnly').then(data=>{document.querySelector('#download-now-only').checked=data.downloadNowOnly!==false;});
+document.querySelector('#download-now-only').onchange=event=>bridge.storage.local.set({downloadNowOnly:event.target.checked});
 async function readExtensionUpdate(force=false){
  const label=document.querySelector('#extension-update-status'),button=document.querySelector('#extension-update-download');
  label.textContent='Đang tìm bản tiện ích mới…';

@@ -34,7 +34,7 @@ Mã nguồn: https://github.com/XOmongoose/DownloadNow
 ## Giải thích quyền cho nhà xét duyệt
 
 - storage: lưu token ghép nối và tùy chọn trên máy, không đồng bộ lên máy chủ.
-- downloads: đọc trạng thái và tạm dừng/chuyển lượt tải khi người dùng bật bắt tải.
+- downloads: đọc trạng thái và tạm dừng/chuyển lượt tải khi người dùng bật bắt tải; chờ xác định tên và hủy lượt trình duyệt sau khi ứng dụng nhận. Chế độ riêng báo lỗi thay vì tự tải bằng trình duyệt.
 - contextMenus: thêm lệnh gửi link, video, audio đến ứng dụng.
 - scripting: đăng ký mã bắt click tĩnh sau khi người dùng bật và cấp quyền.
 - alarms: kiểm tra bản tiện ích mới khoảng mỗi 6 giờ khi trình duyệt hoạt động.
