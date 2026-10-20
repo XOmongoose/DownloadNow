@@ -22,6 +22,12 @@ Users can remove history and optionally the downloaded files from the applicatio
 Removing the extension removes its own browser-local settings.
 
 The desktop updater contacts GitHub Releases to check versions and download updates.
+The extension also contacts the public GitHub Releases API when checking updates,
+on browser startup, when opening its popup, or approximately every six hours.
+Metadata is cached locally. No download URLs, filenames, or connection credentials
+are sent to GitHub. Users can enable automatic downloading of new extension ZIPs;
+this preference is off by default. ZIPs are downloaded by the browser and require
+installation/reloading by the user until a browser-store version is published.
 It validates SHA-256 before preparing an update. Browser extension updates are delivered
 by the applicable browser store after publication and approval.
 

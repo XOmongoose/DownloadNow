@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.9.1",
+      "date": "2026-10-20",
+      "title": "Tải lại và tự tìm gói tiện ích mới",
+      "changes": [
+        "Thêm Tải lại cho lượt hoàn tất hoặc đã hủy, dùng thư mục cũ và giữ nguyên tệp trước đó.",
+        "Tiện ích tự kiểm tra GitHub mỗi 6 giờ và hiển thị đường dẫn gói đúng trình duyệt.",
+        "Thêm tải gói tiện ích một bước và tùy chọn tự tải khi có bản mới; không tự bắt lại gói cập nhật của chính tiện ích.",
+        "Phát hành thêm ZIP riêng cho Chrome, Edge, Opera và Firefox để truy cập trực tiếp từ tiện ích."
+      ]
+    },
+    {
       "version": "1.9.0",
       "date": "2026-10-19",
       "title": "Cập nhật một bước và tự ghép nối tiện ích",

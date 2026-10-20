@@ -141,6 +141,51 @@ class CoreTests(fixtures.DownloadTests):
         with self.assertRaises(ValueError):self.manager.clear_history(ident)
         self.assertIn(ident,self.manager.jobs)
 
+    def test_redownload_creates_fresh_job_and_keeps_original_file(self):
+        original=self.manager.add(self.url+'/again.zip')
+        self.verify(original)
+        with self.manager.lock:
+            fresh=self.manager.redownload(original)
+            self.assertNotEqual(original,fresh)
+            self.assertEqual(self.manager.jobs[fresh]['ranges'],[])
+            self.assertIsNone(self.manager.jobs[fresh]['etag'])
+            self.assertNotEqual(self.manager.jobs[fresh]['name'],'again.zip')
+        self.verify(fresh)
+        self.assertEqual((self.manager.output/'again.zip').read_bytes(),PAYLOAD)
+        self.assertEqual(self.manager.jobs[original]['status'],'completed')
+
+    def test_redownload_cancelled_job_does_not_inherit_cancellation(self):
+        original=self.manager.add(self.url+'/cancel-again.zip',start_at=time.time()+3600)
+        self.manager.action(original,'cancel')
+        fresh=self.manager.redownload(original)
+        self.verify(fresh)
+        self.assertFalse(self.manager.jobs[fresh].get('cancel_requested'))
+        self.assertIsNone(self.manager.jobs[fresh]['start_at'])
+        self.assertEqual(self.manager.jobs[original]['status'],'cancelled')
+
+    def test_redownload_does_not_duplicate_resumable_job(self):
+        original=self.pause_partial()
+        before=set(self.manager.jobs)
+        with self.assertRaises(ValueError):self.manager.redownload(original)
+        self.assertEqual(set(self.manager.jobs),before)
+
+    def test_redownload_keeps_per_file_save_directory(self):
+        folder=self.manager.root/'chosen'
+        folder.mkdir()
+        original=self.manager.add(self.url+'/folder.zip',save_dir=str(folder))
+        self.assertEqual(self.wait(original)['status'],'completed')
+        fresh=self.manager.redownload(original)
+        self.assertEqual(self.wait(fresh)['status'],'completed')
+        self.assertEqual(self.manager.output_for(self.manager.jobs[fresh]),folder)
+        self.assertEqual((folder/self.manager.jobs[fresh]['name']).read_bytes(),PAYLOAD)
+
+    def test_redownload_missing_directory_preserves_history(self):
+        original,path=self.history_file('missing-folder.zip')
+        self.manager.jobs[original]['save_dir']=str(self.manager.root/'missing')
+        with self.assertRaises(ValueError):self.manager.redownload(original)
+        self.assertIn(original,self.manager.jobs)
+        self.assertTrue(path.exists())
+
     def history_file(self,name):
         ident=self.manager.add(self.url+'/'+name,start_at=time.time()+3600)
         self.manager.jobs[ident].update(status='completed',done=4)

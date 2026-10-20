@@ -37,6 +37,8 @@ Mã nguồn: https://github.com/XOmongoose/DownloadNow
 - downloads: đọc trạng thái và tạm dừng/chuyển lượt tải khi người dùng bật bắt tải.
 - contextMenus: thêm lệnh gửi link, video, audio đến ứng dụng.
 - scripting: đăng ký mã bắt click tĩnh sau khi người dùng bật và cấp quyền.
+- alarms: kiểm tra bản tiện ích mới khoảng mỗi 6 giờ khi trình duyệt hoạt động.
+- api.github.com: chỉ đọc thông tin Release công khai, không gửi link tải hoặc token.
 - localhost/127.0.0.1 cổng 8765: ghép nối và giao tiếp với ứng dụng cục bộ.
 - HTTP/HTTPS tùy chọn: nhận link người dùng bấm; chỉ xin quyền khi bật tính năng.
 - Không dùng remote code, cookies, history, webRequest hoặc quyền quản trị trình duyệt.

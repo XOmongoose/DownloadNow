@@ -1,20 +1,23 @@
 {
   "manifest_version": 3,
   "name": "Download Now Bridge",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Gửi liên kết tải HTTP(S) tới Download Now trên máy của bạn.",
   "permissions": [
     "storage",
     "contextMenus",
     "downloads",
-    "scripting"
+    "scripting",
+    "alarms"
   ],
   "host_permissions": [
     "http://127.0.0.1:8765/*",
-    "http://localhost:8765/*"
+    "http://localhost:8765/*",
+    "https://api.github.com/*"
   ],
   "background": {
     "scripts": [
+      "updates.js",
       "background.js"
     ]
   },

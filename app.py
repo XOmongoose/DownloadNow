@@ -203,6 +203,9 @@ def make_server(manager, port=8765):
                 if path == '/api/action':
                     manager.action(data['id'], data['action'])
                     return self.reply({'ok': True})
+                if path == '/api/redownload':
+                    if set(data)!={'id'}:raise ValueError('Tham số tải lại không hợp lệ.')
+                    return self.reply({'id':manager.redownload(data['id'])},201)
                 if path == '/api/history/clear':
                     if set(data)-{'id','ids','delete_files'}:raise ValueError('Tham số xóa lịch sử không hợp lệ.')
                     return self.reply({'removed':manager.clear_history(data.get('id'),data.get('ids'),data.get('delete_files',False))})

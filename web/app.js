@@ -91,7 +91,10 @@ function render() {
    const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'),document.createTextNode('Thư mục'));folder.title='Mở thư mục chứa '+j.name;folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
    const location=text('button','','row-action');location.append(icon('copy'));location.title='Xem và sao chép đường dẫn tệp';location.setAttribute('aria-label',location.title+' '+j.name);location.onclick=()=>{$('#file-location-path').value=j.file_path||'';$('#file-location-name').textContent=j.name;$('#file-location-dialog').showModal();};group.append(folder,location);actions.append(group);
   }
-  if(['completed','cancelled'].includes(j.status)){const remove=text('button','Xóa lịch sử','row-action labeled-action');remove.prepend(icon('trash'));remove.setAttribute('aria-label','Xóa lịch sử '+j.name);remove.onclick=()=>openHistory([j.id]);actions.append(remove);}
+  if(['completed','cancelled'].includes(j.status)){
+   const again=text('button','Tải lại','row-action labeled-action');again.prepend(icon('retry'));again.setAttribute('aria-label','Tải lại '+j.name);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};actions.append(again);
+   const remove=text('button','Xóa lịch sử','row-action labeled-action');remove.prepend(icon('trash'));remove.setAttribute('aria-label','Xóa lịch sử '+j.name);remove.onclick=()=>openHistory([j.id]);actions.append(remove);
+  }
   tr.append(actions);return tr;
  });$('#job-list').replaceChildren(...rows);
 }

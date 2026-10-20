@@ -180,6 +180,11 @@ Các ZIP riêng có manifest.json ở gốc để giải nén/nộp store. Cài 
 Mã kết nối thủ công chỉ dùng dự phòng. Đã kèm hướng dẫn từng bước.
 Gói không chứa EXE ứng dụng, token, hàng đợi hoặc dữ liệu cá nhân.
 ''', encoding='utf-8')
+    # Publish browser-specific packages as direct Release assets as well.
+    for filename in produced:
+        shutil.copy2(out/filename,out.parent/filename)
+        item=out.parent/filename
+        Path(str(item)+'.sha256').write_text(hashlib.sha256(item.read_bytes()).hexdigest()+'  '+item.name+'\n',encoding='utf-8')
     readable_guides(out)
     sums = ''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(out).as_posix()}\n'
                    for p in sorted(out.rglob('*')) if p.is_file())

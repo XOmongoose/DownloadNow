@@ -1,9 +1,43 @@
 const bridge = globalThis.browser || globalThis.chrome;
+if(!globalThis.DownloadNowUpdates&&typeof importScripts==='function')importScripts('updates.js');
 const fallbackUrls = new Map();
 const inFlight = new Map();
 const CONTENT_ID = 'download-now-links';
 const origins = ['http://*/*', 'https://*/*'];
 let interceptionSync=Promise.resolve();
+let updateDownloadInFlight=null;
+
+async function downloadExtensionUpdate(){
+ if(updateDownloadInFlight)return updateDownloadInFlight;
+ updateDownloadInFlight=(async()=>{
+  const info=await globalThis.DownloadNowUpdates.check();
+  if(!info.newer)return {upToDate:true};
+  // Never transfer the extension's own update ZIP back into the downloader.
+  fallbackUrls.set(info.url,Date.now()+60000);
+  const id=await bridge.downloads.download({url:info.url,filename:'DownloadNow/'+info.filename,saveAs:false});
+  await bridge.storage.local.set({extensionDownloadedVersion:info.version,extensionUpdateDownloadId:id});
+  return {id,version:info.version};
+ })().finally(()=>{updateDownloadInFlight=null;});
+ return updateDownloadInFlight;
+}
+async function checkExtensionUpdate(force=false){
+ const info=await globalThis.DownloadNowUpdates.check(force);
+ const values=await bridge.storage.local.get(['extensionAutoDownload','extensionDownloadedVersion']);
+ if(info.newer){
+  await bridge.action.setBadgeText({text:'NEW'});
+  if(values.extensionAutoDownload&&values.extensionDownloadedVersion!==info.version)await downloadExtensionUpdate();
+ }
+ return info;
+}
+if(bridge.alarms){
+ bridge.alarms.get('extension-update-check').then(alarm=>{if(!alarm)bridge.alarms.create('extension-update-check',{periodInMinutes:360});}).catch(()=>{});
+ bridge.alarms.onAlarm.addListener(alarm=>{if(alarm.name==='extension-update-check')checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));});
+}
+if(bridge.downloads.onChanged)bridge.downloads.onChanged.addListener(async change=>{
+ if(change.state?.current!=='interrupted'&&!change.error)return;
+ const values=await bridge.storage.local.get('extensionUpdateDownloadId');
+ if(values.extensionUpdateDownloadId===change.id)await bridge.storage.local.set({extensionDownloadedVersion:'',extensionUpdateDownloadId:null,extensionUpdateError:'Gói tiện ích tải lỗi. Nhấn Tải gói mới để thử lại.'});
+});
 
 async function record(text, error=false) {
  await bridge.storage.local.set({lastStatus:text, lastError:error?text:''});
@@ -33,9 +67,10 @@ bridge.runtime.onInstalled.addListener(async()=>{
   if(values.intercept===undefined)await bridge.storage.local.set({intercept:false});
   await syncInterception();
   if(bridge.tabs)await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
+  if(globalThis.DownloadNowUpdates)await checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));
  }catch(e){await record(e.message,true);}
 });
-bridge.runtime.onStartup.addListener(()=>syncInterception().catch(e=>record(e.message,true)));
+bridge.runtime.onStartup.addListener(()=>{syncInterception().catch(e=>record(e.message,true));if(globalThis.DownloadNowUpdates)checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));});
 bridge.storage.onChanged.addListener((changes,area)=>{
  if(area==='local' && changes.intercept)syncInterception().catch(e=>record(e.message,true));
 });
@@ -77,6 +112,7 @@ bridge.contextMenus.onClicked.addListener(info=>{
 async function captureDownload(item) {
  let pausedByUs=false;
  try{
+  if(item.byExtensionId&&item.byExtensionId===bridge.runtime.id)return;
   const {capture,token}=await bridge.storage.local.get(['capture','token']);
   const original=item.finalUrl||item.url;
   if(!capture || !token || !/^https?:\/\//i.test(original) || item.state==='complete' || item.paused || item.danger && item.danger!=='safe')return;
@@ -124,6 +160,12 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   })().then(reply).catch(e=>reply({error:e.message}));return true;
  }
  if(fromPage)return;
+ if(message.type==='extension-update-check'){
+  checkExtensionUpdate(!!message.force).then(info=>reply({info})).catch(e=>reply({error:e.message}));return true;
+ }
+ if(message.type==='extension-update-download'){
+  downloadExtensionUpdate().then(result=>reply(result)).catch(e=>reply({error:e.message}));return true;
+ }
  if(message.type==='sync-interception'){
   syncInterception().then(()=>reply({ok:true})).catch(e=>reply({error:e.message}));return true;
  }

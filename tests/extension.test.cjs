@@ -82,3 +82,46 @@ test('failed direct link handoff restores the original browser action',async()=>
 test('cancelling Save As does not trigger fallback link navigation',async()=>{
  const h=pageHarness({cancelled:true});await h.click('https://files.example/file.zip');assert.equal(h.fallbackClicks(),0);
 });
+const updateSource=fs.readFileSync(path.join(__dirname,'../extension/chromium/updates.js'),'utf8');
+function releaseFixture(browser='Chrome',version='2.0.0'){
+ const name=`DownloadNow-${browser}-${version}${browser==='Firefox'?'-unsigned':''}.zip`;
+ return {tag_name:'v'+version,draft:false,prerelease:false,assets:[{name,browser_download_url:'https://github.com/XOmongoose/DownloadNow/releases/download/v'+version+'/'+name}]};
+}
+function updateHarness({agent='',firefox=false}={}){
+ const settings={};let requests=0;
+ const context=vm.createContext({chrome:{runtime:{getManifest:()=>({version:'1.9.1'}),...(firefox?{getBrowserInfo:async()=>({name:'Firefox'})}:{})},storage:{local:{async get(){return settings;},async set(value){Object.assign(settings,value);}}}},navigator:{userAgent:agent},AbortSignal,Date,fetch:async()=>{requests++;return {ok:true,json:async()=>releaseFixture(firefox?'Firefox':agent.includes('Edg/')?'Edge':agent.includes('OPR/')?'Opera':'Chrome')};}});
+ vm.runInContext(updateSource,context);return {client:context.DownloadNowUpdates,settings,requests:()=>requests};
+}
+test('extension updates choose the exact package for every supported browser',()=>{
+ const h=updateHarness();for(const browser of ['Chrome','Edge','Opera','Firefox']){const info=h.client.select(releaseFixture(browser),browser,'1.9.1');assert.equal(info.newer,true);assert.match(info.filename,new RegExp(browser));}
+});
+test('extension updates fall back to full browser bundle for older releases',()=>{
+ const h=updateHarness(),r=releaseFixture();r.assets[0].name='DownloadNow-Browser-Extensions-2.0.0.zip';r.assets[0].browser_download_url='https://github.com/XOmongoose/DownloadNow/releases/download/v2.0.0/'+r.assets[0].name;
+ assert.match(h.client.select(r,'Chrome','1.9.1').filename,/Browser-Extensions/);
+});
+test('extension updater rejects a package redirected outside the official repository',()=>{
+ const h=updateHarness(),r=releaseFixture();r.assets[0].browser_download_url='https://evil.example/update.zip';assert.throws(()=>h.client.select(r,'Chrome','1.9.1'));
+});
+test('extension updater ignores prereleases and invalid versions',()=>{
+ const h=updateHarness();for(const change of [{draft:true},{prerelease:true},{tag_name:'v2.0.0-beta'}])assert.throws(()=>h.client.select({...releaseFixture(),...change},'Chrome','1.9.1'));
+});
+test('extension update comparison uses numeric version components',()=>{
+ const h=updateHarness();assert.equal(h.client.newer('1.10.0','1.9.9'),true);assert.equal(h.client.newer('1.9.1','1.9.1'),false);assert.equal(h.client.newer('1.8.0','1.9.1'),false);
+});
+test('extension update checks cache metadata and allow explicit refresh',async()=>{
+ const h=updateHarness();await h.client.check();await h.client.check();assert.equal(h.requests(),1);await h.client.check(true);assert.equal(h.requests(),2);
+});
+test('extension update checks detect Firefox Edge and Opera',async()=>{
+ for(const [options,browser] of [[{firefox:true},'Firefox'],[{agent:'Edg/130'},'Edge'],[{agent:'OPR/110'},'Opera'],[{},'Chrome']])assert.equal((await updateHarness(options).client.check()).browser,browser);
+});
+test('extension update ZIP bypasses capture and concurrent download requests share one download',async()=>{
+ const h=harness();let downloaded=0;
+ const url='https://github.com/XOmongoose/DownloadNow/releases/download/v2.0.0/DownloadNow-Chrome-2.0.0.zip';
+ h.context.DownloadNowUpdates={check:async()=>({newer:true,url,filename:'DownloadNow-Chrome-2.0.0.zip',version:'2.0.0'})};
+ h.bridge.downloads.download=async options=>{downloaded++;assert.equal(options.url,url);assert.equal(options.saveAs,false);return 42;};
+ await Promise.all([h.context.downloadExtensionUpdate(),h.context.downloadExtensionUpdate()]);assert.equal(downloaded,1);
+ await h.context.captureDownload({id:42,url,state:'in_progress'});assert.deepEqual(h.calls,[]);
+});
+test('downloads created by this extension are not intercepted',async()=>{
+ const h=harness();h.bridge.runtime.id='our-extension';await h.context.captureDownload({id:42,url:'https://example.com/file.zip',byExtensionId:'our-extension',state:'in_progress'});assert.deepEqual(h.calls,[]);
+});
