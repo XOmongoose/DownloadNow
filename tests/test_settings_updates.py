@@ -40,9 +40,13 @@ class SettingsUpdateTests(unittest.TestCase):
             time.sleep(.01)
         self.fail('Prompt timed out')
 
-    def package(self,version='2.0.0',tamper=False,extra=None):
+    def package(self,version='2.0.0',tamper=False,extra=None,extension_version=None,include_extensions=True):
         root=f'DownloadNow-{version}-Windows-x64/'
         data={'DownloadNow.exe':b'MZ-new-executable','releases.json':json.dumps({'releases':[{'version':version,'title':'Test update'}]}).encode(),'README.md':b'new readme'}
+        if include_extensions:
+            for browser in ('chromium','firefox'):
+                data['extension/'+browser+'/manifest.json']=json.dumps({'version':extension_version or version}).encode()
+            data['extension/chromium/managed.json']=json.dumps({'managed':True,'version':version}).encode()
         sums=''.join(hashlib.sha256(value).hexdigest()+'  '+key+'\n' for key,value in data.items())
         if tamper:data['DownloadNow.exe']=b'MZ-altered-executable'
         archive=self.manager.root/(version+('-bad' if tamper else '')+'.zip')
@@ -51,6 +55,16 @@ class SettingsUpdateTests(unittest.TestCase):
             z.writestr(root+'SHA256SUMS.txt',sums)
             if extra:z.writestr(extra,b'unsafe')
         return archive
+
+    def test_update_rejects_extension_version_mismatch(self):
+        with self.assertRaisesRegex(ValueError,'cùng phiên bản'):
+            self.updates._prepare(self.package(extension_version='1.0.0'))
+        self.assertIsNone(self.updates.staged)
+
+    def test_update_rejects_package_without_extensions(self):
+        with self.assertRaisesRegex(ValueError,'cùng phiên bản'):
+            self.updates._prepare(self.package(include_extensions=False))
+        self.assertIsNone(self.updates.staged)
 
     def test_remembered_folder_survives_restart(self):
         folder=self.manager.root/'chosen'

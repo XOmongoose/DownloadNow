@@ -43,3 +43,9 @@ URL to the local application. The desktop video processor contacts the video pla
 and its media CDN to retrieve metadata, video and audio. It does not read browser
 cookies or transfer login sessions. Optional website access also allows showing a
 Download this video button on supported video pages.
+
+Connected extensions send their running version, browser family and managed-folder
+status to the local application to acknowledge synchronized updates. These acknowledgements
+expire after two minutes, remain in application memory and are never sent to GitHub
+or the developer. The application page requests local synchronization every two seconds
+while visible; a one-minute alarm provides a fallback.

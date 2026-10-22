@@ -11,6 +11,30 @@ const CONTENT_ID = 'download-now-links';
 const origins = ['http://*/*', 'https://*/*'];
 let interceptionSync=Promise.resolve();
 let updateDownloadInFlight=null;
+let extensionSyncInFlight=null;
+
+async function reportExtension(){
+ const {token}=await bridge.storage.local.get('token');
+ if(!token)return;
+ const marker=await managedExtension();
+ const agent=globalThis.navigator?.userAgent||'';
+ const browser=bridge.runtime.getBrowserInfo?'Firefox':/Edg\//.test(agent)?'Edge':/OPR\//.test(agent)?'Opera':'Chrome';
+ const response=await fetch('http://127.0.0.1:8765/api/extension/heartbeat',{
+  method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+  body:JSON.stringify({id:bridge.runtime.id,version:bridge.runtime.getManifest().version,managed:!!marker,browser}),signal:AbortSignal.timeout(5000)
+ });
+ if(!response.ok)throw Error('Cần ứng dụng mới để xác nhận đồng bộ tiện ích.');
+ return response.json();
+}
+async function synchronizeExtension(){
+ if(extensionSyncInFlight)return extensionSyncInFlight;
+ extensionSyncInFlight=(async()=>{
+  // Report the running version, never mistake updated files for loaded code.
+  await reportExtension();
+  return {reloading:await reloadManagedExtension()};
+ })().finally(()=>{extensionSyncInFlight=null;});
+ return extensionSyncInFlight;
+}
 
 async function managedExtension(){
  try{
@@ -60,7 +84,7 @@ async function checkExtensionUpdate(force=false){
 }
 if(bridge.alarms){
  bridge.alarms.get('managed-extension-reload').then(alarm=>{if(!alarm)bridge.alarms.create('managed-extension-reload',{periodInMinutes:1});}).catch(()=>{});
- bridge.alarms.onAlarm.addListener(alarm=>{if(alarm.name==='managed-extension-reload')reloadManagedExtension().catch(()=>{});});
+ bridge.alarms.onAlarm.addListener(alarm=>{if(alarm.name==='managed-extension-reload')synchronizeExtension().catch(()=>{});});
  bridge.alarms.get('extension-update-check').then(alarm=>{if(!alarm)bridge.alarms.create('extension-update-check',{periodInMinutes:360});}).catch(()=>{});
  bridge.alarms.onAlarm.addListener(alarm=>{if(alarm.name==='extension-update-check')checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));});
 }
@@ -89,7 +113,15 @@ async function applyInterception() {
  }]);
  if((!intercept || !permitted) && registered.length)await bridge.scripting.unregisterContentScripts({ids:[CONTENT_ID]});
 }
-bridge.runtime.onInstalled.addListener(async()=>{
+async function refreshApplicationTabs(){
+ if(!bridge.tabs?.query||!bridge.tabs?.reload)return;
+ const tabs=await bridge.tabs.query({url:['http://127.0.0.1/*','http://localhost/*']});
+ for(const tab of tabs){
+  try{if(['http://127.0.0.1:8765','http://localhost:8765'].includes(new URL(tab.url).origin))await bridge.tabs.reload(tab.id);}
+  catch(e){/* A tab may have closed during application restart. */}
+ }
+}
+bridge.runtime.onInstalled.addListener(async(details={})=>{
  try{
   await bridge.contextMenus.removeAll();
   bridge.contextMenus.create({id:'download-now',title:'Tải bằng Download Now',contexts:['link','video','audio']});
@@ -97,7 +129,8 @@ bridge.runtime.onInstalled.addListener(async()=>{
   if(values.capture===undefined)await bridge.storage.local.set({capture:true});
   if(values.intercept===undefined)await bridge.storage.local.set({intercept:false});
   await syncInterception();
-  if(bridge.tabs)await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
+  if(details.reason==='update')await refreshApplicationTabs();
+  else if(details.reason==='install'&&bridge.tabs)await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
   if(globalThis.DownloadNowUpdates)await checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));
  }catch(e){await record(e.message,true);}
 });
@@ -221,6 +254,14 @@ if(bridge.downloads.onDeterminingFilename){
 
 bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  const fromPage=!!sender.tab;
+ if(message.type==='sync-app-update'){
+  try{
+   const origin=new URL(sender.url||'').origin;
+   if(!fromPage||sender.frameId!==0||!['http://127.0.0.1:8765','http://localhost:8765'].includes(origin))throw Error('Trang đồng bộ không hợp lệ.');
+   synchronizeExtension().then(reply).catch(e=>reply({error:e.message}));
+  }catch(e){reply({error:e.message});}
+  return true;
+ }
  if(message.type==='pair-app'){
   (async()=>{
    const address=new URL(sender.url||'');
@@ -230,6 +271,7 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
    const info=await response.json();
    if(typeof info.version!=='string')throw Error('Phản hồi ứng dụng không hợp lệ.');
    await bridge.storage.local.set({token:message.token,lastError:'',lastStatus:'Đã tự kết nối ứng dụng v'+info.version});
+   if(bridge.runtime.getManifest&&bridge.runtime.getURL)synchronizeExtension().catch(()=>{});
    await record('Đã tự kết nối ứng dụng v'+info.version);
    return {ok:true,version:info.version};
   })().then(reply).catch(e=>reply({error:e.message}));return true;
@@ -257,7 +299,6 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  if(message.type==='extension-update-apply'){
   (async()=>{
    if(await reloadManagedExtension())return {reloading:true};
-   if(!await managedExtension())throw Error('Chuyển sang thư mục tiện ích cạnh DownloadNow.exe một lần để dùng cập nhật tự động.');
    // Ask the application to check; its own dialog obtains user approval.
    await bridge.tabs.create({url:'http://127.0.0.1:8765/?update=1'});
    return {ok:true};
@@ -276,3 +317,4 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   send(message.url).then(result=>reply({ok:true,cancelled:!!result.cancelled})).catch(e=>reply({error:e.message}));return true;
  }
 });
+if(bridge.runtime.getManifest&&bridge.runtime.getURL)synchronizeExtension().catch(()=>{});

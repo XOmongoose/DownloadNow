@@ -10,18 +10,16 @@ async function readExtensionUpdate(force=false){
   const result=await bridge.runtime.sendMessage({type:'extension-update-check',force});
   if(result.error)throw Error(result.error);
   const info=result.info;label.textContent=info.newer?'Có v'+info.version+' cho '+info.browser:'Tiện ích đang ở bản mới nhất: v'+info.current;
-  button.disabled=!info.newer;
+  button.disabled=false;
   const link=document.querySelector('#extension-latest-link');link.href=info.page;link.textContent='Mở bản phát hành v'+info.version;
- }catch(e){label.textContent=e.message;button.disabled=true;}
+ }catch(e){label.textContent=e.message;button.disabled=false;}
 }
-document.querySelector('#extension-update-check').onclick=()=>readExtensionUpdate(true);
+
 document.querySelector('#extension-update-download').onclick=async()=>{
  const button=document.querySelector('#extension-update-download');button.disabled=true;
  try{
-  if(bridge.runtime.getBrowserInfo)throw Error('Firefox cần bản ký Mozilla để tự cập nhật. Bản tạm thời hiện tại vẫn phải nạp lại; xem hướng dẫn phát hành trong gói ứng dụng.');
-  const mode=await bridge.runtime.sendMessage({type:'extension-update-mode'});
-  if(mode.managed){const result=await bridge.runtime.sendMessage({type:'extension-update-apply'});if(result.error)throw Error(result.error);document.querySelector('#extension-update-status').textContent='Xác nhận cập nhật trong trang Download Now. Tiện ích sẽ tự nạp lại sau khi ứng dụng cập nhật.';}
-  else {await bridge.tabs.create({url:'http://127.0.0.1:8765/?extensions=1'});document.querySelector('#extension-update-status').textContent='Chuyển sang thư mục tiện ích trong ứng dụng một lần. Sau đó không cần tải ZIP hoặc xóa tiện ích khi cập nhật.';}
+  const result=await bridge.runtime.sendMessage({type:'extension-update-apply'});if(result.error)throw Error(result.error);
+  document.querySelector('#extension-update-status').textContent='Đã mở cập nhật chung. Đồng ý một lần trong ứng dụng để cập nhật cả hai; tiện ích tự nạp lại sau đó.';
  }catch(e){document.querySelector('#extension-update-status').textContent=e.message;}finally{button.disabled=false;}
 };
 readExtensionUpdate();

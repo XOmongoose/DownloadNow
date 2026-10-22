@@ -42,3 +42,5 @@ table th.history-select-cell{width:36px}table th:nth-child(2){width:38%}
 [hidden]{display:none!important}
 
 .stats .speed-card{display:block;padding-bottom:15px}.speed-heading{display:flex;align-items:flex-start;gap:16px}.speed-live{margin-left:auto;font-size:10px!important;white-space:nowrap;color:#92866a!important}.speed-live.is-live{color:#9a7000!important}.speed-chart{margin-top:14px;min-width:0}.speed-chart svg{display:block;width:100%;height:76px;overflow:hidden}.speed-grid{stroke:#eee7d6;stroke-width:1;stroke-dasharray:3 4;fill:none}#speed-line{fill:none;stroke:#F1AF00;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}.speed-axis{display:flex;justify-content:space-between;gap:6px;margin-top:5px;font-size:10px;color:#9a907a}.speed-axis span{font-size:10px!important}
+
+#update-sync{border-top:1px solid #E8DEBF;padding-top:12px;margin-top:12px;line-height:1.6;color:#795800}

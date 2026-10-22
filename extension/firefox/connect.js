@@ -7,5 +7,11 @@ if(window.top===window && ['http://127.0.0.1:8765','http://localhost:8765'].incl
    const status=document.querySelector('#extension-connection');
    if(status)status.textContent=result?.ok?'Tiện ích đã tự kết nối với ứng dụng.':result?.error||'Chưa kết nối được tiện ích.';
   }).catch(()=>{});
+  // The page remains open throughout update/restart. Poll locally so both
+  // running components converge without a second update button or ZIP.
+  const syncTimer=setInterval(()=>{
+   try{if(!document.hidden)bridge.runtime.sendMessage({type:'sync-app-update'}).catch(()=>{});}
+   catch(e){clearInterval(syncTimer);}
+  },2000);
  }
 }

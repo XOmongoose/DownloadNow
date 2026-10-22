@@ -16,6 +16,7 @@ from engine import Manager
 from save_dialogs import SavePrompts
 from preferences import Preferences
 from updater import UpdateService, update_source, apply_update
+from extension_status import ExtensionStatus
 
 BASE = Path(__file__).resolve().parent
 APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
@@ -73,6 +74,7 @@ def make_server(manager, port=8765):
     preferences = Preferences(manager.root,default_feed='https://github.com/'+repository if repository else '')
     prompts = SavePrompts(manager,preferences=preferences)
     updates = UpdateService(manager,preferences,version(),APP_HOME,BASE)
+    extensions = ExtensionStatus(version())
     token_file = manager.root / 'bridge-token.txt'
     if not token_file.exists():
         token_file.write_text(secrets.token_urlsafe(32), encoding='utf-8')
@@ -124,7 +126,9 @@ def make_server(manager, port=8765):
                 if path == '/api/settings':
                     return self.reply({key:value for key,value in preferences.get().items() if key!='last_update_check'})
                 if path == '/api/update/status':
-                    return self.reply(updates.snapshot())
+                    return self.reply({**updates.snapshot(),'extension_sync':extensions.snapshot()})
+                if path == '/api/extension/status':
+                    return self.reply(extensions.snapshot())
                 if path.startswith('/api/prompts/'):
                     try:
                         return self.reply(prompts.get(path.rsplit('/',1)[-1]))
@@ -180,6 +184,8 @@ def make_server(manager, port=8765):
                 if path == '/api/update/check':
                     updates.check()
                     return self.reply({'ok':True},202)
+                if path == '/api/extension/heartbeat':
+                    return self.reply(extensions.report(data))
                 if path == '/api/update/run':
                     updates.run_update()
                     return self.reply({'ok':True},202)

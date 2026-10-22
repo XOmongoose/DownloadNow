@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.10.2",
+      "date": "2026-10-22",
+      "title": "Một lần cập nhật cho ứng dụng và tiện ích",
+      "changes": [
+        "Dùng chung một nút và một lần đồng ý để cập nhật ứng dụng và tiện ích; không tải ZIP tiện ích riêng.",
+        "Kiểm tra gói chứa ứng dụng, Chrome/Edge/Opera và Firefox cùng phiên bản trước khi cài.",
+        "Tiện ích trong thư mục ứng dụng tự nạp lại sau khi khởi động lại, gửi xác nhận phiên bản đang chạy.",
+        "Hộp cập nhật hiển thị rõ đã đồng bộ hoặc đang chờ trình duyệt xác nhận, không báo thành công khi chỉ mới thay tệp."
+      ]
+    },
+    {
       "version": "1.10.1",
       "date": "2026-10-22",
       "title": "Giữ đúng tên tệp khi tải qua chuyển hướng GitHub",

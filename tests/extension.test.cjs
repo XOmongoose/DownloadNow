@@ -220,3 +220,26 @@ test('legacy capture also retains original URL across redirects',async()=>{
  await h.context.captureDownload({id:99,url:original,finalUrl:'https://cdn.example/uuid',state:'in_progress'});
  assert.deepEqual(urls,[original]);
 });
+
+test('synchronization messages are only accepted from the top-level application page',async()=>{
+ for(const [url,frameId] of [['https://evil.example/',0],['http://127.0.0.1:8765/',1]]){
+  const h=harness();let called=false;h.context.synchronizeExtension=async()=>{called=true;return {};};
+  const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'sync-app-update'},{tab:{id:1},url,frameId},resolve));
+  assert.ok(result.error);assert.equal(called,false);
+ }
+ const h=harness();let called=false;h.context.synchronizeExtension=async()=>{called=true;return {reloading:true};};
+ const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'sync-app-update'},{tab:{id:1},url:'http://127.0.0.1:8765/',frameId:0},resolve));
+ assert.equal(result.reloading,true);assert.equal(called,true);
+});
+
+test('update synchronization reports running version before triggering reload',async()=>{
+ const h=harness();const order=[];
+ h.context.reportExtension=async()=>order.push('report-running');h.context.reloadManagedExtension=async()=>{order.push('reload');return true;};
+ const result=await h.context.synchronizeExtension();assert.equal(result.reloading,true);assert.deepEqual(order,['report-running','reload']);
+});
+
+test('extension update refreshes only existing application tabs without opening duplicates',async()=>{
+ const h=harness(),reloaded=[];
+ h.bridge.tabs={query:async()=>[{id:1,url:'http://127.0.0.1:8765/'},{id:2,url:'http://localhost:8765/?update=1'},{id:3,url:'http://127.0.0.1:8876/'},{id:4,url:'https://example.com/'}],reload:async id=>reloaded.push(id)};
+ await h.context.refreshApplicationTabs();assert.deepEqual(reloaded,[1,2]);
+});

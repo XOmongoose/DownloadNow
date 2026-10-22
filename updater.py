@@ -290,6 +290,13 @@ class UpdateService:
             required={name[len(prefix):] for name in names}-{ 'SHA256SUMS.txt' }
             if set(sums)!=required or 'DownloadNow.exe' not in required:
                 raise ValueError('Gói thiếu tệp hoặc kiểm tra toàn vẹn không đầy đủ.')
+            for browser in ('chromium','firefox'):
+                manifest='extension/'+browser+'/manifest.json'
+                if manifest not in required or json.loads(package.read(prefix+manifest)).get('version')!=new_version:
+                    raise ValueError('Gói phải chứa ứng dụng và các tiện ích cùng phiên bản.')
+            marker='extension/chromium/managed.json'
+            if marker not in required or json.loads(package.read(prefix+marker))!={'managed':True,'version':new_version}:
+                raise ValueError('Gói thiếu cấu hình đồng bộ tiện ích.')
             top={'DownloadNow.exe','README.md','HUONG-DAN.txt','releases.json','SHA256SUMS.txt'}
             for name in required:
                 path=PurePosixPath(name)
