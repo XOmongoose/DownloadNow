@@ -33,6 +33,12 @@ class MediaTests(unittest.TestCase):
         for url in ['https://youtube.com.evil.example/shorts/abc','https://www.youtube.com/','https://user:pass@youtube.com/shorts/x','file:///reel/x','https://example.com/video.mp4']:
             self.assertFalse(is_video_page(url))
 
+    def test_facebook_feed_links_and_stories_use_video_processor(self):
+        for url in ['https://www.facebook.com/user/videos/123/','https://www.facebook.com/user/posts/pfbidABC','https://www.facebook.com/video.php?v=123','https://www.facebook.com/stories/1959327764084753/UzpfSVNDOjE2NjE1MTM1MTU2NDUyOTg=/']:
+            self.assertTrue(is_video_page(url))
+        from media import video_error
+        self.assertIn('trình duyệt đã đăng nhập',video_error('ERROR Unsupported URL: https://www.facebook.com/login.php','https://www.facebook.com/stories/user/story/'))
+
     def test_page_name_is_resolved_before_save_dialog(self):
         with patch('engine.video_name',return_value='Video gốc.mp4'):
             self.assertEqual(self.manager.resolve_download_name(self.url,automatic=True),'Video gốc.mp4')

@@ -4,7 +4,7 @@ const fallbackUrls = new Map();
 const inFlight = new Map();
 function videoPageURL(value){
  try{const u=new URL(value),host=u.hostname.replace(/^(www\.|m\.)/,'');
-  return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&((host==='youtube.com'&&/^\/(shorts\/|watch|live\/)/.test(u.pathname))||host==='youtu.be'&&u.pathname.length>1||host==='instagram.com'&&/^\/(reels?\/|p\/)/.test(u.pathname)||['facebook.com','web.facebook.com'].includes(host)&&(/^\/(reels?\/|watch|share\/r\/)/.test(u.pathname)||u.pathname.includes('/videos/')));
+  return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&((host==='youtube.com'&&/^\/(shorts\/|watch|live\/)/.test(u.pathname))||host==='youtu.be'&&u.pathname.length>1||host==='instagram.com'&&/^\/(reels?\/|p\/)/.test(u.pathname)||['facebook.com','web.facebook.com'].includes(host)&&(/^\/(reels?\/|watch|share\/r\/|video\.php|story\.php|permalink\.php)/.test(u.pathname)||u.pathname.includes('/videos/')||u.pathname.includes('/posts/')));
  }catch(e){return false;}
 }
 const CONTENT_ID = 'download-now-links';
@@ -107,8 +107,12 @@ async function applyInterception() {
  const {intercept}=await bridge.storage.local.get('intercept');
  const registered=await bridge.scripting.getRegisteredContentScripts({ids:[CONTENT_ID]});
  const permitted=await bridge.permissions.contains({origins});
+ const scripts=['facebook-feed.js','content.js'];
+ if(intercept&&permitted&&registered.length&&JSON.stringify(registered[0].js)!==JSON.stringify(scripts)){
+  await bridge.scripting.unregisterContentScripts({ids:[CONTENT_ID]});registered.length=0;
+ }
  if(intercept && permitted && !registered.length)await bridge.scripting.registerContentScripts([{
-  id:CONTENT_ID,js:['content.js'],matches:origins,
+  id:CONTENT_ID,js:scripts,matches:origins,
   excludeMatches:['http://127.0.0.1/*','http://localhost/*'],runAt:'document_start',allFrames:true
  }]);
  if((!intercept || !permitted) && registered.length)await bridge.scripting.unregisterContentScripts({ids:[CONTENT_ID]});
@@ -289,6 +293,13 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   (async()=>{
    const [tab]=await bridge.tabs.query({active:true,currentWindow:true});
    if(!tab?.url)throw Error('Không đọc được trang hiện tại. Mở trang Reels/Shorts rồi bấm tiện ích.');
+   const host=new URL(tab.url).hostname.replace(/^(www\.|m\.)/,'');
+   if(['facebook.com','web.facebook.com'].includes(host)&&!videoPageURL(tab.url)){
+    let result;try{result=await bridge.tabs.sendMessage(tab.id,{type:'resolve-facebook-video'});}catch(e){throw Error('Bật Bắt link tệp ngay khi bấm rồi tải lại Facebook để chọn video/Tin.');}
+    if(!result?.url)throw Error(result?.error||'Hãy dùng nút trên đúng video/Tin cần tải.');
+    const media=new URL(result.url);if(!videoPageURL(result.url)&&!(media.protocol==='https:'&&media.hostname.endsWith('.fbcdn.net')&&/\.mp4$/i.test(media.pathname)))throw Error('Nguồn video Facebook không hợp lệ.');
+    return send(result.url,'Facebook video.mp4');
+   }
    if(!videoPageURL(tab.url))throw Error('Hãy mở video YouTube Shorts, Facebook Reels hoặc Instagram Reels.');
    return send(tab.url);
   })().then(result=>reply({ok:true,cancelled:!!result.cancelled})).catch(e=>reply({error:e.message}));return true;

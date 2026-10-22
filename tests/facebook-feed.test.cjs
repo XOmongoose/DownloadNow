@@ -1,0 +1,62 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+const context=vm.createContext({URL,atob:value=>Buffer.from(value,'base64').toString('utf8')});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension/chromium/facebook-feed.js'),'utf8'),context);
+const fb=context.DownloadNowFacebook,story='UzpfSVNDOjE2NjE1MTM1MTU2NDUyOTg=';
+function container({links=[],count=1,article=false,parent=null,id=null}={}){return {parentElement:parent,querySelectorAll:s=>s==='video'?Array(count).fill({}):links.map(href=>({href})),getAttribute:k=>k==='data-video-id'?id:null,matches:()=>article};}
+function video(parent,src='blob:facebook/player'){return {parentElement:parent,currentSrc:src,src,closest:()=>null};}
+const doc={querySelectorAll:()=>[]};
+test('normalizes feed video and post links without tracking',()=>{
+ assert.equal(fb.canonical('/watch/?v=123&tracking=x','https://www.facebook.com/'),'https://www.facebook.com/watch/?v=123');
+ assert.equal(fb.canonical('https://www.facebook.com/user/videos/456/?x=y'),'https://www.facebook.com/watch/?v=456');
+ assert.equal(fb.canonical('/user/posts/pfbidABC?comment_id=2','https://www.facebook.com/'),'https://www.facebook.com/user/posts/pfbidABC');
+ assert.equal(fb.canonical('https://facebook.com.evil.test/watch/?v=123'),null);
+});
+test('resolves video only inside its own post',()=>{
+ const parent=container({links:['https://www.facebook.com/user/videos/123/'],article:true,parent:container({links:['https://www.facebook.com/user/videos/999/']})});
+ assert.equal(fb.resolve(video(parent),'https://www.facebook.com/',doc),'https://www.facebook.com/watch/?v=123');
+});
+test('never borrows permalink from neighbouring posts or guesses between videos',()=>{
+ const outer=container({links:['https://www.facebook.com/user/videos/999/'],count:2}),article=container({article:true,parent:outer});
+ assert.equal(fb.resolve(video(article),'https://www.facebook.com/',doc),null);
+ const ambiguous=container({links:['https://www.facebook.com/watch/?v=123','https://www.facebook.com/watch/?v=456'],article:true});
+ assert.equal(fb.resolve(video(ambiguous),'https://www.facebook.com/',doc),null);
+});
+test('supports an explicit video id or a single post permalink',()=>{
+ assert.equal(fb.resolve(video(container({id:'123'})),'https://www.facebook.com/',doc),'https://www.facebook.com/watch/?v=123');
+ assert.equal(fb.resolve(video(container({article:true,links:['https://www.facebook.com/u/posts/123']})),'https://www.facebook.com/',doc),'https://www.facebook.com/u/posts/123');
+});
+test('direct fallback only accepts signed Facebook MP4 sources',()=>{
+ assert.equal(fb.direct('https://video.xx.fbcdn.net/file.mp4?sig=abc'),'https://video.xx.fbcdn.net/file.mp4?sig=abc');
+ for(const u of ['blob:facebook/a','https://fbcdn.net.evil.test/file.mp4','https://video.xx.fbcdn.net/file.m3u8','https://user:pass@video.xx.fbcdn.net/file.mp4'])assert.equal(fb.direct(u),null);
+});
+test('stories use exactly the selected story, never a preloaded adjacent story',()=>{
+ const data={stories:[{id:'other-story',video:{id:'video1',browser_native_hd_url:'https://v.fbcdn.net/other.mp4'}},{id:story,video:{id:'video2',browser_native_sd_url:'https://v.fbcdn.net/sd.mp4',browser_native_hd_url:'https://v.fbcdn.net/selected.mp4'}}]};
+ assert.equal(fb.storyMedia(data,story),'https://v.fbcdn.net/selected.mp4');
+ assert.equal(fb.storyMedia(data,'missing-story'),null);
+ const page='https://www.facebook.com/stories/1959327764084753/'+story+'/';
+ assert.equal(fb.resolve(video(null),page,{querySelectorAll:()=>[{textContent:JSON.stringify(data)}]}),'https://v.fbcdn.net/selected.mp4');
+});
+test('decoded numeric story identities are supported but multiple video attachments are rejected',()=>{
+ assert.equal(fb.storyMedia({story_id:'1661513515645298',media:{id:'v1',playable_url:'https://v.fbcdn.net/selected.mp4'}},story),'https://v.fbcdn.net/selected.mp4');
+ assert.equal(fb.storyMedia({id:story,attachments:[{id:'v1',playable_url:'https://v.fbcdn.net/a.mp4'},{id:'v2',playable_url:'https://v.fbcdn.net/b.mp4'}]},story),null);
+});
+test('stories without an accessible source are not sent as HTML or an unrelated post',()=>{
+ const page='https://www.facebook.com/stories/1959327764084753/'+story+'/';
+ assert.equal(fb.resolve(video(container({links:['https://www.facebook.com/u/videos/999']})),page,doc),null);
+});
+
+test('per-video button resolves a recycled feed element again at click time',async()=>{
+ const messages=[],hosts=[],listeners=[];let timer;
+ const parent=container({article:true,links:['https://www.facebook.com/u/videos/123/']});
+ const doc={querySelectorAll:()=>[v],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
+ const v=video(parent);Object.assign(v,{ownerDocument:doc,isConnected:true,paused:false,ended:false,getBoundingClientRect:()=>({left:100,right:500,top:100,bottom:360,width:400,height:260})});doc.elementFromPoint=()=>v;
+ const bridge={runtime:{onMessage:{addListener:f=>listeners.push(f)},sendMessage:async m=>{messages.push(m);return {ok:true};}}};
+ const c=vm.createContext({URL,atob:x=>Buffer.from(x,'base64').toString(),window:{location:{href:'https://www.facebook.com/'},innerHeight:900,innerWidth:1200,addEventListener(){}},setInterval:f=>{timer=f;},requestAnimationFrame:f=>f(),crypto:require('node:crypto').webcrypto});
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension/chromium/facebook-feed.js'),'utf8'),c);
+ c.DownloadNowFacebook.attach({doc,bridge,enabled:()=>true,notice(){}});assert.equal(hosts.length,1);
+ const button=hosts[0].shadow.children[0];await button.onclick({preventDefault(){},stopPropagation(){}});
+ parent.querySelectorAll=s=>s==='video'?[v]:[{href:'https://www.facebook.com/u/videos/456/'}];
+ await button.onclick({preventDefault(){},stopPropagation(){}});
+ assert.deepEqual(messages.map(m=>m.url),['https://www.facebook.com/watch/?v=123','https://www.facebook.com/watch/?v=456']);
+ v.isConnected=false;timer();
+});

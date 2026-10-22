@@ -103,7 +103,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-107 kiem thu loi/cap nhat va 44 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+108 kiem thu loi/cap nhat va 56 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     entries = sorted(p for p in package.rglob('*') if p.is_file())

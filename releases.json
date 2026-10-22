@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.10.3",
+      "date": "2026-10-22",
+      "title": "Tải video trong bảng tin và nhận diện Tin Facebook",
+      "changes": [
+        "Thêm nút Tải video / Tin cạnh từng video đang hiển thị trên Facebook, chọn đúng bài thay vì URL trang chủ.",
+        "Nhận diện liên kết video.php, watch, bài đăng và video trong bảng tin; popup lấy video đang phát khi xác định được duy nhất.",
+        "Tin Facebook: tìm nguồn MP4 của đúng Tin đang mở từ dữ liệu trang hoặc nguồn phát trực tiếp; không đọc cookie/mật khẩu và không chọn Tin nạp trước.",
+        "Báo rõ khi Tin cần đăng nhập hoặc chưa lấy được nguồn, không lưu trang HTML thay video. Tải lại Facebook một lần sau nâng cấp."
+      ]
+    },
+    {
       "version": "1.10.2",
       "date": "2026-10-22",
       "title": "Một lần cập nhật cho ứng dụng và tiện ích",

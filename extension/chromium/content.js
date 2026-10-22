@@ -5,6 +5,7 @@
  const refresh=()=>bridge.storage.local.get(['capture','intercept','token','downloadNowOnly']).then(s=>{enabled=!!(s.capture&&s.intercept&&s.token);exclusive=s.downloadNowOnly!==false;});
  refresh();
  bridge.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&(changes.capture||changes.intercept||changes.token||changes.downloadNowOnly))refresh();});
+ if(globalThis.DownloadNowFacebook&&typeof window!=='undefined'&&globalThis.DownloadNowFacebook.facebook(window.location.href))globalThis.DownloadNowFacebook.attach({doc:document,bridge,enabled:()=>enabled,notice:showNotice});
  function videoPage(value){
   try{const u=new URL(value),host=u.hostname.replace(/^(www\.|m\.)/,'');
    return /^https?:$/.test(u.protocol)&&((host==='youtube.com'&&/^\/(shorts\/|watch)/.test(u.pathname))||host==='youtu.be'||host==='instagram.com'&&/^\/(reels?\/|p\/)/.test(u.pathname)||['facebook.com','web.facebook.com'].includes(host)&&(/^\/(reels?\/|watch|share\/r\/)/.test(u.pathname)||u.pathname.includes('/videos/')));
@@ -15,7 +16,7 @@
  if(typeof window!=='undefined'&&typeof setInterval==='function'){
   let host,button,busy=false;
   const mount=()=>{
-   const visible=enabled&&videoPage(window.location.href);
+   const visible=enabled&&videoPage(window.location.href)&&!(globalThis.DownloadNowFacebook&&globalThis.DownloadNowFacebook.facebook(window.location.href));
    if(!visible){if(host)host.hidden=true;return;}
    if(!host){
     host=document.createElement('div');const shadow=host.attachShadow({mode:'closed'});button=document.createElement('button');

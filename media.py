@@ -16,7 +16,7 @@ def is_video_page(url):
     if host=='youtu.be':return bool(p.path.strip('/'))
     if host=='youtube.com':return p.path.startswith(('/shorts/','/watch','/live/'))
     if host=='instagram.com':return p.path.startswith(('/reel/','/reels/','/p/'))
-    if host in ('facebook.com','web.facebook.com'):return p.path.startswith(('/reel/','/reels/','/watch','/share/r/')) or '/videos/' in p.path
+    if host in ('facebook.com','web.facebook.com'):return p.path.startswith(('/reel/','/reels/','/watch','/share/r/','/stories/','/video.php','/video/video.php','/story.php','/permalink.php')) or '/videos/' in p.path or '/posts/' in p.path
     return False
 
 
@@ -46,13 +46,15 @@ def process_options():
 def video_name(url):
     result=subprocess.run(command(url)+['--skip-download','--dump-single-json','--',url],
                           capture_output=True,timeout=100,**process_options())
-    if result.returncode:raise ValueError(video_error(result.stderr))
+    if result.returncode:raise ValueError(video_error(result.stderr,url))
     info=json.loads(result.stdout)
     if info.get('_type') in ('playlist','multi_video'):raise ValueError('Hãy dùng liên kết của một video cụ thể.')
     return str(info.get('title') or info.get('id') or 'Video')[:150]+'.mp4'
 
 
-def video_error(message):
+def video_error(message,url=''):
+    if '/stories/' in url and ('login.php' in message or 'Unsupported URL' in message):
+        return 'Tin Facebook này cần mở trong trình duyệt đã đăng nhập. Bật Bắt link tệp, tải lại Facebook, mở đúng Tin và dùng nút Tải video / Tin. Nếu chưa lấy được nguồn phát, ứng dụng sẽ không tải trang đăng nhập thay video.'
     detail=next((line for line in reversed(message.splitlines()) if 'ERROR:' in line),message[-800:])
     return 'Không tải được video. Video phải truy cập công khai; nền tảng có thể yêu cầu đăng nhập hoặc giới hạn truy cập. '+detail[:650]
 
@@ -99,7 +101,7 @@ def download_video(url,folder,stop,progress):
                     progress(data)
                 except (ValueError,TypeError):pass
             elif 'ERROR:' in line:errors=(errors+[line])[-8:]
-        if process.wait()!=0:raise ValueError(video_error(''.join(errors)))
+        if process.wait()!=0:raise ValueError(video_error(''.join(errors),url))
         target=folder/'video.mp4'
         if not target.is_file() or not target.stat().st_size:raise ValueError('Bộ xử lý chưa tạo được tệp MP4 hoàn chỉnh.')
         return target

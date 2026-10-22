@@ -49,3 +49,9 @@ status to the local application to acknowledge synchronized updates. These ackno
 expire after two minutes, remain in application memory and are never sent to GitHub
 or the developer. The application page requests local synchronization every two seconds
 while visible; a one-minute alarm provides a fallback.
+
+On Facebook, optional click-capture access adds a download control beside visible
+videos. When the user chooses a video, it reads only video/post links in that post
+or the selected Story metadata and MP4 playback source. Adjacent preloaded Stories
+are not selected. It sends the chosen media URL to the local downloader; it does not
+read cookies, passwords, or authentication tokens from browser storage.

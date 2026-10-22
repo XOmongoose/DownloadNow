@@ -243,3 +243,20 @@ test('extension update refreshes only existing application tabs without opening 
  h.bridge.tabs={query:async()=>[{id:1,url:'http://127.0.0.1:8765/'},{id:2,url:'http://localhost:8765/?update=1'},{id:3,url:'http://127.0.0.1:8876/'},{id:4,url:'https://example.com/'}],reload:async id=>reloaded.push(id)};
  await h.context.refreshApplicationTabs();assert.deepEqual(reloaded,[1,2]);
 });
+
+test('Facebook popup resolves selected feed video through content script',async()=>{
+ const h=harness(),sent=[];h.bridge.tabs={query:async()=>[{id:42,url:'https://www.facebook.com/'}],sendMessage:async(id,m)=>{assert.equal(id,42);assert.equal(m.type,'resolve-facebook-video');return {url:'https://www.facebook.com/watch/?v=123'};}};
+ h.context.send=async u=>{sent.push(u);return {};};
+ const r=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'send-current-video'},{},resolve));assert.equal(r.ok,true);assert.deepEqual(sent,['https://www.facebook.com/watch/?v=123']);
+});
+
+test('Facebook source resolver never forwards an arbitrary content-script URL',async()=>{
+ const h=harness();h.bridge.tabs={query:async()=>[{id:42,url:'https://www.facebook.com/stories/user/story/'}],sendMessage:async()=>({url:'https://evil.example/steal.mp4'})};
+ const r=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'send-current-video'},{},resolve));assert.match(r.error,/không hợp lệ/);
+});
+
+test('existing click registration is upgraded to load Facebook resolver before content script',async()=>{
+ const h=harness(),calls=[];h.bridge.scripting.getRegisteredContentScripts=async()=>[{id:'download-now-links',js:['content.js']}];
+ h.bridge.scripting.unregisterContentScripts=async()=>calls.push('unregister');h.bridge.scripting.registerContentScripts=async items=>calls.push(Array.from(items[0].js));
+ await h.context.syncInterception();assert.deepEqual(calls,['unregister',['facebook-feed.js','content.js']]);
+});

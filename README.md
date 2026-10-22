@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.10.2**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.10.3**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.10.2-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.10.3-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.10.2.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.10.3.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -250,3 +250,7 @@ Tiện ích giữ URL tải gốc. Tên tệp từ tham số Content-Disposition
 ### Đồng bộ cập nhật ứng dụng và tiện ích (v1.10.2)
 Cả nút Cập nhật trong ứng dụng và nút Cập nhật ứng dụng & tiện ích trong popup đều mở cùng luồng. Một lần đồng ý tải/cài cả hai; gói bị từ chối nếu thiếu tiện ích hoặc lệch phiên bản. Tiện ích trong extension/chromium cạnh EXE tự nạp lại khi không có lượt chuyển tải chờ. Trang ứng dụng gửi tín hiệu đồng bộ mỗi 2 giây khi đang hiển thị; báo thức một phút là dự phòng.
 Hộp cập nhật chỉ báo đã đồng bộ khi các tiện ích đang kết nối xác nhận đúng phiên bản chạy. Nếu chưa mở trình duyệt, chỉ hiển thị chưa xác nhận. Bản giải nén ở thư mục riêng cần chuyển thư mục một lần; bản cửa hàng/Firefox dùng cơ chế phân phối/ký của trình duyệt.
+
+### Video bảng tin / Tin Facebook (v1.10.3)
+Sau cập nhật, tải lại Facebook một lần. Bật Tự bắt tải và Bắt link tệp ngay khi bấm, cấp quyền trang nếu chưa có. Nút Tải video / Tin xuất hiện cạnh từng video nhìn thấy; chọn đúng video cần tải. Popup cũng lấy video đang phát nếu chỉ xác định được một video. Không đoán giữa nhiều video hoặc lấy link từ bài lân cận.
+Với Tin (Stories), mở đúng Tin trong trình duyệt đã đăng nhập và đợi video phát. Tiện ích chỉ gửi nguồn MP4 của Tin được chọn khi Facebook cung cấp qua dữ liệu trang/nguồn phát; không đọc cookie hoặc mật khẩu. Link Stories riêng lẻ thường chuyển tới đăng nhập và bộ xử lý không tải được trực tiếp. Nếu Facebook chỉ cấp blob/luồng mà chưa lấy được nguồn phù hợp, tiện ích báo không hỗ trợ thay vì tải sai; không cam kết mọi Tin đều tải được. Ảnh Tin không được coi là video.
