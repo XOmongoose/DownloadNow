@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.10.5",
+      "date": "2026-10-22",
+      "title": "Mở tệp và xóa nhanh từng lượt tải",
+      "changes": [
+        "Thêm nút Mở tệp trên dòng hoàn tất, mở đúng tệp đã lưu bằng ứng dụng mặc định.",
+        "Thêm biểu tượng thùng rác cho từng lượt hoàn tất hoặc đã hủy, mở xác nhận xóa riêng mục đó.",
+        "Mặc định chỉ xóa lịch sử; tùy chọn Xóa luôn tệp trên máy phải được chọn trong hộp xác nhận."
+      ]
+    },
+    {
       "version": "1.10.4",
       "date": "2026-10-22",
       "title": "Hiện rõ nút tải Tin Facebook",

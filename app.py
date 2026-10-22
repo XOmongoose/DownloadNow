@@ -48,6 +48,17 @@ def open_download_folder(manager, ident):
     return str(path)
 
 
+def open_download_file(manager, ident):
+    path = manager.completed_path(ident)
+    if sys.platform == 'win32':
+        os.startfile(str(path))
+    elif sys.platform == 'darwin':
+        subprocess.Popen(['open', str(path)])
+    else:
+        subprocess.Popen(['xdg-open', str(path)])
+    return str(path)
+
+
 def lock_data(directory):
     """Hold an OS lock so two app processes never write the same queue."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -227,6 +238,8 @@ def make_server(manager, port=8765):
                     return self.reply({'removed':manager.clear_history(data.get('id'),data.get('ids'),data.get('delete_files',False))})
                 if path == '/api/open-folder':
                     return self.reply({'path': open_download_folder(manager, data['id'])})
+                if path == '/api/open-file':
+                    return self.reply({'path': open_download_file(manager, data['id'])})
                 return self.reply({'error': 'Not found'}, 404)
             except (ValueError, TypeError, KeyError) as ex:
                 return self.reply({'error': str(ex)}, 400)

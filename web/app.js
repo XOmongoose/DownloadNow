@@ -46,6 +46,7 @@ function actionButton(job,label,symbol,operation,disabled=false){
  return button;
 }
 let historyIds=[];
+let historyTarget=null;
 let historyCandidates={selected:[],all:[]};
 const selectedHistory=new Set();
 const canClearHistory=j=>['completed','cancelled'].includes(j.status);
@@ -54,13 +55,16 @@ function updateHistorySummary(){
  const selected=historyCandidates.selected.filter(id=>eligible.has(id)),all=historyCandidates.all.filter(id=>eligible.has(id));
  $('#history-scope-selected-count').textContent=selected.length;$('#history-scope-all-count').textContent=all.length;
  $('#history-scope-selected').disabled=!selected.length;
- historyIds=$('#history-scope-selected').checked?selected:all;
+ historyIds=historyTarget?selected:$('#history-scope-selected').checked?selected:all;
  $('#history-message').textContent='Sẽ xóa '+historyIds.length+' mục lịch sử. Các lượt đang tải, đã dừng và bị lỗi vẫn được giữ để tiếp tục.';
  $('#history-confirm').disabled=!historyIds.length;
  $('#history-confirm').textContent='Xóa '+historyIds.length+' mục'+($('#history-delete-files').checked?' và tệp':'');
 }
-function openHistory(){
- historyCandidates={selected:[...selectedHistory],all:jobs.filter(canClearHistory).map(j=>j.id)};
+function openHistory(ident=null){
+ historyTarget=ident;
+ $('#history-dialog .history-scope').hidden=!!ident;
+ $('#history-title').textContent=ident?'Xóa mục tải này':'Xóa lịch sử tải';
+ historyCandidates={selected:ident?[ident]:[...selectedHistory],all:jobs.filter(canClearHistory).map(j=>j.id)};
  if(!historyCandidates.all.length)return;
  $('#history-scope-selected').checked=historyCandidates.selected.length>0;$('#history-scope-all').checked=!historyCandidates.selected.length;
  $('#history-delete-files').checked=false;updateHistorySummary();$('#history-dialog').showModal();
@@ -100,10 +104,12 @@ function render() {
    actions.append(group);
   }else if(j.status==='completed') {
    const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'),document.createTextNode('Thư mục'));folder.title='Mở thư mục chứa '+j.name;folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
+   const open=text('button','Mở tệp','row-action labeled-action');open.prepend(icon('play'));open.title='Mở tệp '+j.name;open.setAttribute('aria-label',open.title);open.onclick=async()=>{open.disabled=true;try{await api('open-file',{id:j.id});}catch(e){notice(e.message);}finally{open.disabled=false;}};group.append(open);
    const location=text('button','','row-action');location.append(icon('copy'));location.title='Xem và sao chép đường dẫn tệp';location.setAttribute('aria-label',location.title+' '+j.name);location.onclick=()=>{$('#file-location-path').value=j.file_path||'';$('#file-location-name').textContent=j.name;$('#file-location-dialog').showModal();};group.append(folder,location);actions.append(group);
   }
   if(['completed','cancelled'].includes(j.status)){
-   const again=text('button','Tải lại','row-action labeled-action');again.prepend(icon('retry'));again.setAttribute('aria-label','Tải lại '+j.name);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};actions.append(again);
+   const again=text('button','Tải lại','row-action labeled-action');again.prepend(icon('retry'));again.setAttribute('aria-label','Tải lại '+j.name);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};
+   const remove=text('button','','row-action delete-action');remove.append(icon('trash'));remove.title='Xóa lịch sử '+j.name;remove.setAttribute('aria-label',remove.title);remove.onclick=()=>openHistory(j.id);const group=text('div','','file-actions history-row-actions');group.append(again,remove);actions.append(group);
   }
   tr.append(actions);return tr;
  });$('#job-list').replaceChildren(...rows);

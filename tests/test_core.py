@@ -325,6 +325,24 @@ class CoreTests(fixtures.DownloadTests):
             app.open_download_folder(self.manager, ident)
             launch.assert_called_once_with(str(self.manager.output))
 
+    def test_open_completed_file_uses_exact_saved_path(self):
+        import app
+        ident = self.manager.add(self.url+'/video.mp4')
+        self.verify(ident)
+        with patch('app.sys.platform', 'win32'), patch('app.os.startfile', create=True) as launch:
+            app.open_download_file(self.manager, ident)
+            launch.assert_called_once_with(str(self.manager.completed_path(ident)))
+
+    def test_open_missing_file_never_launches(self):
+        import app
+        ident = self.manager.add(self.url+'/video.mp4')
+        self.verify(ident)
+        self.manager.completed_path(ident).unlink()
+        with patch('app.os.startfile', create=True) as launch:
+            with self.assertRaises(ValueError):
+                app.open_download_file(self.manager, ident)
+            launch.assert_not_called()
+
     def capture_response(self, mime='application/zip', disposition=''):
         response = MagicMock()
         response.__enter__.return_value = response
