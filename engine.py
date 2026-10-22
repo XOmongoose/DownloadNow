@@ -42,6 +42,10 @@ def link_name(url):
     """Decode URL filenames without treating a '+' in a path as a space."""
     parsed = urllib.parse.urlsplit(url)
     query = urllib.parse.parse_qs(parsed.query)
+    for key in ('response-content-disposition','rscd'):
+        if query.get(key):
+            candidate=response_name({'Content-Disposition':query[key][0]})
+            if candidate:return candidate
     for key in ('filename', 'file_name', 'download_filename'):
         if query.get(key, [''])[0]:
             return query[key][0]
@@ -66,6 +70,7 @@ def response_name(headers):
 
 def generic_name(name):
     return (not name or name.lower() in {'download', 'download.bin', 'file', 'get', 'view'}
+            or not Path(name).suffix
             or Path(name).suffix.lower() in {'.php', '.aspx', '.ashx', '.jsp'})
 
 

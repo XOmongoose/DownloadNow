@@ -237,6 +237,26 @@ class SettingsUpdateTests(unittest.TestCase):
             self.assertEqual(self.manager.resolve_download_name('https://example.com/download','Tên riêng.zip'),'Tên riêng.zip')
         request.assert_not_called()
 
+    def test_github_signed_url_uses_disposition_query_not_uuid(self):
+        from urllib.parse import urlencode
+        url='https://release-assets.githubusercontent.com/asset/0401ac71-dd9e-457f-9a63-0c1649122b0a?'+urlencode({'response-content-disposition':'attachment; filename=DownloadNow-Browser-Extensions-1.10.0.zip'})
+        with patch.object(self.manager,'_request') as request:
+            self.assertEqual(self.manager.resolve_download_name(url,'0401ac71-dd9e-457f-9a63-0c1649122b0a',True),'DownloadNow-Browser-Extensions-1.10.0.zip')
+        request.assert_not_called()
+
+    def test_uuid_without_query_is_resolved_from_response_header(self):
+        response=MagicMock();response.__enter__.return_value=response
+        response.headers={'Content-Disposition':'attachment; filename="bundle.zip"'}
+        with patch.object(self.manager,'_request',return_value=response) as request:
+            self.assertEqual(self.manager.resolve_download_name('https://cdn.example/0401ac71-dd9e-457f-9a63-0c1649122b0a',automatic=True),'bundle.zip')
+        request.assert_called_once()
+
+    def test_signed_unicode_disposition_query(self):
+        from engine import link_name
+        from urllib.parse import urlencode
+        url='https://cdn.example/uuid?'+urlencode({'rscd':"attachment; filename=fallback.zip; filename*=UTF-8''B%C3%A1o%20c%C3%A1o.zip"})
+        self.assertEqual(link_name(url),'Báo cáo.zip')
+
     def test_update_feed_requires_https_and_checksum(self):
         with self.assertRaises(ValueError):https_url('http://example.com/updates.json')
         self.preferences.set(update_feed='https://example.com/updates.json')

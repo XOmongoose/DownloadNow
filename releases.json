@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.10.1",
+      "date": "2026-10-22",
+      "title": "Giữ đúng tên tệp khi tải qua chuyển hướng GitHub",
+      "changes": [
+        "Tiện ích giữ liên kết tải gốc thay vì URL CDN chứa mã UUID.",
+        "Đọc tên từ response-content-disposition/rscd và Content-Disposition trước hộp chọn lưu; không coi mã không có đuôi là tên tệp cuối.",
+        "Khắc phục tải ZIP GitHub thành tệp không có đuôi; giữ nguyên tên người dùng nhập."
+      ]
+    },
+    {
       "version": "1.10.0",
       "date": "2026-10-22",
       "title": "Biểu đồ tốc độ trực tiếp và tải Reels / Shorts",

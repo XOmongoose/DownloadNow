@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.10.0**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.10.1**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.10.0-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.10.1-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Giữ cửa sổ chương trình mở để tải và thực hiện lịch; nhấn Ctrl+C để thoát. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.10.0.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.10.1.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -243,3 +243,6 @@ Chrome/Edge/Opera: dùng Load unpacked để nạp `extension/chromium` cạnh D
 Dán liên kết YouTube Shorts/YouTube, Facebook Reels hoặc Instagram Reels công khai vào Thêm tải xuống; ứng dụng phân tích tiêu đề, chọn nơi lưu rồi tải/ghép MP4 (ưu tiên H.264, tối đa chiều cao 1080). Trong tiện ích có nút Tải video trang hiện tại; khi bật Bắt link tệp và cấp quyền trang, trang Reels/Shorts có nút Tải video này. activeTab chỉ đọc trang hiện tại khi mở tiện ích.
 Bản Windows tích hợp yt-dlp 2026.10.21, Deno 2.9.8 và FFmpeg 7.1 (GPLv3); công cụ được ghim và kiểm tra SHA-256 khi build. Không tải mã xử lý video từ xa khi chạy; không lấy cookie trình duyệt, không đăng nhập hoặc vượt DRM. Video yêu cầu đăng nhập/giới hạn khu vực hoặc thay đổi từ nền tảng có thể báo lỗi. HLS/DASH chỉ qua bộ xử lý video trên các trang hỗ trợ, không phải bắt mọi blob/luồng tùy ý.
 Chạy mã nguồn: cài requirements-build.txt và chạy python tools/build_media_runtime.py trên Windows trước khi dùng video. Các thông báo giấy phép nằm trong media-runtime bên trong gói thực thi; nguồn FFmpeg: https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz; nguồn/bản build thư viện: https://www.gyan.dev/ffmpeg/builds/.
+
+### Sửa tên tệp chuyển hướng (v1.10.1)
+Tiện ích giữ URL tải gốc. Tên tệp từ tham số Content-Disposition của URL ký (GitHub/Azure) và header máy chủ được dùng thay cho mã UUID không có đuôi; tên người dùng nhập vẫn được giữ nguyên.

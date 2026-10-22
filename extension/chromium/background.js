@@ -157,7 +157,8 @@ async function captureDownload(item) {
   try{await bridge.downloads.pause(item.id);pausedByUs=true;}catch(e){/* A download may already have completed. */}
   const [current]=await bridge.downloads.search({id:item.id});
   if(!current || current.state!=='in_progress')return;
-  const url=current.finalUrl||current.url||original;
+  // Keep the stable source URL: signed CDN redirects often end in a UUID.
+  const url=current.url||item.url||current.finalUrl||original;
   const name=(current.filename||'').split(/[\\/]/).pop();
   const result=await automaticSend(url,name,crypto.randomUUID());
   if(result.cancelled){await bridge.downloads.cancel(item.id);return;}
@@ -177,7 +178,7 @@ async function captureDownload(item) {
 async function captureBeforeSaveAs(item,suggest){
  try{
   const {capture,token,downloadNowOnly}=await bridge.storage.local.get(['capture','token','downloadNowOnly']);
-  const url=item.finalUrl||item.url;
+  const url=item.url||item.finalUrl;
   if(!capture||!/^https?:\/\//i.test(url)||item.state==='complete'||item.danger&&item.danger!=='safe'||item.byExtensionId===bridge.runtime.id&&item.byExtensionId)return;
   if((fallbackUrls.get(url)||fallbackUrls.get(item.url)||0)>Date.now()){
    fallbackUrls.delete(url);fallbackUrls.delete(item.url);return;

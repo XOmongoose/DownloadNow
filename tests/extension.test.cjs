@@ -205,3 +205,18 @@ test('current video action rejects ordinary and spoofed pages',async()=>{
   assert.match(result.error,/Hãy mở video/);
  }
 });
+
+test('filename gate keeps stable release URL instead of signed UUID redirect',async()=>{
+ const h=harness({filenameGate:true});const urls=[];h.context.automaticSend=async url=>{urls.push(url);return {};};
+ const original='https://github.com/XOmongoose/DownloadNow/releases/download/v1.10.0/DownloadNow-Browser-Extensions-1.10.0.zip';
+ await h.context.captureBeforeSaveAs({id:99,url:original,finalUrl:'https://release-assets.githubusercontent.com/asset/random-uuid',state:'in_progress'},()=>{});
+ assert.deepEqual(urls,[original]);assert.deepEqual(h.calls,['pause','cancel']);
+});
+
+test('legacy capture also retains original URL across redirects',async()=>{
+ const h=harness();const original='https://github.com/owner/repo/releases/download/v1/file.zip',urls=[];
+ h.bridge.downloads.search=async()=>[{url:original,finalUrl:'https://cdn.example/uuid',state:'in_progress',filename:'C:\\Downloads\\file.zip'}];
+ h.context.automaticSend=async url=>{urls.push(url);return {};};
+ await h.context.captureDownload({id:99,url:original,finalUrl:'https://cdn.example/uuid',state:'in_progress'});
+ assert.deepEqual(urls,[original]);
+});
