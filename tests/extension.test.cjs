@@ -190,3 +190,18 @@ test('managed extension reloads only matching completed newer files and waits fo
  vm.runInContext('inFlight.clear()',h.context);assert.equal(await h.context.reloadManagedExtension(),true);assert.equal(reloads,1);
  version=manifestVersion='1.8.0';assert.equal(await h.context.reloadManagedExtension(),false);assert.equal(reloads,1);
 });
+
+test('current video action sends the active Shorts page, not its blob stream',async()=>{
+ const h=harness();const url='https://www.youtube.com/shorts/VTueQm5ER9I?feature=share';
+ h.context.chrome.tabs={query:async()=>[{url}]};const sent=[];h.context.send=async value=>{sent.push(value);return {};};
+ const result=await new Promise(resolve=>h.context.chrome.runtime.onMessage.listeners[0]({type:'send-current-video'},{},resolve));
+ assert.equal(result.ok,true);assert.deepEqual(sent,[url]);
+});
+
+test('current video action rejects ordinary and spoofed pages',async()=>{
+ for(const url of ['https://www.youtube.com/','https://youtube.com.evil.test/shorts/x','https://example.com/reel/x']){
+  const h=harness();h.context.chrome.tabs={query:async()=>[{url}]};h.context.send=async()=>{throw Error('must not send');};
+  const result=await new Promise(resolve=>h.context.chrome.runtime.onMessage.listeners[0]({type:'send-current-video'},{},resolve));
+  assert.match(result.error,/Hãy mở video/);
+ }
+});

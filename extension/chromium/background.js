@@ -2,6 +2,11 @@ const bridge = globalThis.browser || globalThis.chrome;
 if(!globalThis.DownloadNowUpdates&&typeof importScripts==='function')importScripts('updates.js');
 const fallbackUrls = new Map();
 const inFlight = new Map();
+function videoPageURL(value){
+ try{const u=new URL(value),host=u.hostname.replace(/^(www\.|m\.)/,'');
+  return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&((host==='youtube.com'&&/^\/(shorts\/|watch|live\/)/.test(u.pathname))||host==='youtu.be'&&u.pathname.length>1||host==='instagram.com'&&/^\/(reels?\/|p\/)/.test(u.pathname)||['facebook.com','web.facebook.com'].includes(host)&&(/^\/(reels?\/|watch|share\/r\/)/.test(u.pathname)||u.pathname.includes('/videos/')));
+ }catch(e){return false;}
+}
 const CONTENT_ID = 'download-now-links';
 const origins = ['http://*/*', 'https://*/*'];
 let interceptionSync=Promise.resolve();
@@ -132,7 +137,11 @@ function automaticSend(url,name,requestId) {
  inFlight.set(url,pending);return pending;
 }
 bridge.contextMenus.onClicked.addListener(info=>{
- if(info.menuItemId==='download-now')send(info.linkUrl||info.srcUrl).catch(e=>record(e.message,true));
+ if(info.menuItemId==='download-now'){
+  const direct=info.linkUrl||info.srcUrl;
+  if(direct?.startsWith('blob:')&&!videoPageURL(info.pageUrl)){record('Trang video này chưa được hỗ trợ.',true);return;}
+  send(direct?.startsWith('blob:')?info.pageUrl:direct).catch(e=>record(e.message,true));
+ }
 });
 
 async function captureDownload(item) {
@@ -233,6 +242,14 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   })().then(reply).catch(e=>reply({error:e.message}));return true;
  }
  if(fromPage)return;
+ if(message.type==='send-current-video'){
+  (async()=>{
+   const [tab]=await bridge.tabs.query({active:true,currentWindow:true});
+   if(!tab?.url)throw Error('Không đọc được trang hiện tại. Mở trang Reels/Shorts rồi bấm tiện ích.');
+   if(!videoPageURL(tab.url))throw Error('Hãy mở video YouTube Shorts, Facebook Reels hoặc Instagram Reels.');
+   return send(tab.url);
+  })().then(result=>reply({ok:true,cancelled:!!result.cancelled})).catch(e=>reply({error:e.message}));return true;
+ }
  if(message.type==='extension-update-mode'){
   managedExtension().then(marker=>reply({managed:!!marker}));return true;
  }

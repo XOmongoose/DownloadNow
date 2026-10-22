@@ -44,6 +44,8 @@ def make_icon(path):
 def main():
     if sys.platform != 'win32':
         raise SystemExit('Build this package on Windows.')
+    from build_media_runtime import build
+    media_runtime=build()
     subprocess.run([sys.executable, str(ROOT/'tools/sync_release.py')], check=True, cwd=ROOT)
     release = json.loads((ROOT/'releases.json').read_text('utf-8'))['releases'][0]
     version = release['version']
@@ -65,6 +67,7 @@ def main():
                     '--name', 'DownloadNow', '--icon', str(icon), '--version-file', str(info),
                     '--add-data', f'{ROOT / "web"}:web', '--add-data', f'{ROOT / "releases.json"}:.',
                     '--add-data', f'{icon}:.',
+                    '--add-data', f'{media_runtime}:media-runtime',
                     '--distpath', str(work/'exe'), '--workpath', str(work/'pyinstaller'),
                     '--specpath', str(work), str(ROOT/'app.py')], check=True, cwd=ROOT)
     package.mkdir()
@@ -74,6 +77,10 @@ def main():
     (package/'extension/chromium/managed.json').write_text(json.dumps({'managed':True,'version':version}),encoding='utf-8')
     shutil.copy2(ROOT/'releases.json',package/'releases.json')
     shutil.copy2(ROOT/'README.md',package/'README.md')
+    with (package/'README.md').open('a',encoding='utf-8') as notices:
+        notices.write('\n\n## Bundled media tool notices and licenses\n')
+        for license_file in sorted(media_runtime.glob('*.txt')):
+            notices.write('\n### '+license_file.name+'\n\n'+license_file.read_text('utf-8')+'\n')
     (package/'HUONG-DAN.txt').write_text(f'''DOWNLOAD NOW v{version} — WINDOWS x64 PORTABLE
 
 1. Giai nen toan bo ZIP vao thu muc co quyen ghi (vi du Documents).
@@ -96,7 +103,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-85 kiem thu loi/cap nhat va 37 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+95 kiem thu loi/cap nhat va 39 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     entries = sorted(p for p in package.rglob('*') if p.is_file())

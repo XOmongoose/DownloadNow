@@ -22,8 +22,7 @@ Mô tả dài: Tiện ích kết nối trình duyệt với ứng dụng Downloa
 Cài ứng dụng rồi mở http://127.0.0.1:8765 trong trình duyệt có tiện ích để tự ghép nối.
 Bạn có thể gửi link từ menu chuột phải, chuyển lượt tải trình duyệt hoặc bật bắt link
 khi bấm. Ứng dụng hiển thị hộp thoại chọn nơi lưu, hỗ trợ nhiều kết nối khi máy chủ
-cho phép, dừng, tiếp tục, hủy và quản lý lịch sử. Không hỗ trợ DRM, blob, ghép HLS/DASH
-hoặc truyền phiên đăng nhập. Cần ứng dụng đang chạy trên cùng máy.
+cho phép, dừng, tiếp tục, hủy và quản lý lịch sử. Hỗ trợ gửi trang Shorts/Reels công khai đến bộ xử lý video trong ứng dụng. Không hỗ trợ DRM hoặc tự truyền phiên đăng nhập. Cần ứng dụng đang chạy trên cùng máy.
 
 Mục đích duy nhất: chuyển lượt tải người dùng chọn sang ứng dụng tải cục bộ.
 
@@ -33,6 +32,7 @@ Mã nguồn: https://github.com/XOmongoose/DownloadNow
 
 ## Giải thích quyền cho nhà xét duyệt
 
+- activeTab: chỉ đọc URL trang hiện tại khi người dùng mở tiện ích và chọn Tải video trang hiện tại.
 - storage: lưu token ghép nối và tùy chọn trên máy, không đồng bộ lên máy chủ.
 - downloads: đọc trạng thái và tạm dừng/chuyển lượt tải khi người dùng bật bắt tải; chờ xác định tên và hủy lượt trình duyệt sau khi ứng dụng nhận. Chế độ riêng báo lỗi thay vì tự tải bằng trình duyệt.
 - contextMenus: thêm lệnh gửi link, video, audio đến ứng dụng.

@@ -48,3 +48,8 @@ document.querySelector('#check').onclick=async()=>{
  catch(e){status.textContent='Chưa kết nối: '+e.message;}
 };
 document.querySelector('#send').onclick=async()=>{const button=document.querySelector('#send');button.disabled=true;status.textContent='Chọn nơi lưu trong hộp thoại Windows…';try{const r=await bridge.runtime.sendMessage({type:'send',url:document.querySelector('#url').value.trim()});status.textContent=r.error||(r.cancelled?'Đã hủy tải.':'Đã thêm vào hàng đợi.');}catch(e){status.textContent=e.message;}finally{button.disabled=false;}};
+
+document.querySelector('#send-current-video').onclick=async()=>{
+ const button=document.querySelector('#send-current-video');button.disabled=true;status.textContent='Đang phân tích video và chọn nơi lưu…';
+ try{const result=await bridge.runtime.sendMessage({type:'send-current-video'});if(result.error)throw Error(result.error);status.textContent=result.cancelled?'Đã hủy tải.':'Đã thêm video vào hàng đợi.';}catch(e){status.textContent=e.message;}finally{button.disabled=false;}
+};

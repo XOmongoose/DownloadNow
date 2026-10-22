@@ -17,6 +17,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from media import is_video_page, video_name, download_video, VideoStopped
 from datetime import datetime
 
 CHUNK = 4 * 1024 * 1024
@@ -79,6 +80,8 @@ class Changed(Exception):
 class Manager:
     def resolve_download_name(self, url, supplied='', automatic=False):
         """Resolve endpoint URLs before a Save dialog makes its name explicit."""
+        if is_video_page(url):
+            return safe_name(supplied if supplied and not automatic else video_name(url))
         original = link_name(url)
         if supplied and not automatic:
             return safe_name(supplied)
@@ -141,6 +144,7 @@ class Manager:
             raise ValueError('Thời gian dừng phải sau thời gian bắt đầu.')
         custom_name = bool(name)
         name = safe_name(name or link_name(url))
+        if is_video_page(url) and not name.lower().endswith('.mp4'):name=safe_name(name+'.mp4')
         destination = Path(save_dir).expanduser() if save_dir else self.output
         if not destination.is_absolute() or not destination.is_dir():
             raise ValueError('Thư mục lưu phải là đường dẫn tuyệt đối và đang tồn tại.')
@@ -281,6 +285,9 @@ class Manager:
 
     def _discard_partial(self,j):
         folder=self.parts/j['id']
+        if is_video_page(j['url']):
+            for item in folder.glob('*'):
+                if item.is_file():item.unlink()
         for part in folder.glob('*.part'):
             part.unlink(missing_ok=True)
         (folder/'assembled.tmp').unlink(missing_ok=True)
@@ -381,6 +388,8 @@ class Manager:
                     raise Paused()
 
     def _run(self, j, stop):
+        if is_video_page(j['url']):
+            return self._run_video(j,stop)
         folder = self.parts / j['id']
         folder.mkdir(exist_ok=True)
         try:
@@ -470,6 +479,57 @@ class Manager:
                 self.running.pop(j['id'], None)
                 self.save()
 
+    def _run_video(self,j,stop):
+        folder=self.parts/j['id'];folder.mkdir(exist_ok=True)
+        sizes={}
+        try:
+            if not j.get('custom_name') and not j.get('name_resolved'):
+                name=safe_name(video_name(j['url']))
+                with self.lock:
+                    j.update(name=self._unique_name(name,exclude=j['id'],directory=self.output_for(j)),name_resolved=True)
+            if stop.is_set():raise VideoStopped()
+            with self.lock:j.update(status='downloading',error='',media_speed=0);self.save()
+            def progress(data):
+                def number(value):
+                    try:return max(0,float(value or 0))
+                    except (ValueError,TypeError):return 0
+                key=str(data.get('filename','video'))
+                done=int(number(data.get('downloaded_bytes')))
+                total=number(data.get('total_bytes')) or number(data.get('total_bytes_estimate'))
+                sizes[key]=(done,max(done,int(total)) if total else None)
+                with self.lock:
+                    j.update(done=sum(x[0] for x in sizes.values()),total=sum(x[1] for x in sizes.values()) if all(x[1] is not None for x in sizes.values()) else None,
+                             media_speed=number(data.get('speed')),media_tick=time.monotonic())
+            source=download_video(j['url'],folder,stop,progress)
+            target=self.output_for(j)/j['name']
+            assembled=target.parent/f'.downloadnow-{j["id"]}.tmp'
+            with source.open('rb') as src,assembled.open('wb') as out:
+                while block:=src.read(1024*1024):
+                    if stop.is_set():raise VideoStopped()
+                    out.write(block)
+                out.flush();os.fsync(out.fileno())
+            with self.lock:
+                if stop.is_set():raise VideoStopped()
+                try:
+                    if os.name=='nt':os.rename(assembled,target)
+                    else:os.link(assembled,target)
+                except FileExistsError:
+                    if not filecmp.cmp(assembled,target,shallow=False):raise ValueError('Tệp đích đã tồn tại. Hãy đổi tên để giữ nguyên tệp cũ.')
+                assembled.unlink(missing_ok=True)
+                j.update(status='completed',done=target.stat().st_size,total=target.stat().st_size,media_speed=0)
+                self.save()
+            self._discard_partial(j)
+        except VideoStopped:
+            with self.lock:j.update(status='paused',media_speed=0)
+        except Exception as ex:
+            with self.lock:j.update(status='error',error=str(ex),media_speed=0)
+        finally:
+            with self.lock:
+                if j.get('cancel_requested') and j['status']!='completed':
+                    try:self._discard_partial(j);j.update(status='cancelled',done=0,total=None,error='')
+                    except OSError as ex:j.update(status='error',error='Không dọn được video tải dở: '+str(ex))
+                self.running.pop(j['id'],None);self.save()
+
     def _segment(self, j, index, bounds, folder, stop):
         path = folder / f'{index}.part'
         start, end = bounds
@@ -526,6 +586,7 @@ class Manager:
                     raise Paused()
 
     def _done(self, j):
+        if is_video_page(j['url']):return j['done']
         if j['status'] == 'completed':
             return j['done']
         total = 0
@@ -544,6 +605,7 @@ class Manager:
                 now = time.monotonic()
                 prev_t, prev_d = self.samples.get(j['id'], (now, done))
                 speed = max(0, (done - prev_d) / max(now - prev_t, .001)) if j['status'] == 'downloading' else 0
+                if is_video_page(j['url']):speed=j.get('media_speed',0) if j['status']=='downloading' and now-j.get('media_tick',0)<3 else 0
                 self.samples[j['id']] = (now, done)
                 result.append({**j, 'done': done, 'speed': speed, 'ranges': len(j['ranges']),
                                'file_path': str(self.output_for(j) / j['name']) if j['status'] == 'completed' else None})

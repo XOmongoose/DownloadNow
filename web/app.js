@@ -108,7 +108,21 @@ function render() {
   tr.append(actions);return tr;
  });$('#job-list').replaceChildren(...rows);
 }
-async function refresh(){try{jobs=await api('jobs');$('#connection-state').textContent='Đã kết nối · sẵn sàng';render();}catch(e){$('#connection-state').textContent='Mất kết nối · đang thử lại';}}
+const speedSamples=[];
+function sampleSpeed(){
+ const now=Date.now(),speed=jobs.reduce((sum,j)=>sum+(Number.isFinite(j.speed)?Math.max(0,j.speed):0),0);
+ speedSamples.push({at:now,value:speed});while(speedSamples.length&&speedSamples[0].at<now-60000)speedSamples.shift();
+ const actualPeak=Math.max(0,...speedSamples.map(s=>s.value)),peak=Math.max(1,actualPeak);
+ const points=speedSamples.map(s=>[Math.max(0,320*(1-(now-s.at)/60000)),72-60*s.value/peak]);
+ const line=points.map((p,i)=>(i?'L':'M')+p.map(x=>x.toFixed(2)).join(' ')).join(' ');
+ $('#speed-line').setAttribute('d',line||'M0 72H320');
+ $('#speed-area').setAttribute('d',points.length?'M'+points[0][0].toFixed(2)+' 72 '+line.replace(/^M/,'L')+' L320 72Z':'M0 72H320Z');
+ $('#speed-peak').textContent='Đỉnh '+bytes(actualPeak)+'/s';
+ $('#speed-live').textContent=jobs.some(j=>j.status==='downloading')?'● Trực tiếp':'Đang chờ tải';
+ $('#speed-live').classList.toggle('is-live',jobs.some(j=>j.status==='downloading'));
+ $('#speed-chart').setAttribute('aria-label','Tốc độ hiện tại '+bytes(speed)+'/s, đỉnh '+bytes(actualPeak)+'/s trong 60 giây gần nhất');
+}
+async function refresh(){try{jobs=await api('jobs');$('#connection-state').textContent='Đã kết nối · sẵn sàng';sampleSpeed();render();}catch(e){$('#connection-state').textContent='Mất kết nối · đang thử lại';$('#speed-live').textContent='Mất kết nối';}}
 function openAdd(schedule=false){$('#form-error').textContent='';if(schedule){const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());$('#add-form').elements.start_at.value=d.toISOString().slice(0,16);}$('#add-dialog').showModal();}
 $('#add-open').onclick=()=>openAdd();$('#empty-add').onclick=()=>openAdd();$('#schedule-nav').onclick=()=>openAdd(true);$('#schedule-card').onclick=()=>openAdd(true);
 $('#history-clear').onclick=()=>openHistory();

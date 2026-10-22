@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.10.0",
+      "date": "2026-10-22",
+      "title": "Biểu đồ tốc độ trực tiếp và tải Reels / Shorts",
+      "changes": [
+        "Biểu đồ tốc độ tải 60 giây theo dữ liệu thực, hiển thị tốc độ đỉnh và trạng thái trực tiếp.",
+        "Tải Facebook / Instagram Reels và YouTube Shorts công khai bằng bộ xử lý video đi kèm, ghép hình và âm thanh thành MP4.",
+        "Thêm nút Tải video này trên trang và Tải video trang hiện tại trong tiện ích; vẫn chọn nơi lưu và nhớ thư mục.",
+        "Hỗ trợ dừng, tiếp tục và hủy video; báo rõ lỗi khi video không truy cập được."
+      ]
+    },
+    {
       "version": "1.9.5",
       "date": "2026-10-20",
       "title": "Cập nhật có xác nhận và tiện ích theo ứng dụng",

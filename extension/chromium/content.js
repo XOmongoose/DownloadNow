@@ -5,6 +5,34 @@
  const refresh=()=>bridge.storage.local.get(['capture','intercept','token','downloadNowOnly']).then(s=>{enabled=!!(s.capture&&s.intercept&&s.token);exclusive=s.downloadNowOnly!==false;});
  refresh();
  bridge.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&(changes.capture||changes.intercept||changes.token||changes.downloadNowOnly))refresh();});
+ function videoPage(value){
+  try{const u=new URL(value),host=u.hostname.replace(/^(www\.|m\.)/,'');
+   return /^https?:$/.test(u.protocol)&&((host==='youtube.com'&&/^\/(shorts\/|watch)/.test(u.pathname))||host==='youtu.be'||host==='instagram.com'&&/^\/(reels?\/|p\/)/.test(u.pathname)||['facebook.com','web.facebook.com'].includes(host)&&(/^\/(reels?\/|watch|share\/r\/)/.test(u.pathname)||u.pathname.includes('/videos/')));
+  }catch(e){return false;}
+ }
+ // These pages navigate without a document reload. Resolve the current URL at
+ // click time instead of capturing the first reel visited in a feed.
+ if(typeof window!=='undefined'&&typeof setInterval==='function'){
+  let host,button,busy=false;
+  const mount=()=>{
+   const visible=enabled&&videoPage(window.location.href);
+   if(!visible){if(host)host.hidden=true;return;}
+   if(!host){
+    host=document.createElement('div');const shadow=host.attachShadow({mode:'closed'});button=document.createElement('button');
+    button.textContent='↓ Tải video này';button.setAttribute('type','button');
+    button.style.cssText='position:fixed;right:24px;bottom:92px;z-index:2147483647;border:1px solid #d99e00;border-radius:24px;padding:13px 20px;background:#F1AF00;color:#302600;font:600 14px system-ui;cursor:pointer;box-shadow:0 4px 18px #0003';
+    shadow.append(button);(document.body||document.documentElement).append(host);
+    button.onclick=async()=>{
+     const url=window.location.href;if(busy||!enabled||!videoPage(url))return;
+     busy=true;button.disabled=true;button.textContent='Đang phân tích video…';
+     try{const result=await bridge.runtime.sendMessage({type:'capture-link',url,requestId:crypto.randomUUID()});if(!result?.ok)throw Error(result?.error||'Không kết nối được ứng dụng.');showNotice(result.cancelled?'Đã hủy tải video.':'Đã thêm video vào Download Now.');}
+     catch(e){showNotice(e.message);}finally{busy=false;button.disabled=false;button.textContent='↓ Tải video này';}
+    };
+   }
+   host.hidden=false;
+  };
+  setInterval(mount,1200);
+ }
  function isDownload(anchor,url) {
   if(anchor.hasAttribute('download'))return true;
   if(['drive.usercontent.google.com','drive.google.com','docs.google.com'].includes(url.hostname)&&url.searchParams.has('id')&&(url.pathname==='/download'||url.pathname==='/uc'&&url.searchParams.get('export')==='download'))return true;
