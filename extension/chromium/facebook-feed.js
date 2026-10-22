@@ -47,8 +47,9 @@ globalThis.DownloadNowFacebook=(()=>{
     const raw=script.textContent||'';budget-=raw.length;if(budget<0)break;if(!story||raw.length>4000000||!raw.includes(story)&&!(numeric&&raw.includes(numeric)))continue;
     try{const url=storyMedia(JSON.parse(raw),story);if(url)return url;}catch(e){}
    }
-   return direct(video.currentSrc)||direct(video.src);
+   return direct(video?.currentSrc)||direct(video?.src);
   }
+  if(!video)return null;
   const enclosing=video.closest('a[href]');const own=enclosing&&canonical(enclosing.href,page);if(own)return own;
   let node=video.parentElement,post=null;
   for(let depth=0;node&&depth<10;depth++,node=node.parentElement){
@@ -68,19 +69,36 @@ globalThis.DownloadNowFacebook=(()=>{
  }
  function selected(doc){const videos=[...doc.querySelectorAll('video')].filter(visible),playing=videos.filter(v=>!v.paused&&!v.ended);return playing.length===1?playing[0]:videos.length===1?videos[0]:null;}
  function attach({doc,bridge,enabled,notice,page=()=>window.location.href}){
-  const buttons=new Map();let scheduled=false;
+  const buttons=new Map();let scheduled=false,storyButton=null;
+  // Old extension contexts can leave DOM behind after runtime.reload().
+  for(const host of doc.querySelectorAll('[data-downloadnow-feed],[data-downloadnow-story]'))host.remove();
   async function send(video,button){
-   if(button.disabled||!enabled())return;const url=resolve(video,page(),doc);
-   if(!url){notice('Chưa lấy được nguồn của video/Tin này. Mở đúng video, đợi phát rồi thử lại; Tin phải xem được trong trình duyệt.');return;}
+   if(button.disabled)return;
+   if(!enabled()){notice('Mở tiện ích Download Now, bật Bắt tự động và Bắt link tệp ngay khi bấm, rồi mở ứng dụng để kết nối.');return;}
+   const url=resolve(video,page(),doc);
+   if(!url){notice('Chưa tìm thấy nguồn video của Tin này. Nếu là Tin ảnh kèm nhạc thì không có tệp video để tải; nếu là video, đợi phát rồi thử lại.');return;}
+   const label=button.textContent;
    button.disabled=true;button.textContent='Đang chọn nơi lưu…';
    try{let result=await bridge.runtime.sendMessage({type:'capture-link',url,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
-    const fallback=direct(video.currentSrc)||direct(video.src);
+    const fallback=direct(video?.currentSrc)||direct(video?.src);
     if(!result?.ok&&fallback&&fallback!==url)result=await bridge.runtime.sendMessage({type:'capture-link',url:fallback,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
     if(!result?.ok)throw Error(result?.error||'Không kết nối được ứng dụng.');notice(result.cancelled?'Đã hủy tải.':'Đã thêm video vào Download Now.');}
-   catch(e){notice(e.message);}finally{button.disabled=false;button.textContent='↓ Tải video / Tin';}
+   catch(e){notice(e.message);}finally{button.disabled=false;button.textContent=label;}
   }
   function update(){
-   scheduled=false;const videos=enabled()&&facebook(page())?[...doc.querySelectorAll('video')].filter(visible).slice(0,12):[];
+   scheduled=false;
+   const story=facebook(page())&&new URL(page()).pathname.startsWith('/stories/');
+   if(story&&!storyButton){
+    const host=doc.createElement('div'),shadow=host.attachShadow({mode:'closed'}),button=doc.createElement('button');
+    host.setAttribute('data-downloadnow-story','');
+    host.style.cssText='position:fixed;right:24px;bottom:88px;z-index:2147483647;';
+    button.type='button';button.textContent='↓ Tải Tin Facebook';button.setAttribute('aria-label','Download Now: tải Tin Facebook đang mở');
+    button.style.cssText='background:#F1AF00;color:#302600;border:1px solid #d99e00;border-radius:24px;padding:13px 18px;font:600 14px system-ui;cursor:pointer;box-shadow:0 4px 18px #0005';
+    button.onclick=async e=>{e.preventDefault();e.stopPropagation();await send(selected(doc),button);};
+    shadow.append(button);(doc.body||doc.documentElement).append(host);storyButton={host,button};
+   }
+   if(!story&&storyButton){storyButton.host.remove();storyButton=null;}
+   const videos=!story&&enabled()&&facebook(page())?[...doc.querySelectorAll('video')].filter(visible).slice(0,12):[];
    for(const [video,item] of buttons)if(!videos.includes(video)){item.host.remove();buttons.delete(video);}
    for(const video of videos){
     let item=buttons.get(video);
@@ -96,7 +114,7 @@ globalThis.DownloadNowFacebook=(()=>{
   bridge.runtime.onMessage.addListener((message,sender,reply)=>{
    if(message.type!=='resolve-facebook-video')return;
    if(!enabled()){reply({error:'Bật Bắt link tệp ngay khi bấm và tải lại Facebook trước.'});return;}
-   const video=selected(doc),url=video&&resolve(video,page(),doc);
+   const video=selected(doc),url=(video||storyIdentity(page()))&&resolve(video,page(),doc);
    reply(url?{url}:{error:'Dùng nút Tải video / Tin trên đúng video bạn muốn tải; không chọn tự động khi có nhiều video hoặc chưa lấy được nguồn.'});
   });
   update();

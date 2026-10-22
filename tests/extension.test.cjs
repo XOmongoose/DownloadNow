@@ -260,3 +260,17 @@ test('existing click registration is upgraded to load Facebook resolver before c
  h.bridge.scripting.unregisterContentScripts=async()=>calls.push('unregister');h.bridge.scripting.registerContentScripts=async items=>calls.push(Array.from(items[0].js));
  await h.context.syncInterception();assert.deepEqual(calls,['unregister',['facebook-feed.js','content.js']]);
 });
+
+test('Facebook controls attach to open Facebook tabs without reloading pages or duplicating other sites',async()=>{
+ const h=harness(),injected=[];
+ h.bridge.tabs={query:async()=>[{id:1,url:'https://www.facebook.com/stories/u/s/'},{id:2,url:'https://facebook.com.evil.test/'},{id:3,url:'https://example.com/'}]};
+ h.bridge.scripting.executeScript=async spec=>injected.push({id:spec.target.tabId,files:Array.from(spec.files)});
+ await h.context.syncInterception();assert.deepEqual(injected,[{id:1,files:['facebook-feed.js','content.js']}]);
+ h.settings.intercept=false;await h.context.syncInterception();assert.equal(injected.length,1);
+});
+
+test('injecting the content script twice keeps exactly one click and storage listener',()=>{
+ let clicks=0,storage=0;
+ const c=vm.createContext({chrome:{storage:{local:{get:async()=>({})},onChanged:{addListener(){storage++;}}}},document:{addEventListener(){clicks++;}},URL});
+ vm.runInContext(content,c);vm.runInContext(content,c);assert.equal(clicks,1);assert.equal(storage,1);
+});

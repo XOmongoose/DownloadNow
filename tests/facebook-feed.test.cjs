@@ -48,7 +48,7 @@ test('stories without an accessible source are not sent as HTML or an unrelated 
 test('per-video button resolves a recycled feed element again at click time',async()=>{
  const messages=[],hosts=[],listeners=[];let timer;
  const parent=container({article:true,links:['https://www.facebook.com/u/videos/123/']});
- const doc={querySelectorAll:()=>[v],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
+ const doc={querySelectorAll:s=>s==='video'?[v]:[],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
  const v=video(parent);Object.assign(v,{ownerDocument:doc,isConnected:true,paused:false,ended:false,getBoundingClientRect:()=>({left:100,right:500,top:100,bottom:360,width:400,height:260})});doc.elementFromPoint=()=>v;
  const bridge={runtime:{onMessage:{addListener:f=>listeners.push(f)},sendMessage:async m=>{messages.push(m);return {ok:true};}}};
  const c=vm.createContext({URL,atob:x=>Buffer.from(x,'base64').toString(),window:{location:{href:'https://www.facebook.com/'},innerHeight:900,innerWidth:1200,addEventListener(){}},setInterval:f=>{timer=f;},requestAnimationFrame:f=>f(),crypto:require('node:crypto').webcrypto});
@@ -59,4 +59,30 @@ test('per-video button resolves a recycled feed element again at click time',asy
  await button.onclick({preventDefault(){},stopPropagation(){}});
  assert.deepEqual(messages.map(m=>m.url),['https://www.facebook.com/watch/?v=123','https://www.facebook.com/watch/?v=456']);
  v.isConnected=false;timer();
+});
+
+function storyUI({enabled=true,data=null}={}){
+ const hosts=[],messages=[],notices=[];let timer,page='https://www.facebook.com/stories/1959327764084753/'+story+'/';
+ const doc={querySelectorAll:s=>s==='script[type="application/json"]'&&data?[{textContent:JSON.stringify(data)}]:[],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){this.removed=true;},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
+ const bridge={runtime:{onMessage:{addListener(){}},sendMessage:async m=>{messages.push(m);return {ok:true};}}};
+ const c=vm.createContext({URL,atob:x=>Buffer.from(x,'base64').toString(),window:{location:{href:page},innerHeight:900,innerWidth:1200,addEventListener(){}},setInterval:f=>{timer=f;},requestAnimationFrame:f=>f(),crypto:require('node:crypto').webcrypto});
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension/chromium/facebook-feed.js'),'utf8'),c);
+ c.DownloadNowFacebook.attach({doc,bridge,enabled:()=>enabled,notice:t=>notices.push(t),page:()=>page});
+ return {hosts,messages,notices,click:()=>hosts.at(-1).shadow.children[0].onclick({preventDefault(){},stopPropagation(){}}),navigate:p=>{page=p;timer();}};
+}
+
+test('fixed Story button remains visible without a video element and downloads only its matching source',async()=>{
+ const h=storyUI({data:{id:story,video:{id:'v1',browser_native_hd_url:'https://v.fbcdn.net/selected.mp4'}}});
+ assert.equal(h.hosts.length,1);assert.equal(h.hosts[0].shadow.children[0].textContent,'↓ Tải Tin Facebook');
+ assert.match(h.hosts[0].style.cssText,/right:24px;bottom:88px/);
+ await h.click();assert.equal(h.messages[0].url,'https://v.fbcdn.net/selected.mp4');
+ h.navigate('https://www.facebook.com/');assert.equal(h.hosts[0].removed,true);
+});
+
+test('photo or unavailable Story gives an explanation without downloading an HTML page',async()=>{
+ const h=storyUI();await h.click();assert.equal(h.messages.length,0);assert.match(h.notices[0],/Tin ảnh kèm nhạc/);
+});
+
+test('unpaired Story action stays visible and explains how to connect',async()=>{
+ const h=storyUI({enabled:false});assert.equal(h.hosts.length,1);await h.click();assert.equal(h.messages.length,0);assert.match(h.notices[0],/mở ứng dụng để kết nối/);
 });

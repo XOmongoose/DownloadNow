@@ -116,6 +116,18 @@ async function applyInterception() {
   excludeMatches:['http://127.0.0.1/*','http://localhost/*'],runAt:'document_start',allFrames:true
  }]);
  if((!intercept || !permitted) && registered.length)await bridge.scripting.unregisterContentScripts({ids:[CONTENT_ID]});
+ if(intercept&&permitted)await attachFacebookTabs();
+}
+async function attachFacebookTabs(){
+ if(!bridge.tabs?.query||!bridge.scripting?.executeScript)return;
+ const tabs=await bridge.tabs.query({url:['*://facebook.com/*','*://www.facebook.com/*','*://m.facebook.com/*','*://web.facebook.com/*']});
+ for(const tab of tabs){
+  try{
+   const u=new URL(tab.url);
+   if(!/^https?:$/.test(u.protocol)||!['facebook.com','www.facebook.com','m.facebook.com','web.facebook.com'].includes(u.hostname))continue;
+   await bridge.scripting.executeScript({target:{tabId:tab.id},files:['facebook-feed.js','content.js']});
+  }catch(e){/* A tab may close or navigate while the extension is updating. */}
+ }
 }
 async function refreshApplicationTabs(){
  if(!bridge.tabs?.query||!bridge.tabs?.reload)return;

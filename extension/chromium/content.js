@@ -1,4 +1,6 @@
 (() => {
+ if(globalThis.DownloadNowContentLoaded===true)return;
+ globalThis.DownloadNowContentLoaded=true;
  const bridge=globalThis.browser||globalThis.chrome;
  let enabled=false,exclusive=true;
  const types=/\.(?:zip|rar|7z|tar|gz|bz2|xz|zst|exe|msi|iso|dmg|pkg|apk|pdf|epub|docx?|xlsx?|pptx?|csv|txt|mp4|mkv|webm|mov|avi|mp3|wav|flac|ogg|m4a)$/i;

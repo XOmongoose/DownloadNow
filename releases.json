@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.10.4",
+      "date": "2026-10-22",
+      "title": "Hiện rõ nút tải Tin Facebook",
+      "changes": [
+        "Thêm nút Tải Tin Facebook cố định ở góc dưới bên phải, không phụ thuộc thẻ video hoặc lớp phủ của trình phát.",
+        "Tự gắn nút vào các trang Facebook đang mở sau khi cập nhật hoặc bật bắt link; tránh tạo trùng nút và bộ xử lý.",
+        "Nút Tin vẫn hiển thị khi chưa kết nối, hướng dẫn bật bắt link và mở ứng dụng; giải thích khi Tin ảnh/nhạc hoặc chưa có nguồn video."
+      ]
+    },
+    {
       "version": "1.10.3",
       "date": "2026-10-22",
       "title": "Tải video trong bảng tin và nhận diện Tin Facebook",
