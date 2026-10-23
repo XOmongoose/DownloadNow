@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "1.10.16",
+      "date": "2026-10-24",
+      "title": "Làm mờ đường phân chia cột",
+      "changes": [
+        "Dùng một nét xám nhạt 1 px cho đường phân chia cột từ tiêu đề đến cuối bảng, giảm độ tương phản để giao diện nhẹ mắt."
+      ]
+    },
+    {
       "version": "1.10.15",
       "date": "2026-10-24",
       "title": "Đường kẻ cột liền từ tiêu đề đến cuối bảng",
