@@ -10,6 +10,7 @@ import sys
 import subprocess
 import threading
 import webbrowser
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 from engine import Manager
@@ -254,10 +255,41 @@ def make_server(manager, port=8765):
     return server
 
 
+def background_streams(directory):
+    """A windowed PyInstaller executable has no stdout/stderr handles."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    directory.mkdir(parents=True,exist_ok=True)
+    output=(directory/'application.log').open('a',encoding='utf-8',buffering=1)
+    if sys.stdout is None:sys.stdout=output
+    if sys.stderr is None:sys.stderr=output
+
+
+def open_running_app(directory,port,no_browser=False):
+    """A second launch opens the existing instance with the same data token."""
+    try:
+        token=(directory/'bridge-token.txt').read_text('utf-8').strip()
+        address=f'http://127.0.0.1:{port}'
+        request=urllib.request.Request(address+'/api/info',headers={'Authorization':'Bearer '+token})
+        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(request,timeout=2) as response:
+            info=json.load(response)
+        if not isinstance(info,dict) or 'capture-preflight' not in info.get('features',[]):return False
+        if not no_browser:webbrowser.open(address)
+        return True
+    except (OSError,ValueError):return False
+
+
+def startup_error(message):
+    print(message,file=sys.stderr)
+    if sys.platform=='win32' and getattr(sys,'frozen',False) and sys.__stderr__ is None:
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None,message,'Download Now',0x10)
+
+
 def main():
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+    for stream in (sys.stdout,sys.stderr):
+        if hasattr(stream,'reconfigure'):stream.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description='Download Now — local download manager')
     parser.add_argument('--version', action='version', version='Download Now ' + version())
     parser.add_argument('--port', type=int, default=8765)
@@ -276,9 +308,15 @@ def main():
             return 1
         return apply_update(args.update_source,args.update_destination,args.update_backup,args.update_parent,args.update_port,args.update_data)
     try:
+        background_streams(args.data.resolve())
+    except OSError:
+        startup_error('Không thể ghi nhật ký. Hãy đặt Download Now trong thư mục có quyền ghi.')
+        return 1
+    try:
         storage_lock = lock_data(args.data.resolve())
     except OSError:
-        print('Dữ liệu đang được ứng dụng khác sử dụng hoặc không có quyền ghi. Hãy đóng bản đang chạy.', file=sys.stderr)
+        if open_running_app(args.data.resolve(),args.port,args.no_browser):return 0
+        startup_error('Dữ liệu đang được ứng dụng khác sử dụng hoặc không có quyền ghi. Hãy đóng bản đang chạy.')
         return 1
     manager = Manager(args.data)
     try:
@@ -286,11 +324,11 @@ def main():
     except OSError as ex:
         manager.close()
         storage_lock.close()
-        print(f'Không thể mở cổng {args.port}: {ex}. Hãy đóng bản đang chạy hoặc dùng --port khác.', file=sys.stderr)
+        startup_error(f'Không thể mở cổng {args.port}: {ex}. Hãy đóng bản đang chạy hoặc dùng --port khác.')
         return 1
     print(f'Download Now v{version()}: http://127.0.0.1:{server.server_port}')
     print(f'Tệp tải về: {manager.output}')
-    print('Giữ cửa sổ này mở để tải và chạy lịch. Nhấn Ctrl+C để thoát.')
+    print('Ứng dụng chạy nền. Đóng tab trình duyệt không dừng tải hoặc lịch tải.')
     server.updates.start_auto_check(server.prompts)
     if getattr(sys, 'frozen', False) and not args.no_browser:
         threading.Timer(.8, webbrowser.open, args=(f'http://127.0.0.1:{server.server_port}',)).start()

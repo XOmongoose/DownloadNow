@@ -63,7 +63,7 @@ def main():
     version_tuple = tuple(map(int,version.split('.'))) + (0,)
     info = work/'version-info.txt'
     info.write_text(f'''VSVersionInfo(ffi=FixedFileInfo(filevers={version_tuple!r}, prodvers={version_tuple!r}, mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)), kids=[StringFileInfo([StringTable('040904B0', [StringStruct('CompanyName', 'Download Now'), StringStruct('FileDescription', 'Download Now Download Manager'), StringStruct('FileVersion', '{version}'), StringStruct('InternalName', 'DownloadNow'), StringStruct('OriginalFilename', 'DownloadNow.exe'), StringStruct('ProductName', 'Download Now'), StringStruct('ProductVersion', '{version}')])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])])''', encoding='utf-8')
-    subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--onefile', '--console', '--noupx',
+    subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--onefile', '--windowed', '--noupx',
                     '--name', 'DownloadNow', '--icon', str(icon), '--version-file', str(info),
                     '--add-data', f'{ROOT / "web"}:web', '--add-data', f'{ROOT / "releases.json"}:.',
                     '--add-data', f'{icon}:.',
@@ -86,7 +86,8 @@ def main():
 1. Giai nen toan bo ZIP vao thu muc co quyen ghi (vi du Documents).
 2. Chay DownloadNow.exe. Khong can cai Python.
 3. Giao dien tu mo tai http://127.0.0.1:8765.
-4. Giu cua so chuong trinh mo khi tai; Ctrl+C de thoat.
+4. Ung dung chay nen, khong hien CMD. Dong tab trinh duyet khong dung tai.
+5. Mo lai DownloadNow.exe de quay lai giao dien dang chay.
 
 Du lieu va hang doi: thu muc data canh DownloadNow.exe.
 Tep hoan tat: data/files. Khong xoa data neu muon tiep tuc tai.
@@ -103,7 +104,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-110 kiem thu loi/cap nhat va 74 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+115 kiem thu loi/cap nhat va 74 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     entries = sorted(p for p in package.rglob('*') if p.is_file())

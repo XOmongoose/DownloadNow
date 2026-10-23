@@ -423,7 +423,7 @@ def apply_update(source,destination,backup,parent_id,port=8765,data=None):
         log.write_text('Update installed successfully.\n',encoding='utf-8')
         arguments=[str(destination/'DownloadNow.exe'),'--port',str(port)]
         if data is not None:arguments+=['--data',str(data)]
-        subprocess.Popen(arguments,cwd=destination,creationflags=subprocess.CREATE_NEW_CONSOLE,
+        subprocess.Popen(arguments,cwd=destination,creationflags=subprocess.CREATE_NO_WINDOW,
                          env={**os.environ,'PYINSTALLER_RESET_ENVIRONMENT':'1'})
         return 0
     except Exception as error:

@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.10.7",
+      "date": "2026-10-23",
+      "title": "Mở ứng dụng không hiện cửa sổ CMD",
+      "changes": [
+        "Đóng gói EXE Windows dạng chạy nền, không hiện CMD khi mở hoặc khởi động lại sau cập nhật.",
+        "Mở lại DownloadNow.exe sẽ mở giao diện của phiên đang chạy, không tạo hàng đợi thứ hai.",
+        "Ghi nhật ký UTF-8 vào data/application.log khi không có console; lỗi khởi động hiển thị bằng hộp thoại."
+      ]
+    },
+    {
       "version": "1.10.6",
       "date": "2026-10-23",
       "title": "Bổ sung nguồn Tin Facebook nạp động",
