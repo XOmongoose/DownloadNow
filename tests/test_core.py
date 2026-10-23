@@ -439,6 +439,21 @@ class CoreTests(fixtures.DownloadTests):
         self.assertEqual(self.wait_prompt(prompts,ticket)['state'],'cancelled')
         self.assertEqual(self.manager.jobs,{})
 
+    def test_rejected_handoff_after_save_selection_stays_visible_as_persisted_error(self):
+        from save_dialogs import SavePrompts
+        import json
+        prompts=SavePrompts(self.manager,chooser=lambda *_:self.manager.output/'selected.rar')
+        with patch.object(self.manager,'capture',side_effect=ValueError('Google Drive needs confirmation')):
+            ticket=prompts.start({'url':self.url+'/file.rar','request_id':'failed-capture-001'},automatic=True)
+            result=self.wait_prompt(prompts,ticket)
+        self.assertEqual(result['state'],'error')
+        ident=result['id']
+        self.assertEqual(self.manager.jobs[ident]['status'],'error')
+        self.assertEqual(self.manager.jobs[ident]['name'],'selected.rar')
+        self.assertIn('confirmation',self.manager.jobs[ident]['error'])
+        self.assertEqual(json.loads((self.manager.root/'state.json').read_text('utf-8'))[ident]['status'],'error')
+        self.assertNotIn(ident,self.manager.running)
+
     def test_automatic_save_prompt_is_deduplicated(self):
         from save_dialogs import SavePrompts
         prompts = SavePrompts(self.manager,chooser=lambda *_:self.manager.output/'selected.zip')

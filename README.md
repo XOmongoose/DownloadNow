@@ -4,13 +4,13 @@
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.10.8**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.10.9**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
 ## Bản Windows portable (không cần cài Python)
 
-Giải nén `DownloadNow-1.10.8-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Ứng dụng chạy nền và không hiện CMD. Đóng tab không dừng lượt tải; mở lại EXE để quay lại giao diện. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
+Giải nén `DownloadNow-1.10.9-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Ứng dụng chạy nền và không hiện CMD. Đóng tab không dừng lượt tải; mở lại EXE để quay lại giao diện. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
 Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
@@ -36,7 +36,7 @@ Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong 
 
 ## Tiện ích trình duyệt
 
-Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.10.8.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
+Gói độc lập: `dist/DownloadNow-Browser-Extensions-1.10.9.zip`. Giải nén, mở `BAT-DAU.html` hoặc `BAT-DAU.txt`, làm theo hướng dẫn trong `huong-dan` cho từng trình duyệt. Bộ này có thư mục nạp trực tiếp cho Chrome/Edge/Opera/Firefox, ZIP riêng với manifest ở gốc, cùng XPI Firefox **chưa ký**. Chrome/Edge/Opera dùng Load unpacked; Firefox nạp tạm qua about:debugging. Firefox cần ký Mozilla để cài lâu dài; Safari chưa có gói cài và cần macOS/Xcode. Chưa cài kiểm chứng trong từng trình duyệt. Không có khóa, token cá nhân hay dữ liệu tải trong các gói.
 
 Tái tạo sau khi tăng phiên bản trong `releases.json`: `python tools/build_extensions.py`. Script đồng bộ phiên bản rồi tạo các gói và SHA-256; từ chối ghi đè gói đã có.
 
@@ -264,3 +264,6 @@ Khi không tìm thấy MP4 trong HTML ban đầu, nút tải kiểm tra dữ li�
 
 ### Chạy nền Windows (v1.10.7)
 Bản EXE dùng chế độ windowed và không tạo cửa sổ CMD, kể cả khi khởi động lại sau cập nhật. Nhật ký nằm trong data/application.log. Mở EXE lần nữa sẽ mở lại trang ứng dụng đang chạy. Đóng tab trình duyệt vẫn tiếp tục tải và chạy lịch. Nếu muốn dừng hẳn ứng dụng nền, kết thúc DownloadNow.exe trong Task Manager sau khi đã tạm dừng hàng đợi. Bản chạy bằng Python trong terminal vẫn dùng terminal bình thường.
+
+### Google Drive công khai (v1.10.9)
+Dùng liên kết của từng tệp, không dùng URL thư mục. Ứng dụng xử lý biểu mẫu xác nhận tệp lớn công khai của Google Drive, chỉ chấp nhận máy chủ Google và cùng mã tệp. Cookie xác nhận công khai nằm trong bộ nhớ của kết nối; không lấy cookie đăng nhập trình duyệt. Nếu Drive yêu cầu đăng nhập, quyền truy cập hoặc báo hạn mức, ứng dụng không lưu HTML thành RAR. Sau khi đã xác nhận nơi lưu, lượt chuyển tải lỗi vẫn được giữ trong mục Cần kiểm tra.

@@ -102,7 +102,14 @@ class SavePrompts:
                 if not selected.is_absolute() or not selected.parent.is_dir():
                     raise ValueError('Đường dẫn lưu không hợp lệ.')
                 data.update(name=selected.name, save_dir=str(selected.parent))
-                job = self.manager.capture(**data) if automatic else self.manager.add(**data)
+                try:
+                    job = self.manager.capture(**data) if automatic else self.manager.add(**data)
+                except Exception as error:
+                    if not automatic:raise
+                    job=self.manager.failed_capture(data['url'],data['name'],data['request_id'],data['save_dir'],error)
+                    result={'state':'error','id':job,'error':str(error)}
+                    with self.lock:self.items[ident].update(result)
+                    return
                 self.preferences.set(remember_save_dir=remember,last_save_dir=str(selected.parent) if remember else '')
                 result = {'state':'accepted', 'id':job}
         except Exception as error:

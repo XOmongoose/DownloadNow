@@ -61,3 +61,7 @@ bounded React component data attached to video elements in the page's main world
 It requires an exact match to the current Story identity and returns only one
 validated Facebook CDN MP4 URL. It does not intercept network traffic, read browser
 storage or transmit component data. A navigation change or ambiguous source is rejected.
+
+Public Google Drive downloads may follow Google's large-file confirmation form
+for the same file identifier. Confirmation cookies are kept in memory for that
+download connection; browser login cookies and saved credentials are not imported.

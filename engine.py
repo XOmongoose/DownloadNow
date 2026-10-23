@@ -18,6 +18,8 @@ import urllib.parse
 import urllib.request
 import uuid
 from media import is_video_page, video_name, download_video, VideoStopped
+import google_drive
+import http.cookiejar
 from datetime import datetime
 
 CHUNK = 4 * 1024 * 1024
@@ -191,7 +193,8 @@ class Manager:
         try:
             req = urllib.request.Request(url, headers={'Range': 'bytes=0-0',
                 'Accept-Encoding': 'identity', 'User-Agent': 'DownloadNow/1.0'})
-            with urllib.request.urlopen(req, timeout=8) as response:
+            response_context=self._request({'url':url},{'Range':'bytes=0-0'}) if google_drive.file_id(url) else urllib.request.urlopen(req,timeout=8)
+            with response_context as response:
                 valid_url(response.geturl())
                 if response.status not in (200, 206):
                     raise ValueError('Máy chủ không chấp nhận chuyển tải.')
@@ -206,6 +209,17 @@ class Manager:
                 ex.close()
             raise ValueError('Không truy cập được link. Trình duyệt sẽ tiếp tục tải; link có thể cần đăng nhập.') from ex
         return self.add(url, name=name, capture_id=request_id, save_dir=save_dir)
+
+    def failed_capture(self,url,name,request_id,save_dir,error):
+        # Hold the scheduler lock through creation and error persistence so no
+        # worker can publish HTML while a rejected browser handoff is recorded.
+        with self.lock:
+            existing=self._capture_existing(request_id,url)
+            if existing:return existing
+            ident=self.add(url,name=name,capture_id=request_id,save_dir=save_dir)
+            self.jobs[ident].update(status='error',error=str(error))
+            self.save()
+            return ident
 
     def output_for(self, job):
         return Path(job.get('save_dir') or self.output).resolve()
@@ -361,6 +375,11 @@ class Manager:
                     thread.start()
 
     def _request(self, j, headers=None):
+        if google_drive.file_id(j['url']):
+            if not hasattr(self.http,'drive_opener'):
+                self.http.drive_opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+                self.http.drive_urls={}
+            return google_drive.open_download(self.http.drive_opener,j['url'],headers,self.http.drive_urls)
         if not hasattr(self.http, 'opener'):
             self.http.opener = urllib.request.build_opener()
             self.http.local_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))

@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.10.9",
+      "date": "2026-10-23",
+      "title": "Sửa tải tệp lớn Google Drive và lưu lượt tải lỗi",
+      "changes": [
+        "Nhận diện liên kết tệp Google Drive và xử lý biểu mẫu xác nhận tải tệp lớn công khai, giữ tên RAR từ máy chủ.",
+        "Chỉ theo biểu mẫu Google hợp lệ của cùng mã tệp; không lưu trang đăng nhập hoặc trang vượt hạn mức thành tệp nén.",
+        "Sau khi bấm Bắt đầu tải, nếu kiểm tra chuyển tải thất bại, vẫn ghi mục Cần kiểm tra trong danh sách cùng lỗi và nơi lưu đã chọn.",
+        "Đã kiểm tra Range, tên tệp và chữ ký RAR của office 2010 professional plus.rar; thử nhận vào hàng đợi và tạm dừng, chưa tải toàn bộ 650 MB."
+      ]
+    },
+    {
       "version": "1.10.8",
       "date": "2026-10-23",
       "title": "Ổn định mở lại ứng dụng chạy nền",
