@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.10.12",
+      "date": "2026-10-24",
+      "title": "Hiện cửa sổ tải xuống phía trước ứng dụng khác",
+      "changes": [
+        "Giữ cửa sổ chọn nơi lưu ở trên cùng cho đến khi bấm Bắt đầu tải hoặc Hủy, thay vì bỏ chế độ này sau nửa giây.",
+        "Đưa cửa sổ lên phía trước và nhận tiêu điểm sau khi Windows đã hiển thị cửa sổ."
+      ]
+    },
+    {
       "version": "1.10.11",
       "date": "2026-10-24",
       "title": "Sửa chuyển tải YouTube Shorts từ tiện ích",

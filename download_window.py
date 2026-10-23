@@ -13,7 +13,6 @@ def download_details(name, directory, url, remember=True):
     root.geometry('720x425')
     root.minsize(660,425)
     root.attributes('-topmost',True)
-    root.after(500,lambda:root.attributes('-topmost',False))
     for icon in (Path(__file__).parent/'DownloadNow.ico',Path(__file__).parent/'build/DownloadNow.ico'):
         if icon.exists():
             try:root.iconbitmap(str(icon))
@@ -65,5 +64,12 @@ def download_details(name, directory, url, remember=True):
     root.protocol('WM_DELETE_WINDOW',cancel)
     root.bind('<Escape>',lambda _:cancel())
     root.bind('<Return>',lambda _:accept())
+    # Keep the decision window above browser windows until it is dismissed.
+    # Schedule activation after Tk has mapped the native window.
+    def present():
+        root.deiconify()
+        root.lift()
+        root.focus_force()
+    root.after_idle(present)
     root.mainloop()
     return result
