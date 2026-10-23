@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.10.15",
+      "date": "2026-10-24",
+      "title": "Đường kẻ cột liền từ tiêu đề đến cuối bảng",
+      "changes": [
+        "Thêm đường kẻ dọc xuyên suốt các hàng tải, nối với vạch phân chia ở tiêu đề đến chân bảng.",
+        "Đường kẻ đi theo độ rộng cột khi kéo chỉnh; giữ cột cuối sát lề phải."
+      ]
+    },
+    {
       "version": "1.10.14",
       "date": "2026-10-24",
       "title": "Giữ mép cuối bảng sát lề phải",
