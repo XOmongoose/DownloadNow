@@ -9,8 +9,8 @@ import socket
 import sys
 import subprocess
 import threading
+import time
 import webbrowser
-import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 from engine import Manager
@@ -266,15 +266,17 @@ def background_streams(directory):
 
 
 def open_running_app(directory,port,no_browser=False):
-    """A second launch opens the existing instance with the same data token."""
+    """After the data lock is held, reopen the local listener without HTTP races."""
     try:
-        token=(directory/'bridge-token.txt').read_text('utf-8').strip()
+        if not (directory/'bridge-token.txt').is_file():return False
         address=f'http://127.0.0.1:{port}'
-        request=urllib.request.Request(address+'/api/info',headers={'Authorization':'Bearer '+token})
-        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open(request,timeout=2) as response:
-            info=json.load(response)
-        if not isinstance(info,dict) or 'capture-preflight' not in info.get('features',[]):return False
+        for attempt in range(4):
+            try:
+                with socket.create_connection(('127.0.0.1',port),timeout=2):pass
+                break
+            except OSError:
+                if attempt==3:raise
+                time.sleep(.2)
         if not no_browser:webbrowser.open(address)
         return True
     except (OSError,ValueError):return False

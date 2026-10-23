@@ -34,25 +34,26 @@ class BackgroundLaunchTests(unittest.TestCase):
             self.assertIs(app.sys.stderr,err)
         self.assertFalse((self.root/'application.log').exists())
 
-    def test_second_launch_authenticates_before_opening_existing_ui(self):
-        opener=MagicMock()
-        opener.open.return_value.__enter__.return_value=io.BytesIO(json.dumps({'features':['capture-preflight']}).encode())
-        with patch('app.urllib.request.build_opener',return_value=opener),patch('app.webbrowser.open') as browser:
+    def test_second_launch_checks_local_listener_before_opening_existing_ui(self):
+        with patch('app.socket.create_connection') as connection,patch('app.webbrowser.open') as browser:
             self.assertTrue(app.open_running_app(self.root,8765))
             browser.assert_called_once_with('http://127.0.0.1:8765')
-        request=opener.open.call_args.args[0]
-        self.assertEqual(request.get_header('Authorization'),'Bearer local-test-token')
+            connection.assert_called_once_with(('127.0.0.1',8765),timeout=2)
 
-    def test_unrelated_server_is_not_opened(self):
-        opener=MagicMock()
-        opener.open.return_value.__enter__.return_value=io.BytesIO(b'{"features":[]}')
-        with patch('app.urllib.request.build_opener',return_value=opener),patch('app.webbrowser.open') as browser:
+    def test_profile_without_existing_token_is_not_opened(self):
+        (self.root/'bridge-token.txt').unlink()
+        with patch('app.socket.create_connection') as connection,patch('app.webbrowser.open') as browser:
             self.assertFalse(app.open_running_app(self.root,8765))
             browser.assert_not_called()
+            connection.assert_not_called()
+
+    def test_transient_connection_reset_is_retried(self):
+        with patch('app.socket.create_connection',side_effect=[ConnectionResetError('Transient reset'),MagicMock()]) as connection,patch('app.webbrowser.open') as browser,patch('app.time.sleep'):
+            self.assertTrue(app.open_running_app(self.root,8765))
+            self.assertEqual(connection.call_count,2)
+            browser.assert_called_once()
 
     def test_no_browser_flag_does_not_open_existing_ui(self):
-        opener=MagicMock()
-        opener.open.return_value.__enter__.return_value=io.BytesIO(b'{"features":["capture-preflight"]}')
-        with patch('app.urllib.request.build_opener',return_value=opener),patch('app.webbrowser.open') as browser:
+        with patch('app.socket.create_connection'),patch('app.webbrowser.open') as browser:
             self.assertTrue(app.open_running_app(self.root,8765,True))
             browser.assert_not_called()

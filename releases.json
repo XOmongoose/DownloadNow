@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.10.8",
+      "date": "2026-10-23",
+      "title": "Ổn định mở lại ứng dụng chạy nền",
+      "changes": [
+        "Giữ EXE Windows chạy nền không hiện CMD và ghi log UTF-8.",
+        "Thử lại xác nhận phiên đang chạy khi kết nối cục bộ bị ngắt tạm thời, tránh báo nhầm rằng cần đóng ứng dụng."
+      ]
+    },
+    {
       "version": "1.10.7",
       "date": "2026-10-23",
       "title": "Mở ứng dụng không hiện cửa sổ CMD",
