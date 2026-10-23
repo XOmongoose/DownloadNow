@@ -61,10 +61,10 @@ test('per-video button resolves a recycled feed element again at click time',asy
  v.isConnected=false;timer();
 });
 
-function storyUI({enabled=true,data=null}={}){
+function storyUI({enabled=true,data=null,probe=null}={}){
  const hosts=[],messages=[],notices=[];let timer,page='https://www.facebook.com/stories/1959327764084753/'+story+'/';
  const doc={querySelectorAll:s=>s==='script[type="application/json"]'&&data?[{textContent:JSON.stringify(data)}]:[],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){this.removed=true;},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
- const bridge={runtime:{onMessage:{addListener(){}},sendMessage:async m=>{messages.push(m);return {ok:true};}}};
+ const bridge={runtime:{onMessage:{addListener(){}},sendMessage:async m=>{messages.push(m);return m.type==='resolve-facebook-story-source'&&probe?probe():{ok:true};}}};
  const c=vm.createContext({URL,atob:x=>Buffer.from(x,'base64').toString(),window:{location:{href:page},innerHeight:900,innerWidth:1200,addEventListener(){}},setInterval:f=>{timer=f;},requestAnimationFrame:f=>f(),crypto:require('node:crypto').webcrypto});
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension/chromium/facebook-feed.js'),'utf8'),c);
  c.DownloadNowFacebook.attach({doc,bridge,enabled:()=>enabled,notice:t=>notices.push(t),page:()=>page});
@@ -79,10 +79,24 @@ test('fixed Story button remains visible without a video element and downloads o
  h.navigate('https://www.facebook.com/');assert.equal(h.hosts[0].removed,true);
 });
 
-test('photo or unavailable Story gives an explanation without downloading an HTML page',async()=>{
- const h=storyUI();await h.click();assert.equal(h.messages.length,0);assert.match(h.notices[0],/Tin ảnh kèm nhạc/);
+test('unavailable Story tries dynamic source resolution without downloading HTML or calling it a photo',async()=>{
+ const h=storyUI();await h.click();assert.equal(h.messages.filter(m=>m.type==='capture-link').length,0);assert.equal(h.messages[0].type,'resolve-facebook-story-source');assert.match(h.notices[0],/Chưa tìm được nguồn MP4/);assert.doesNotMatch(h.notices[0],/ảnh/);
 });
 
 test('unpaired Story action stays visible and explains how to connect',async()=>{
  const h=storyUI({enabled:false});assert.equal(h.hosts.length,1);await h.click();assert.equal(h.messages.length,0);assert.match(h.notices[0],/mở ứng dụng để kết nối/);
+});
+
+test('Story button sends a dynamically resolved MP4 through the normal download queue',async()=>{
+ const h=storyUI({probe:()=>({url:'https://v.fbcdn.net/dynamic.mp4'})});await h.click();
+ assert.deepEqual(h.messages.map(m=>m.type),['resolve-facebook-story-source','capture-link']);assert.equal(h.messages[1].url,'https://v.fbcdn.net/dynamic.mp4');
+});
+
+test('Story button refuses the result if navigation changes during async resolution',async()=>{
+ let h;h=storyUI({probe:()=>{h.navigate('https://www.facebook.com/stories/owner/other/');return {url:'https://v.fbcdn.net/old.mp4'};}});await h.click();
+ assert.equal(h.messages.filter(m=>m.type==='capture-link').length,0);assert.match(h.notices[0],/Tin đã thay đổi/);
+});
+
+test('initial Story JSON supports progressive delivery fields without mixing video identities',()=>{
+ assert.equal(fb.storyMedia({id:story,video:{id:'v1',progressive_urls:[{progressive_url:'https://v.fbcdn.net/a.mp4'},{progressive_url:'https://v.fbcdn.net/b.mp4'}]}},story)?.endsWith('.mp4'),true);
 });

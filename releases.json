@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.10.6",
+      "date": "2026-10-23",
+      "title": "Bổ sung nguồn Tin Facebook nạp động",
+      "changes": [
+        "Khi nguồn HTML ban đầu không có, kiểm tra dữ liệu thành phần của đúng Tin đang mở sau thao tác bấm tải, hỗ trợ trường progressive_url.",
+        "Đối chiếu mã Tin và từ chối kết quả khi chuyển Tin trong lúc tìm nguồn; không chọn nguồn của Tin tải sẵn bên cạnh.",
+        "Bỏ thông báo suy đoán Tin ảnh/nhạc khi chưa tìm được nguồn. Video nhận diện được vẫn đi qua hộp chọn nơi lưu và lịch sử tải của ứng dụng.",
+        "Không thêm quyền trình duyệt, không đọc cookie, mật khẩu hoặc kho lưu trữ đăng nhập. Cần thử lại Tin thực tế trong trình duyệt đã đăng nhập."
+      ]
+    },
+    {
       "version": "1.10.5",
       "date": "2026-10-22",
       "title": "Mở tệp và xóa nhanh từng lượt tải",

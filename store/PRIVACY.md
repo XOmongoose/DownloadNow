@@ -55,3 +55,9 @@ videos. When the user chooses a video, it reads only video/post links in that po
 or the selected Story metadata and MP4 playback source. Adjacent preloaded Stories
 are not selected. It sends the chosen media URL to the local downloader; it does not
 read cookies, passwords, or authentication tokens from browser storage.
+
+If initial Story markup has no source, an explicit download action can inspect
+bounded React component data attached to video elements in the page's main world.
+It requires an exact match to the current Story identity and returns only one
+validated Facebook CDN MP4 URL. It does not intercept network traffic, read browser
+storage or transmit component data. A navigation change or ambiguous source is rejected.

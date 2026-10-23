@@ -1,5 +1,6 @@
 const bridge = globalThis.browser || globalThis.chrome;
 if(!globalThis.DownloadNowUpdates&&typeof importScripts==='function')importScripts('updates.js');
+if(!globalThis.DownloadNowFacebookProbe&&typeof importScripts==='function')importScripts('facebook-probe.js');
 const fallbackUrls = new Map();
 const inFlight = new Map();
 function videoPageURL(value){
@@ -270,6 +271,21 @@ if(bridge.downloads.onDeterminingFilename){
 
 bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  const fromPage=!!sender.tab;
+ if(message.type==='resolve-facebook-story-source'){
+  (async()=>{
+   const page=new URL(sender.url||''),requested=new URL(message.page||'');
+   const hosts=['facebook.com','www.facebook.com','m.facebook.com','web.facebook.com'];
+   if(!fromPage||sender.frameId!==0||page.protocol!=='https:'||!hosts.includes(page.hostname)||!page.pathname.startsWith('/stories/')||requested.origin!==page.origin||requested.pathname!==page.pathname)throw Error('Trang Tin không hợp lệ hoặc đã thay đổi.');
+   const settings=await bridge.storage.local.get(['capture','intercept','token']);
+   if(!settings.capture||!settings.intercept||!settings.token)throw Error('Bật bắt link và kết nối ứng dụng trước.');
+   const results=await bridge.scripting.executeScript({target:{tabId:sender.tab.id,frameIds:[0]},world:'MAIN',func:globalThis.DownloadNowFacebookProbe,args:[requested.href]});
+   const result=results.find(r=>r.frameId===0)?.result;
+   if(!result?.url)throw Error(result?.error||'Chưa tìm được nguồn phát của Tin này.');
+   const url=new URL(result.url);
+   if(url.protocol!=='https:'||url.username||url.password||!url.hostname.endsWith('.fbcdn.net')||! /\.mp4$/i.test(url.pathname))throw Error('Nguồn phát không hợp lệ.');
+   return {url:url.href};
+  })().then(reply).catch(e=>reply({error:e.message}));return true;
+ }
  if(message.type==='sync-app-update'){
   try{
    const origin=new URL(sender.url||'').origin;

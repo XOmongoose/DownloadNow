@@ -26,12 +26,13 @@ globalThis.DownloadNowFacebook=(()=>{
    for(const value of Object.values(node))if(value&&typeof value==='object')stack.push(value);
   }
   const videos=new Map();
-  for(const match of matches){const pending=[match];let remaining=20000;
-   while(pending.length&&remaining-->0){const node=pending.pop();if(!node||typeof node!=='object')continue;
-    const fields=['browser_native_hd_url','playable_url_quality_hd','browser_native_sd_url','playable_url'];
+  for(const match of matches){const pending=[[match,'story']];let remaining=20000;
+   while(pending.length&&remaining-->0){const [node,parentId]=pending.pop();if(!node||typeof node!=='object')continue;
+    const id=String(node.id||node.video_id||parentId);
+    const fields=['browser_native_hd_url','playable_url_quality_hd','browser_native_sd_url','playable_url','progressive_url'];
     const url=fields.map(k=>direct(node[k])).find(Boolean);
-    if(url)videos.set(String(node.id||url),url);
-    for(const value of Object.values(node))if(value&&typeof value==='object')pending.push(value);
+    if(url&&!videos.has(id))videos.set(id,url);
+    for(const value of Object.values(node))if(value&&typeof value==='object')pending.push([value,id]);
    }
   }
   return videos.size===1?[...videos.values()][0]:null;
@@ -72,14 +73,24 @@ globalThis.DownloadNowFacebook=(()=>{
   const buttons=new Map();let scheduled=false,storyButton=null;
   // Old extension contexts can leave DOM behind after runtime.reload().
   for(const host of doc.querySelectorAll('[data-downloadnow-feed],[data-downloadnow-story]'))host.remove();
+  async function source(video){
+   const initial=page();let url=resolve(video,initial,doc);
+   if(!url&&storyIdentity(initial)){
+    const result=await bridge.runtime.sendMessage({type:'resolve-facebook-story-source',page:initial});
+    if(storyIdentity(page())!==storyIdentity(initial))throw Error('Tin đã thay đổi. Bấm tải lại trên đúng Tin.');
+    if(!result?.url)throw Error(result?.error||'Chưa tìm được nguồn MP4 phù hợp của Tin đang mở.');
+    url=direct(result.url);if(!url)throw Error('Nguồn video Facebook không hợp lệ.');
+   }
+   return url;
+  }
   async function send(video,button){
    if(button.disabled)return;
    if(!enabled()){notice('Mở tiện ích Download Now, bật Bắt tự động và Bắt link tệp ngay khi bấm, rồi mở ứng dụng để kết nối.');return;}
-   const url=resolve(video,page(),doc);
-   if(!url){notice('Chưa tìm thấy nguồn video của Tin này. Nếu là Tin ảnh kèm nhạc thì không có tệp video để tải; nếu là video, đợi phát rồi thử lại.');return;}
    const label=button.textContent;
-   button.disabled=true;button.textContent='Đang chọn nơi lưu…';
-   try{let result=await bridge.runtime.sendMessage({type:'capture-link',url,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
+   button.disabled=true;button.textContent='Đang tìm nguồn video…';
+   try{const url=await source(video);if(!url)throw Error('Chưa tìm được nguồn video của mục đang mở.');
+    button.textContent='Đang chọn nơi lưu…';
+    let result=await bridge.runtime.sendMessage({type:'capture-link',url,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
     const fallback=direct(video?.currentSrc)||direct(video?.src);
     if(!result?.ok&&fallback&&fallback!==url)result=await bridge.runtime.sendMessage({type:'capture-link',url:fallback,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
     if(!result?.ok)throw Error(result?.error||'Không kết nối được ứng dụng.');notice(result.cancelled?'Đã hủy tải.':'Đã thêm video vào Download Now.');}
@@ -114,8 +125,8 @@ globalThis.DownloadNowFacebook=(()=>{
   bridge.runtime.onMessage.addListener((message,sender,reply)=>{
    if(message.type!=='resolve-facebook-video')return;
    if(!enabled()){reply({error:'Bật Bắt link tệp ngay khi bấm và tải lại Facebook trước.'});return;}
-   const video=selected(doc),url=(video||storyIdentity(page()))&&resolve(video,page(),doc);
-   reply(url?{url}:{error:'Dùng nút Tải video / Tin trên đúng video bạn muốn tải; không chọn tự động khi có nhiều video hoặc chưa lấy được nguồn.'});
+   const video=selected(doc);
+   source(video).then(url=>reply(url?{url}:{error:'Dùng nút Tải video / Tin trên đúng video bạn muốn tải; không chọn tự động khi có nhiều video hoặc chưa lấy được nguồn.'})).catch(e=>reply({error:e.message}));return true;
   });
   update();
  }

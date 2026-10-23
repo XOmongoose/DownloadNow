@@ -274,3 +274,25 @@ test('injecting the content script twice keeps exactly one click and storage lis
  const c=vm.createContext({chrome:{storage:{local:{get:async()=>({})},onChanged:{addListener(){storage++;}}}},document:{addEventListener(){clicks++;}},URL});
  vm.runInContext(content,c);vm.runInContext(content,c);assert.equal(clicks,1);assert.equal(storage,1);
 });
+
+test('Story probe runs only in the originating top-level Facebook tab and validates media URL',async()=>{
+ const h=harness(),page='https://www.facebook.com/stories/owner/story/';let spec;
+ h.context.DownloadNowFacebookProbe=function(){};
+ h.bridge.scripting.executeScript=async s=>{spec=s;return [{frameId:0,result:{url:'https://v.fbcdn.net/video.mp4'}}];};
+ const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'resolve-facebook-story-source',page},{url:page,tab:{id:123},frameId:0},resolve));
+ assert.equal(result.url,'https://v.fbcdn.net/video.mp4');assert.equal(spec.world,'MAIN');assert.equal(spec.target.tabId,123);assert.deepEqual(Array.from(spec.target.frameIds),[0]);
+});
+
+test('Story probe rejects foreign senders and changed Story paths without executing page code',async()=>{
+ for(const [url,frameId] of [['https://evil.test/stories/owner/story/',0],['https://www.facebook.com/stories/owner/other/',0],['https://www.facebook.com/stories/owner/story/',1]]){
+  const h=harness();let executed=false;h.bridge.scripting.executeScript=async()=>{executed=true;};
+  const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'resolve-facebook-story-source',page:'https://www.facebook.com/stories/owner/story/'},{url,tab:{id:1},frameId},resolve));
+  assert.ok(result.error);assert.equal(executed,false);
+ }
+});
+
+test('Story probe rejects forged media output from the page',async()=>{
+ const h=harness(),page='https://www.facebook.com/stories/owner/story/';
+ h.bridge.scripting.executeScript=async()=>[{frameId:0,result:{url:'https://evil.test/file.mp4'}}];
+ const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'resolve-facebook-story-source',page},{url:page,tab:{id:1},frameId:0},resolve));assert.match(result.error,/không hợp lệ/);
+});
