@@ -38,13 +38,18 @@ document.querySelectorAll('[data-icon]').forEach(element=>element.replaceChildre
  table.prepend(group);table.classList.add('resizable-table');
  const handles=[];
  function apply(){
+  // The last column fills remaining space: its right edge cannot leave a
+  // blank strip inside the list when columns are narrowed or the frame grows.
+  const last=widths.length-1;
+  const preceding=widths.slice(0,last).reduce((sum,n)=>sum+n,0);
+  widths[last]=Math.max(minimums[last],table.parentElement.clientWidth-preceding);
   columns.forEach((col,i)=>col.style.width=widths[i]+'px');
   table.style.width=widths.reduce((sum,n)=>sum+n,0)+'px';
   handles.forEach(({handle,i})=>handle.setAttribute('aria-valuenow',Math.round(widths[i])));
  }
  function save(){try{localStorage.setItem(key,JSON.stringify(widths));}catch(error){}}
  headings.forEach((heading,i)=>{
-  if(!i)return;
+  if(!i||i===headings.length-1)return;
   const handle=document.createElement('span');handle.className='column-resizer';handle.tabIndex=0;
   handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');
   handle.setAttribute('aria-label','Đổi độ rộng cột '+heading.textContent.trim());
@@ -70,6 +75,7 @@ document.querySelectorAll('[data-icon]').forEach(element=>element.replaceChildre
   heading.append(handle);handles.push({handle,i});
  });
  apply();
+ new ResizeObserver(()=>apply()).observe(table.parentElement);
 })();
 const labels = {queued:'Trong hàng đợi', probing:'Đang kết nối', downloading:'Đang tải', pausing:'Đang dừng…', paused:'Đã dừng', cancelling:'Đang hủy…', cancelled:'Đã hủy', completed:'Hoàn tất', error:'Cần kiểm tra'};
 let jobs = [], filter = 'all', noticeTimer;

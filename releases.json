@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.10.14",
+      "date": "2026-10-24",
+      "title": "Giữ mép cuối bảng sát lề phải",
+      "changes": [
+        "Cột Thao tác tự lấp đầy phần còn lại đến lề phải của bảng, không để khoảng trắng khi thu hẹp các cột.",
+        "Cố định mép ngoài cùng bên phải; điều chỉnh các cột bằng vạch phân chia bên trong, tự cân lại khi đổi kích thước cửa sổ."
+      ]
+    },
+    {
       "version": "1.10.13",
       "date": "2026-10-24",
       "title": "Điều chỉnh độ rộng cột danh sách tải",
