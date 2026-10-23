@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import shutil
+import ssl
 import struct
 import subprocess
 import sys
@@ -63,13 +64,17 @@ def main():
     version_tuple = tuple(map(int,version.split('.'))) + (0,)
     info = work/'version-info.txt'
     info.write_text(f'''VSVersionInfo(ffi=FixedFileInfo(filevers={version_tuple!r}, prodvers={version_tuple!r}, mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)), kids=[StringFileInfo([StringTable('040904B0', [StringStruct('CompanyName', 'Download Now'), StringStruct('FileDescription', 'Download Now Download Manager'), StringStruct('FileVersion', '{version}'), StringStruct('InternalName', 'DownloadNow'), StringStruct('OriginalFilename', 'DownloadNow.exe'), StringStruct('ProductName', 'Download Now'), StringStruct('ProductVersion', '{version}')])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])])''', encoding='utf-8')
+    ssl_data=[]
+    # Keep optional CA policy resources beside the frozen ssl module.
+    ssl_policy=Path(ssl.__file__).with_name('codex-rejected-cas.pem')
+    if ssl_policy.is_file():ssl_data=['--add-data',f'{ssl_policy}:.']
     subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--onefile', '--windowed', '--noupx',
                     '--name', 'DownloadNow', '--icon', str(icon), '--version-file', str(info),
                     '--add-data', f'{ROOT / "web"}:web', '--add-data', f'{ROOT / "releases.json"}:.',
                     '--add-data', f'{icon}:.',
                     '--add-data', f'{media_runtime}:media-runtime',
                     '--distpath', str(work/'exe'), '--workpath', str(work/'pyinstaller'),
-                    '--specpath', str(work), str(ROOT/'app.py')], check=True, cwd=ROOT)
+                    '--specpath', str(work), *ssl_data, str(ROOT/'app.py')], check=True, cwd=ROOT)
     package.mkdir()
     shutil.copy2(work/'exe/DownloadNow.exe',package/'DownloadNow.exe')
     shutil.copytree(ROOT/'extension',package/'extension', ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
@@ -104,7 +109,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-126 kiem thu loi/cap nhat va 74 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+129 kiem thu loi/cap nhat va 74 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     entries = sorted(p for p in package.rglob('*') if p.is_file())

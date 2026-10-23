@@ -6,6 +6,7 @@ from pathlib import Path
 import secrets
 import signal
 import socket
+import ssl
 import sys
 import subprocess
 import threading
@@ -297,6 +298,7 @@ def main():
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--data', type=Path, default=APP_HOME / 'data')
     parser.add_argument('--no-browser', action='store_true', help='Do not open the browser automatically')
+    parser.add_argument('--self-test-tls',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--apply-update',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--update-source',help=argparse.SUPPRESS)
     parser.add_argument('--update-destination',help=argparse.SUPPRESS)
@@ -305,6 +307,11 @@ def main():
     parser.add_argument('--update-port',type=int,default=8765,help=argparse.SUPPRESS)
     parser.add_argument('--update-data',type=Path,help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.self_test_tls:
+        try:
+            context=ssl.create_default_context()
+            return 0 if context.verify_mode==ssl.CERT_REQUIRED and context.check_hostname else 1
+        except Exception:return 1
     if args.apply_update:
         if not all((args.update_source,args.update_destination,args.update_backup,args.update_parent)):
             return 1

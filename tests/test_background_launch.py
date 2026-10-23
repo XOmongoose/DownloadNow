@@ -57,3 +57,17 @@ class BackgroundLaunchTests(unittest.TestCase):
         with patch('app.socket.create_connection'),patch('app.webbrowser.open') as browser:
             self.assertTrue(app.open_running_app(self.root,8765,True))
             browser.assert_not_called()
+
+    def test_frozen_tls_check_requires_certificate_and_hostname_verification(self):
+        context=MagicMock(verify_mode=app.ssl.CERT_REQUIRED,check_hostname=True)
+        with patch('app.sys.argv',['app','--self-test-tls']),patch('app.ssl.create_default_context',return_value=context):
+            self.assertEqual(app.main(),0)
+
+    def test_frozen_tls_check_fails_for_missing_resource(self):
+        with patch('app.sys.argv',['app','--self-test-tls']),patch('app.ssl.create_default_context',side_effect=FileNotFoundError('CA policy missing')):
+            self.assertEqual(app.main(),1)
+
+    def test_frozen_tls_check_rejects_disabled_verification(self):
+        context=MagicMock(verify_mode=app.ssl.CERT_NONE,check_hostname=False)
+        with patch('app.sys.argv',['app','--self-test-tls']),patch('app.ssl.create_default_context',return_value=context):
+            self.assertEqual(app.main(),1)

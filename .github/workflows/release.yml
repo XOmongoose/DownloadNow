@@ -27,6 +27,11 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: node --test tests/extension.test.cjs tests/facebook-feed.test.cjs tests/facebook-probe.test.cjs
       - run: python tools/build_windows.py
+      - name: Verify frozen TLS configuration
+        shell: pwsh
+        run: |
+          $probe = Start-Process -FilePath (Resolve-Path build/exe/DownloadNow.exe) -ArgumentList '--self-test-tls' -WindowStyle Hidden -Wait -PassThru
+          if ($probe.ExitCode -ne 0) { throw 'Frozen TLS context failed or verification is disabled' }
       - run: python tools/build_extensions.py
       - run: python tools/build_store_bundle.py
       - name: Publish complete release
