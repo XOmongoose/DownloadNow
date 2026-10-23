@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.10.13",
+      "date": "2026-10-24",
+      "title": "Điều chỉnh độ rộng cột danh sách tải",
+      "changes": [
+        "Kéo vạch bên phải tiêu đề để thay đổi độ rộng cột tên tệp, kích thước, trạng thái, tốc độ và thao tác.",
+        "Ghi nhớ độ rộng trên trình duyệt; nhấp đúp vạch để đặt lại từng cột, hoặc dùng phím mũi tên khi chọn vạch.",
+        "Tên tệp và đường dẫn tận dụng độ rộng cột đã chỉnh; bảng cuộn ngang khi vượt khung."
+      ]
+    },
+    {
       "version": "1.10.12",
       "date": "2026-10-24",
       "title": "Hiện cửa sổ tải xuống phía trước ứng dụng khác",

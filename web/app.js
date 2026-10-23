@@ -21,6 +21,56 @@ function icon(name) {
  return svg;
 }
 document.querySelectorAll('[data-icon]').forEach(element=>element.replaceChildren(icon(element.dataset.icon)));
+// Keep widths on columns so periodic row rendering cannot reset a resize.
+(() => {
+ const table=document.querySelector('.table-scroll table');
+ const headings=[...table.querySelectorAll('thead th')];
+ const key='downloadnow.column-widths.v1';
+ const defaults=[36,Math.max(320,table.parentElement.clientWidth-670),140,140,120,234];
+ const minimums=[36,200,110,115,100,200];
+ let widths=[...defaults];
+ try{
+  const saved=JSON.parse(localStorage.getItem(key));
+  if(Array.isArray(saved)&&saved.length===6&&saved.every((n,i)=>Number.isFinite(n)&&n>=minimums[i]&&n<=2000))widths=saved;
+ }catch(error){/* Storage may be unavailable in private browser profiles. */}
+ const group=document.createElement('colgroup');
+ const columns=widths.map(()=>{const col=document.createElement('col');group.append(col);return col;});
+ table.prepend(group);table.classList.add('resizable-table');
+ const handles=[];
+ function apply(){
+  columns.forEach((col,i)=>col.style.width=widths[i]+'px');
+  table.style.width=widths.reduce((sum,n)=>sum+n,0)+'px';
+  handles.forEach(({handle,i})=>handle.setAttribute('aria-valuenow',Math.round(widths[i])));
+ }
+ function save(){try{localStorage.setItem(key,JSON.stringify(widths));}catch(error){}}
+ headings.forEach((heading,i)=>{
+  if(!i)return;
+  const handle=document.createElement('span');handle.className='column-resizer';handle.tabIndex=0;
+  handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');
+  handle.setAttribute('aria-label','Đổi độ rộng cột '+heading.textContent.trim());
+  handle.setAttribute('aria-valuemin',minimums[i]);handle.setAttribute('aria-valuemax','2000');
+  handle.title='Kéo để đổi độ rộng · Nhấp đúp để đặt lại';
+  let drag=null;
+  handle.addEventListener('pointerdown',event=>{
+   if(event.button!==0)return;
+   event.preventDefault();drag={x:event.clientX,width:widths[i]};
+   handle.setPointerCapture(event.pointerId);document.body.classList.add('resizing-columns');
+  });
+  handle.addEventListener('pointermove',event=>{
+   if(!drag)return;
+   widths[i]=Math.max(minimums[i],Math.min(2000,drag.width+event.clientX-drag.x));apply();
+  });
+  function finish(){if(!drag)return;drag=null;document.body.classList.remove('resizing-columns');save();}
+  handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',finish);handle.addEventListener('lostpointercapture',finish);
+  handle.addEventListener('dblclick',()=>{widths[i]=defaults[i];apply();save();});
+  handle.addEventListener('keydown',event=>{
+   if(!['ArrowLeft','ArrowRight','Home'].includes(event.key))return;
+   event.preventDefault();widths[i]=event.key==='Home'?defaults[i]:Math.max(minimums[i],Math.min(2000,widths[i]+(event.key==='ArrowRight'?1:-1)*(event.shiftKey?50:10)));apply();save();
+  });
+  heading.append(handle);handles.push({handle,i});
+ });
+ apply();
+})();
 const labels = {queued:'Trong hàng đợi', probing:'Đang kết nối', downloading:'Đang tải', pausing:'Đang dừng…', paused:'Đã dừng', cancelling:'Đang hủy…', cancelled:'Đã hủy', completed:'Hoàn tất', error:'Cần kiểm tra'};
 let jobs = [], filter = 'all', noticeTimer;
 const active = j => ['probing','downloading','pausing','cancelling'].includes(j.status);
