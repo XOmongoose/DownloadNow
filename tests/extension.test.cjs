@@ -21,6 +21,17 @@ function harness({online=true,capture=true,token='test-token',state='in_progress
  return {context,bridge,calls,settings};
 }
 
+test('save prompt polling retries a transient connection failure without resending the job',async()=>{
+ const h=harness({promptOutcome:'accepted'}),original=h.context.fetch;
+ let polls=0;
+ h.context.fetch=async(url,options)=>{if(url.includes('/api/prompts/')&&++polls===1)throw TypeError('Failed to fetch');return original(url,options);};
+ const result=await h.context.send('https://youtube.com/shorts/3LPWhCK537I','','video-request-001',true);
+ assert.equal(result.id,'job-1');assert.equal(polls,2);assert.equal(h.calls.filter(c=>c==='send').length,1);
+});
+test('unreachable application reports a useful connection error',async()=>{
+ const h=harness({online:false});
+ await assert.rejects(h.context.send('https://youtube.com/shorts/3LPWhCK537I','','video-request-002',true),/Hãy mở ứng dụng/);
+});
 function pair(h,url='http://127.0.0.1:8765/',frameId=0){return new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'pair-app',token:'new-valid-connection-token-12345'},{tab:{id:1},url,frameId},resolve));}
 test('local application pairs automatically only after verifying token',async()=>{
  const h=harness();const result=await pair(h);assert.equal(result.ok,true);assert.equal(h.settings.token,'new-valid-connection-token-12345');assert.deepEqual(h.calls,['verify-pair']);

@@ -363,6 +363,16 @@ class CoreTests(fixtures.DownloadTests):
                 self.manager.capture(self.url+'/other.zip', request_id='capture-0001')
         self.verify(first)
 
+    def test_capture_video_page_uses_media_queue_and_deduplicates(self):
+        url = 'https://www.youtube.com/shorts/VTueQm5ER9I'
+        with patch('engine.urllib.request.urlopen', side_effect=AssertionError('HTML preflight')):
+            first = self.manager.capture(url, name='Short.mp4', request_id='video-capture-001')
+            second = self.manager.capture(url, name='Short.mp4', request_id='video-capture-001')
+        self.assertEqual(first, second)
+        self.assertEqual(self.manager.jobs[first]['status'], 'queued')
+        self.assertEqual(self.manager.jobs[first]['url'], url)
+        self.assertEqual(self.manager.jobs[first]['name'], 'Short.mp4')
+
     def test_capture_login_page_stays_in_browser(self):
         with patch('engine.urllib.request.urlopen', return_value=self.capture_response('text/html')):
             with self.assertRaisesRegex(ValueError, 'đăng nhập'):

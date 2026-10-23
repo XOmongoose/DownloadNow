@@ -190,6 +190,10 @@ class Manager:
             existing = self._capture_existing(request_id, url)
             if existing:
                 return existing
+        # Supported video pages are HTML by design. Their media extractor,
+        # rather than the direct-file preflight, validates and downloads them.
+        if is_video_page(url):
+            return self.add(url, name=name, capture_id=request_id, save_dir=save_dir)
         try:
             req = urllib.request.Request(url, headers={'Range': 'bytes=0-0',
                 'Accept-Encoding': 'identity', 'User-Agent': 'DownloadNow/1.0'})

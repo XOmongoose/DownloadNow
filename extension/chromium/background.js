@@ -160,18 +160,28 @@ async function send(url,name='',requestId=crypto.randomUUID(),automatic=false) {
  if(!/^https?:\/\//i.test(url))throw Error('Chỉ hỗ trợ liên kết HTTP(S) trực tiếp.');
  const {token}=await bridge.storage.local.get('token');
  if(!token)throw Error('Chưa ghép nối: dán mã kết nối trong tiện ích rồi nhấn Lưu.');
- const response=await fetch('http://127.0.0.1:8765/api/'+(automatic?'capture':'jobs'),{
+ let response;
+ try{response=await fetch('http://127.0.0.1:8765/api/'+(automatic?'capture':'jobs'),{
   method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
   body:JSON.stringify({url,ask_save:true,...(name?{name}:{}),...(automatic?{request_id:requestId}:{})}),signal:AbortSignal.timeout(12000)
- });
+ });}catch(error){throw Error('Không kết nối được Download Now. Hãy mở ứng dụng rồi thử lại.');}
  let data=await response.json();
  if(!response.ok)throw Error(response.status===404?'Cần nâng cấp ứng dụng lên v1.5.0 để chọn nơi lưu.':data.error||'Không thể gửi liên kết.');
  if(data.prompt_id){
   const prompt=data.prompt_id;
-  await record('Đang chờ bạn chọn nơi lưu trong hộp thoại Windows.');
+  try{await record('Đang chờ bạn chọn nơi lưu trong hộp thoại Windows.');}catch(error){}
+  let connectionFailures=0;
+  data={state:'pending'};
   do{
    await new Promise(resolve=>setTimeout(resolve,800));
-   const status=await fetch('http://127.0.0.1:8765/api/prompts/'+prompt,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});
+   let status;
+   try{
+    status=await fetch('http://127.0.0.1:8765/api/prompts/'+prompt,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});
+   }catch(error){
+    if(++connectionFailures<3)continue;
+    throw Error('Mất kết nối với Download Now. Kiểm tra danh sách tải trong ứng dụng trước khi thử lại.');
+   }
+   connectionFailures=0;
    data=await status.json();
    if(!status.ok)throw Error(data.error||'Không thể kiểm tra hộp thoại lưu.');
   }while(data.state==='pending');

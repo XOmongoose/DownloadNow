@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.10.11",
+      "date": "2026-10-24",
+      "title": "Sửa chuyển tải YouTube Shorts từ tiện ích",
+      "changes": [
+        "Chuyển trang video được hỗ trợ sang bộ xử lý video, không từ chối trang YouTube như tệp HTML sau khi chọn nơi lưu.",
+        "Tiếp tục kiểm tra hộp thoại lưu khi kết nối bị gián đoạn tạm thời, không gửi lại lượt tải; thông báo rõ khi không kết nối được ứng dụng.",
+        "Đã tải thử hoàn chỉnh video YouTube Shorts 3LPWhCK537I thành MP4; 130 kiểm thử ứng dụng và 76 kiểm thử tiện ích đã qua."
+      ]
+    },
+    {
       "version": "1.10.10",
       "date": "2026-10-23",
       "title": "Sửa tài nguyên TLS của bản EXE và tải Google Drive",
