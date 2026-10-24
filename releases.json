@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "1.10.18",
+      "date": "2026-10-24",
+      "title": "Thông tin tác giả",
+      "changes": [
+        "Thêm dòng Tác giả: XOmongoose - ChatGPT ở cuối giao diện, làm nổi bật tên XOmongoose."
+      ]
+    },
+    {
       "version": "1.10.17",
       "date": "2026-10-24",
       "title": "Logo tia sét trên giao diện",
