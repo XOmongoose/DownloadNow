@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "1.10.17",
+      "date": "2026-10-24",
+      "title": "Logo tia sét trên giao diện",
+      "changes": [
+        "Đổi biểu tượng trong ô màu vàng cam cạnh tên DownloadNow thành hình tia sét."
+      ]
+    },
+    {
       "version": "1.10.16",
       "date": "2026-10-24",
       "title": "Làm mờ đường phân chia cột",
