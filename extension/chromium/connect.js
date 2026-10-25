@@ -1,5 +1,5 @@
 // Only injected into the local application's top-level page by the manifest.
-if(window.top===window && ['http://127.0.0.1:8765','http://localhost:8765'].includes(location.origin)){
+if(window.top===window && location.protocol==='http:' && ['127.0.0.1','localhost'].includes(location.hostname) && Number(location.port)>=1024 && document.querySelector('meta[name="download-now-app"]')?.content==='1'){
  const token=document.querySelector('meta[name="bridge-token"]')?.content;
  if(token){
   const bridge=globalThis.browser||globalThis.chrome;

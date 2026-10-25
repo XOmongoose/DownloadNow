@@ -99,8 +99,8 @@ Tep hoan tat: data/files. Khong xoa data neu muon tiep tuc tai.
 Nang cap: bam Cap nhat trong ung dung, dong y de tai/kiem tra/cai ban moi.
 Co the sao chep data tu ban chay ma nguon sau khi da tat ca hai ban.
 
-Neu cong 8765 dang dung, dong ban Download Now cu truoc khi mo ban nay.
-Doi cong: DownloadNow.exe --port 8766 (tien ich mac dinh dung 8765).
+Ung dung tu chon cong trong neu cong uu tien dang duoc su dung.
+Cong uu tien: DownloadNow.exe --port 8766. Tien ich tu tim hoac ghep noi qua trang ung dung.
 Khong tu mo trinh duyet: DownloadNow.exe --no-browser.
 Xem phien ban: DownloadNow.exe --version.
 
@@ -109,7 +109,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-130 kiem thu loi/cap nhat va 76 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+134 kiem thu loi/cap nhat va 81 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     (package/'HUONG-DAN.txt').write_text((package/'HUONG-DAN.txt').read_text('utf-8-sig')+'\n\n'+'''DOWNLOAD NOW - TAC GIA: XOmongoose

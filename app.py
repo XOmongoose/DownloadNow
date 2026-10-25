@@ -129,6 +129,9 @@ def make_server(manager, port=8765):
             if not self.allowed_host():
                 return self.reply({'error': 'Invalid Host'}, 403)
             path = urlsplit(self.path).path
+            if path == '/api/discovery':
+                return self.reply({'application':'DownloadNow','protocol':1,
+                                   'version':version(),'port':self.server.server_port})
             if path.startswith('/api/'):
                 if not secrets.compare_digest(self.headers.get('Authorization', ''), 'Bearer ' + token):
                     return self.reply({'error': 'Unauthorized'}, 401)
@@ -256,6 +259,19 @@ def make_server(manager, port=8765):
     return server
 
 
+def make_available_server(manager, preferred=8765):
+    """Bind atomically; never close another process or reserve a port by probing."""
+    import errno
+    candidates=list(dict.fromkeys([preferred,*range(8765,8775),0]))
+    for port in candidates:
+        try:
+            return make_server(manager,port)
+        except OSError as error:
+            if error.errno not in (errno.EADDRINUSE,errno.EACCES) and getattr(error,'winerror',None) not in (10048,10013):
+                raise
+    raise OSError('Không tìm được cổng cục bộ trống.')
+
+
 def background_streams(directory):
     """A windowed PyInstaller executable has no stdout/stderr handles."""
     if sys.stdout is not None and sys.stderr is not None:
@@ -270,6 +286,10 @@ def open_running_app(directory,port,no_browser=False):
     """After the data lock is held, reopen the local listener without HTTP races."""
     try:
         if not (directory/'bridge-token.txt').is_file():return False
+        endpoint=directory/'bridge-endpoint.json'
+        if endpoint.is_file():
+            saved=json.loads(endpoint.read_text('utf-8'))
+            if isinstance(saved.get('port'),int) and 1024<=saved['port']<=65535:port=saved['port']
         address=f'http://127.0.0.1:{port}'
         for attempt in range(4):
             try:
@@ -329,7 +349,12 @@ def main():
         return 1
     manager = Manager(args.data)
     try:
-        server = make_server(manager, args.port)
+        if args.port!=0 and not 1024<=args.port<=65535:raise OSError('Cổng phải nằm trong khoảng 1024–65535, hoặc 0 để tự chọn.')
+        server = make_available_server(manager, args.port)
+        endpoint=args.data.resolve()/'bridge-endpoint.json'
+        temporary=endpoint.with_suffix('.tmp')
+        temporary.write_text(json.dumps({'port':server.server_port}),encoding='utf-8')
+        temporary.replace(endpoint)
     except OSError as ex:
         manager.close()
         storage_lock.close()

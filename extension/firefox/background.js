@@ -3,6 +3,37 @@ if(!globalThis.DownloadNowUpdates&&typeof importScripts==='function')importScrip
 if(!globalThis.DownloadNowFacebookProbe&&typeof importScripts==='function')importScripts('facebook-probe.js');
 const fallbackUrls = new Map();
 const inFlight = new Map();
+function localApplicationBase(value){
+ try{
+  const u=new URL(value),port=Number(u.port);
+  if(u.protocol!=='http:'||!['127.0.0.1','localhost'].includes(u.hostname)||u.username||u.password||!Number.isInteger(port)||port<1024||port>65535)return null;
+  return 'http://127.0.0.1:'+port;
+ }catch(error){return null;}
+}
+async function probeApplication(base){
+ if(!localApplicationBase(base))return false;
+ try{
+  const response=await fetch(base+'/api/discovery',{credentials:'omit',redirect:'error',signal:AbortSignal.timeout(900)});
+  if(!response.ok)return false;
+  const info=await response.json();
+  return info.application==='DownloadNow'&&info.protocol===1&&info.port===Number(new URL(base).port)&&typeof info.version==='string';
+ }catch(error){return false;}
+}
+let discoveryInFlight=null;
+async function applicationBase(){
+ if(discoveryInFlight)return discoveryInFlight;
+ discoveryInFlight=(async()=>{
+  const stored=await bridge.storage.local.get('appBase');
+  const preferred=localApplicationBase(stored.appBase||'http://127.0.0.1:8765');
+  if(preferred&&await probeApplication(preferred))return preferred;
+  const candidates=Array.from({length:10},(_,i)=>'http://127.0.0.1:'+(8765+i)).filter(base=>base!==preferred);
+  const results=await Promise.all(candidates.map(base=>probeApplication(base)));
+  const base=candidates[results.indexOf(true)];
+  if(!base)throw Error('Không tìm thấy Download Now. Hãy mở ứng dụng rồi thử lại.');
+  await bridge.storage.local.set({appBase:base});return base;
+ })().finally(()=>{discoveryInFlight=null;});
+ return discoveryInFlight;
+}
 function videoPageURL(value){
  try{const u=new URL(value),host=u.hostname.replace(/^(www\.|m\.)/,'');
   return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&((host==='youtube.com'&&/^\/(shorts\/|watch|live\/)/.test(u.pathname))||host==='youtu.be'&&u.pathname.length>1||host==='instagram.com'&&/^\/(reels?\/|p\/)/.test(u.pathname)||['facebook.com','web.facebook.com'].includes(host)&&(/^\/(reels?\/|watch|share\/r\/|video\.php|story\.php|permalink\.php)/.test(u.pathname)||u.pathname.includes('/videos/')||u.pathname.includes('/posts/')));
@@ -20,7 +51,7 @@ async function reportExtension(){
  const marker=await managedExtension();
  const agent=globalThis.navigator?.userAgent||'';
  const browser=bridge.runtime.getBrowserInfo?'Firefox':/Edg\//.test(agent)?'Edge':/OPR\//.test(agent)?'Opera':'Chrome';
- const response=await fetch('http://127.0.0.1:8765/api/extension/heartbeat',{
+ const response=await fetch((await applicationBase())+'/api/extension/heartbeat',{
   method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
   body:JSON.stringify({id:bridge.runtime.id,version:bridge.runtime.getManifest().version,managed:!!marker,browser}),signal:AbortSignal.timeout(5000)
  });
@@ -55,7 +86,7 @@ async function reloadManagedExtension(){
  if(manifest.version!==marker.version)return false;
  const {token}=await bridge.storage.local.get('token');
  if(!token)return false;
- const app=await fetch('http://127.0.0.1:8765/api/info',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(5000)});
+ const app=await fetch((await applicationBase())+'/api/info',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(5000)});
  if(!app.ok||(await app.json()).version!==marker.version)return false;
  const newer=manifest.version.split('.').map(Number).some((part,i,parts)=>parts.slice(0,i).every((v,j)=>v===Number(current.split('.')[j]))&&part>Number(current.split('.')[i]));
  if(newer){bridge.runtime.reload();return true;}
@@ -132,9 +163,11 @@ async function attachFacebookTabs(){
 }
 async function refreshApplicationTabs(){
  if(!bridge.tabs?.query||!bridge.tabs?.reload)return;
+ const stored=await bridge.storage.local.get('appBase');
+ const base=localApplicationBase(stored.appBase||'http://127.0.0.1:8765');
  const tabs=await bridge.tabs.query({url:['http://127.0.0.1/*','http://localhost/*']});
  for(const tab of tabs){
-  try{if(['http://127.0.0.1:8765','http://localhost:8765'].includes(new URL(tab.url).origin))await bridge.tabs.reload(tab.id);}
+  try{if(localApplicationBase(tab.url)===base)await bridge.tabs.reload(tab.id);}
   catch(e){/* A tab may have closed during application restart. */}
  }
 }
@@ -147,7 +180,7 @@ bridge.runtime.onInstalled.addListener(async(details={})=>{
   if(values.intercept===undefined)await bridge.storage.local.set({intercept:false});
   await syncInterception();
   if(details.reason==='update')await refreshApplicationTabs();
-  else if(details.reason==='install'&&bridge.tabs)await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
+  else if(details.reason==='install'&&bridge.tabs)await bridge.tabs.create({url:(await applicationBase())+'/'});
   if(globalThis.DownloadNowUpdates)await checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));
  }catch(e){await record(e.message,true);}
 });
@@ -160,8 +193,9 @@ async function send(url,name='',requestId=crypto.randomUUID(),automatic=false) {
  if(!/^https?:\/\//i.test(url))throw Error('Chỉ hỗ trợ liên kết HTTP(S) trực tiếp.');
  const {token}=await bridge.storage.local.get('token');
  if(!token)throw Error('Chưa ghép nối: dán mã kết nối trong tiện ích rồi nhấn Lưu.');
+ const base=await applicationBase();
  let response;
- try{response=await fetch('http://127.0.0.1:8765/api/'+(automatic?'capture':'jobs'),{
+ try{response=await fetch(base+'/api/'+(automatic?'capture':'jobs'),{
   method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
   body:JSON.stringify({url,ask_save:true,...(name?{name}:{}),...(automatic?{request_id:requestId}:{})}),signal:AbortSignal.timeout(12000)
  });}catch(error){throw Error('Không kết nối được Download Now. Hãy mở ứng dụng rồi thử lại.');}
@@ -176,7 +210,7 @@ async function send(url,name='',requestId=crypto.randomUUID(),automatic=false) {
    await new Promise(resolve=>setTimeout(resolve,800));
    let status;
    try{
-    status=await fetch('http://127.0.0.1:8765/api/prompts/'+prompt,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});
+    status=await fetch(base+'/api/prompts/'+prompt,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(12000)});
    }catch(error){
     if(++connectionFailures<3)continue;
     throw Error('Mất kết nối với Download Now. Kiểm tra danh sách tải trong ứng dụng trước khi thử lại.');
@@ -281,6 +315,16 @@ if(bridge.downloads.onDeterminingFilename){
 
 bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  const fromPage=!!sender.tab;
+ if(message.type==='application-info'){
+  if(fromPage){reply({error:'Chỉ dùng trong tiện ích.'});return false;}
+  (async()=>{
+   const base=await applicationBase();
+   if(message.token===undefined)return {base};
+   const response=await fetch(base+'/api/info',{headers:{Authorization:'Bearer '+message.token},signal:AbortSignal.timeout(4000)});
+   if(!response.ok)throw Error('Mã kết nối không hợp lệ. Mở trang ứng dụng để ghép nối lại.');
+   return {base,info:await response.json()};
+  })().then(reply).catch(error=>reply({error:error.message}));return true;
+ }
  if(message.type==='resolve-facebook-story-source'){
   (async()=>{
    const page=new URL(sender.url||''),requested=new URL(message.page||'');
@@ -299,7 +343,7 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  if(message.type==='sync-app-update'){
   try{
    const origin=new URL(sender.url||'').origin;
-   if(!fromPage||sender.frameId!==0||!['http://127.0.0.1:8765','http://localhost:8765'].includes(origin))throw Error('Trang đồng bộ không hợp lệ.');
+   if(!fromPage||sender.frameId!==0||!localApplicationBase(origin))throw Error('Trang đồng bộ không hợp lệ.');
    synchronizeExtension().then(reply).catch(e=>reply({error:e.message}));
   }catch(e){reply({error:e.message});}
   return true;
@@ -307,12 +351,14 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  if(message.type==='pair-app'){
   (async()=>{
    const address=new URL(sender.url||'');
-   if(!fromPage || sender.frameId!==0 || !['http://127.0.0.1:8765','http://localhost:8765'].includes(address.origin) || !/^[A-Za-z0-9_-]{20,200}$/.test(message.token||''))throw Error('Trang ghép nối không hợp lệ.');
-   const response=await fetch('http://127.0.0.1:8765/api/info',{headers:{Authorization:'Bearer '+message.token},signal:AbortSignal.timeout(5000)});
+   const base=localApplicationBase(address.origin);
+   if(!fromPage || sender.frameId!==0 || !base || !/^[A-Za-z0-9_-]{20,200}$/.test(message.token||''))throw Error('Trang ghép nối không hợp lệ.');
+   if(!await probeApplication(base))throw Error('Cổng này không phải Download Now.');
+   const response=await fetch(base+'/api/info',{headers:{Authorization:'Bearer '+message.token},signal:AbortSignal.timeout(5000)});
    if(!response.ok)throw Error('Không xác minh được ứng dụng.');
    const info=await response.json();
    if(typeof info.version!=='string')throw Error('Phản hồi ứng dụng không hợp lệ.');
-   await bridge.storage.local.set({token:message.token,lastError:'',lastStatus:'Đã tự kết nối ứng dụng v'+info.version});
+   await bridge.storage.local.set({token:message.token,appBase:base,lastError:'',lastStatus:'Đã tự kết nối ứng dụng v'+info.version+' · cổng '+address.port});
    if(bridge.runtime.getManifest&&bridge.runtime.getURL)synchronizeExtension().catch(()=>{});
    await record('Đã tự kết nối ứng dụng v'+info.version);
    return {ok:true,version:info.version};
@@ -349,7 +395,7 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   (async()=>{
    if(await reloadManagedExtension())return {reloading:true};
    // Ask the application to check; its own dialog obtains user approval.
-   await bridge.tabs.create({url:'http://127.0.0.1:8765/?update=1'});
+   await bridge.tabs.create({url:(await applicationBase())+'/?update=1'});
    return {ok:true};
   })().then(reply).catch(e=>reply({error:e.message}));return true;
  }

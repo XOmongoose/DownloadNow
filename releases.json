@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.12.0",
+      "date": "2026-10-25",
+      "title": "Tự chọn cổng trống và tìm đúng ứng dụng",
+      "changes": [
+        "Ứng dụng thử cổng ưu tiên, chuyển qua dải 8765–8774 nếu bị chiếm; nếu cả dải bận thì để Windows cấp cổng trống. Không đóng hay chiếm cổng của phần mềm khác.",
+        "Ghi nhớ cổng thực tế để mở lại đúng phiên ứng dụng; bộ cập nhật khởi động lại với cổng đã chọn.",
+        "Tiện ích tìm Download Now trong dải cổng cục bộ hoặc cổng đã ghép nối, xác minh giao thức trước khi gửi mã kết nối và liên kết tải.",
+        "Tự ghép nối theo địa chỉ trang ứng dụng, hỗ trợ cả cổng Windows cấp; không quét mạng LAN hay toàn bộ cổng trên máy."
+      ]
+    },
+    {
       "version": "1.11.1",
       "date": "2026-10-25",
       "title": "Bộ cài Windows cho máy khác",

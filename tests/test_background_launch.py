@@ -58,6 +58,33 @@ class BackgroundLaunchTests(unittest.TestCase):
             self.assertTrue(app.open_running_app(self.root,8765,True))
             browser.assert_not_called()
 
+    def test_occupied_port_is_skipped_without_closing_its_owner(self):
+        import errno
+        expected=MagicMock()
+        with patch('app.make_server',side_effect=[OSError(errno.EADDRINUSE,'occupied'),expected]) as factory:
+            self.assertIs(app.make_available_server(MagicMock(),8765),expected)
+        self.assertEqual([call.args[1] for call in factory.call_args_list],[8765,8766])
+
+    def test_other_socket_errors_are_not_hidden(self):
+        import errno
+        with patch('app.make_server',side_effect=OSError(errno.EMFILE,'too many files')) as factory:
+            with self.assertRaises(OSError):app.make_available_server(MagicMock())
+        factory.assert_called_once()
+
+    def test_busy_candidate_range_falls_back_to_os_assigned_port(self):
+        import errno
+        expected=MagicMock()
+        with patch('app.make_server',side_effect=[*[OSError(errno.EADDRINUSE,'busy') for _ in range(10)],expected]) as factory:
+            self.assertIs(app.make_available_server(MagicMock()),expected)
+        self.assertEqual([call.args[1] for call in factory.call_args_list],[*range(8765,8775),0])
+
+    def test_saved_port_is_used_to_reopen_running_app(self):
+        (self.root/'bridge-endpoint.json').write_text(json.dumps({'port':8771}))
+        with patch('app.socket.create_connection') as connection,patch('app.webbrowser.open') as browser:
+            self.assertTrue(app.open_running_app(self.root,8765))
+            connection.assert_called_once_with(('127.0.0.1',8771),timeout=2)
+            browser.assert_called_once_with('http://127.0.0.1:8771')
+
     def test_frozen_tls_check_requires_certificate_and_hostname_verification(self):
         context=MagicMock(verify_mode=app.ssl.CERT_REQUIRED,check_hostname=True)
         with patch('app.sys.argv',['app','--self-test-tls']),patch('app.ssl.create_default_context',return_value=context):

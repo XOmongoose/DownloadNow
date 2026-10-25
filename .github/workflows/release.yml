@@ -33,6 +33,7 @@ jobs:
           $probe = Start-Process -FilePath (Resolve-Path build/exe/DownloadNow.exe) -ArgumentList '--self-test-tls' -WindowStyle Hidden -Wait -PassThru
           if ($probe.ExitCode -ne 0) { throw 'Frozen TLS context failed or verification is disabled' }
       - run: python tools/build_extensions.py
+      - run: python tools/smoke_ports.py
       - run: python tools/build_store_bundle.py
       - name: Prepare installer compiler
         shell: pwsh

@@ -2,13 +2,13 @@
 
 Tác giả: **XOmongoose**.
 
-Bộ cài cho Windows 10/11 x64: tải **DownloadNow-Setup-1.11.1-Windows-x64.exe** từ GitHub Releases. Không cần cài Python hay Node.js trên máy đích. Xem [hướng dẫn cài đặt](INSTALLER.md).
+Bộ cài cho Windows 10/11 x64: tải **DownloadNow-Setup-1.12.0-Windows-x64.exe** từ GitHub Releases. Không cần cài Python hay Node.js trên máy đích. Xem [hướng dẫn cài đặt](INSTALLER.md).
 
 Ứng dụng quản lý tải HTTP/HTTPS chạy cục bộ, giao diện tiếng Việt. Không cần thư viện Python bên ngoài.
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.11.1**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.12.0**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
@@ -16,9 +16,9 @@ Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `m
 
 Giải nén `DownloadNow-1.10.10-Windows-x64.zip` vào thư mục có quyền ghi, chạy `DownloadNow.exe`. Giao diện tự mở trong trình duyệt mặc định. Ứng dụng chạy nền và không hiện CMD. Đóng tab không dừng lượt tải; mở lại EXE để quay lại giao diện. Đây là bản EXE portable x64 chưa ký số, không phải bộ cài MSI.
 
-Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Đóng bản chạy mã nguồn trước khi mở EXE vì cả hai mặc định dùng cổng 8765. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
+Tệp tải nằm tại `data/files` cạnh EXE; dữ liệu không lưu vào thư mục giải nén tạm của chương trình. Khi nâng cấp, tắt bản cũ, thay EXE/tiện ích rồi giữ nguyên `data`. Khi cổng ưu tiên bận, ứng dụng tự chọn cổng trống. Để chuyển hàng đợi từ bản mã nguồn, tắt cả hai bản rồi sao chép toàn bộ thư mục `data` sang cạnh EXE. Không chạy hai bản cùng ghi vào một thư mục dữ liệu.
 
-Lệnh bổ sung: `DownloadNow.exe --version`, `DownloadNow.exe --no-browser`, `DownloadNow.exe --port 8766`, `DownloadNow.exe --data D:\Downloads\DownloadNow`. Tiện ích mặc định vẫn kết nối cổng 8765.
+Lệnh bổ sung: `DownloadNow.exe --version`, `DownloadNow.exe --no-browser`, `DownloadNow.exe --port 8766`, `DownloadNow.exe --data D:\Downloads\DownloadNow`. Tiện ích tự tìm Download Now trên cổng đã ghép nối hoặc dải 8765–8774; mở trang ứng dụng để ghép nối cổng Windows cấp ngoài dải.
 
 Tự build trên Windows x64 bằng Python 3.12: tạo venv `.venv-build`, cài `requirements-build.txt`, chạy `.venv-build/Scripts/python.exe tools/build_windows.py`. Script tạo EXE, ZIP, thông tin phiên bản Windows và SHA-256 trong `dist`; không đưa dữ liệu cá nhân, token hay môi trường build vào gói. Nếu gói cùng phiên bản đã tồn tại, script từ chối ghi đè.
 
@@ -28,7 +28,7 @@ Tự build trên Windows x64 bằng Python 3.12: tạo venv `.venv-build`, cài 
 2. Nhấp đúp `start.bat`, hoặc chạy `python app.py` trong thư mục này.
 3. Mở **http://127.0.0.1:8765** trong trình duyệt. Giữ cửa sổ ứng dụng đang chạy.
 
-Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong `data/parts`; hàng đợi nằm trong `data/state.json`. Không xóa thư mục `data` nếu muốn tiếp tục tải. Dùng Ctrl+C để thoát gọn. Có thể chọn vị trí lưu bằng `python app.py --data D:\Downloads\DownloadNow` (giao diện mặc định vẫn hiển thị đường dẫn tương đối `data/files`). Đổi cổng bằng `--port`; tiện ích hiện dùng cổng 8765 cố định.
+Tệp hoàn tất nằm trong `data/files`. Các phần đang tải nằm trong `data/parts`; hàng đợi nằm trong `data/state.json`. Không xóa thư mục `data` nếu muốn tiếp tục tải. Dùng Ctrl+C để thoát gọn. Có thể chọn vị trí lưu bằng `python app.py --data D:\Downloads\DownloadNow` (giao diện mặc định vẫn hiển thị đường dẫn tương đối `data/files`). Đổi cổng bằng `--port`; ứng dụng tự chọn cổng khác nếu cổng ưu tiên bận, tiện ích nhận cổng thực tế khi mở trang ứng dụng.
 
 ## Các chức năng
 

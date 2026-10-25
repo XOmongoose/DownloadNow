@@ -16,7 +16,7 @@ function harness({online=true,capture=true,token='test-token',state='in_progress
   downloads:{onCreated:event(),async pause(){calls.push('pause');},async search(){return [{url:'https://files.example/file.zip',filename:'C:\\Downloads\\file.zip',state}];},async cancel(){calls.push('cancel');},async resume(){calls.push('resume');}}};
  if(filenameGate)bridge.downloads.onDeterminingFilename=event();
  const context=vm.createContext({chrome:bridge,URL,crypto:require('node:crypto').webcrypto,AbortSignal,console,Map,Date,setTimeout:fn=>fn(),
-  fetch:async(url,options)=>{if(url.endsWith('/api/info')){calls.push('verify-pair');if(!online)throw Error('offline');return {ok:true,json:async()=>({version:'1.9.0'})};}if(url.includes('/api/prompts/')){calls.push('poll');return {ok:true,json:async()=>({state:promptOutcome,id:'job-1'})};}calls.push('send');if(!online)throw Error('offline');assert.ok(url.endsWith('/api/capture'));assert.ok(JSON.parse(options.body).request_id);assert.equal(JSON.parse(options.body).ask_save,true);return {ok:true,json:async()=>promptOutcome?({prompt_id:'prompt-1'}):({id:'job-1'})};}});
+  fetch:async(url,options)=>{if(url.endsWith('/api/discovery')){if(!online)throw Error('offline');return {ok:true,json:async()=>({application:'DownloadNow',protocol:1,port:Number(new URL(url).port),version:'1.9.0'})};}if(url.endsWith('/api/info')){calls.push('verify-pair');if(!online)throw Error('offline');return {ok:true,json:async()=>({version:'1.9.0'})};}if(url.includes('/api/prompts/')){calls.push('poll');return {ok:true,json:async()=>({state:promptOutcome,id:'job-1'})};}calls.push('send');if(!online)throw Error('offline');assert.ok(url.endsWith('/api/capture'));assert.ok(JSON.parse(options.body).request_id);assert.equal(JSON.parse(options.body).ask_save,true);return {ok:true,json:async()=>promptOutcome?({prompt_id:'prompt-1'}):({id:'job-1'})};}});
  vm.runInContext(background,context);
  return {context,bridge,calls,settings};
 }
@@ -33,6 +33,38 @@ test('unreachable application reports a useful connection error',async()=>{
  await assert.rejects(h.context.send('https://youtube.com/shorts/3LPWhCK537I','','video-request-002',true),/Hãy mở ứng dụng/);
 });
 function pair(h,url='http://127.0.0.1:8765/',frameId=0){return new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'pair-app',token:'new-valid-connection-token-12345'},{tab:{id:1},url,frameId},resolve));}
+
+test('discovery skips other software without sending its server a token or download URL',async()=>{
+ const h=harness(),requests=[];
+ h.context.fetch=async(url,options={})=>{
+  requests.push({url,options});const port=Number(new URL(url).port);
+  if(url.endsWith('/api/discovery'))return {ok:true,json:async()=>({application:port===8766?'DownloadNow':'OtherSoftware',protocol:1,port,version:'1.12.0'})};
+  assert.equal(port,8766);assert.equal(options.headers.Authorization,'Bearer test-token');
+  return {ok:true,json:async()=>({id:'alternate-port-job'})};
+ };
+ const result=await h.context.send('https://example.com/private-file.zip','','alternate-port-001',true);
+ assert.equal(result.id,'alternate-port-job');assert.equal(h.settings.appBase,'http://127.0.0.1:8766');
+ for(const request of requests.filter(r=>!r.url.includes(':8766/'))){assert.equal(request.options.headers,undefined);assert.equal(request.options.body,undefined);assert.ok(request.url.endsWith('/api/discovery'));}
+});
+test('no compatible local server means no authorized request is sent',async()=>{
+ const h=harness();let requests=0;
+ h.context.fetch=async(url,options)=>{requests++;assert.equal(options.headers,undefined);assert.equal(options.body,undefined);return {ok:true,json:async()=>({version:'1.12.0'})};};
+ await assert.rejects(h.context.send('https://example.com/file.zip','','no-server-001',true),/Không tìm thấy/);
+ assert.equal(requests,10);
+});
+test('alternative application page pairs and remembers its actual port',async()=>{
+ const h=harness();assert.equal((await pair(h,'http://127.0.0.1:8772/')).ok,true);
+ assert.equal(h.settings.appBase,'http://127.0.0.1:8772');
+});
+test('unrelated localhost page cannot replace the paired token',async()=>{
+ const h=harness();h.context.fetch=async()=>({ok:true,json:async()=>({application:'OtherSoftware',protocol:1,port:8766,version:'1.12.0'})});
+ assert.ok((await pair(h,'http://localhost:8766/')).error);assert.equal(h.settings.token,'test-token');
+});
+test('remembered operating-system-assigned port is verified before reuse',async()=>{
+ const h=harness();h.settings.appBase='http://127.0.0.1:49123';let requests=0;
+ h.context.fetch=async(url,options)=>{requests++;assert.equal(url,'http://127.0.0.1:49123/api/discovery');assert.equal(options.headers,undefined);return {ok:true,json:async()=>({application:'DownloadNow',protocol:1,port:49123,version:'1.12.0'})};};
+ assert.equal(await h.context.applicationBase(),'http://127.0.0.1:49123');assert.equal(requests,1);
+});
 test('local application pairs automatically only after verifying token',async()=>{
  const h=harness();const result=await pair(h);assert.equal(result.ok,true);assert.equal(h.settings.token,'new-valid-connection-token-12345');assert.deepEqual(h.calls,['verify-pair']);
 });
@@ -51,7 +83,7 @@ test('browser download pauses, sends, then cancels only after acceptance',async(
 });
 test('offline bridge resumes original browser download',async()=>{
  const h=harness({online:false});await h.context.captureDownload({id:1,url:'https://files.example/file.zip',state:'in_progress'});
- assert.deepEqual(h.calls,['pause','send','resume']);
+ assert.deepEqual(h.calls,['pause','resume']);
 });
 test('disabled or unpaired capture leaves browser alone',async()=>{
  for(const options of [{capture:false},{token:''}]){const h=harness(options);await h.context.captureDownload({id:1,url:'https://files.example/file.zip'});assert.deepEqual(h.calls,[]);}
@@ -152,10 +184,10 @@ test('filename gate cancels browser before releasing Save As and does not regist
  accept({id:'job'});assert.equal(await completed,1);assert.deepEqual(h.calls,['pause','send','cancel','suggest']);
 });
 test('strict filename gate cancels instead of opening browser Save As when application is offline',async()=>{
- const h=harness({filenameGate:true,exclusive:true,online:false});assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['pause','send','cancel','suggest']);
+ const h=harness({filenameGate:true,exclusive:true,online:false});assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['pause','cancel','suggest']);
 });
 test('filename gate permits browser fallback only when explicitly enabled',async()=>{
- const h=harness({filenameGate:true,exclusive:false,online:false});await filenameGate(h);assert.deepEqual(h.calls,['pause','send','resume','suggest']);
+ const h=harness({filenameGate:true,exclusive:false,online:false});await filenameGate(h);assert.deepEqual(h.calls,['pause','resume','suggest']);
 });
 test('disabled capture releases filename determination exactly once',async()=>{
  const h=harness({filenameGate:true,capture:false});assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['suggest']);
@@ -174,7 +206,7 @@ test('Google Drive generic download endpoints are intercepted before navigation'
  const h=pageHarness();const click=await h.click('https://drive.google.com.evil.example/download?id=file-123');assert.equal(click.defaultPrevented,false);
 });
 test('strict legacy download capture cancels instead of resuming on failure',async()=>{
- const h=harness({exclusive:true,online:false});await h.context.captureDownload(filenameItem());assert.deepEqual(h.calls,['pause','send','cancel']);
+ const h=harness({exclusive:true,online:false});await h.context.captureDownload(filenameItem());assert.deepEqual(h.calls,['pause','cancel']);
 });
 test('filename determination is released even if settings cannot be read',async()=>{
  const h=harness({filenameGate:true});h.bridge.storage.local.get=async()=>{throw Error('storage unavailable');};assert.equal(await filenameGate(h),1);assert.deepEqual(h.calls,['suggest']);
@@ -183,7 +215,7 @@ test('strict handoff failure never bypasses the filename gate on a later downloa
  const h=harness({filenameGate:true,exclusive:true,online:false});
  const url='https://files.example/file.zip';
  const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'capture-link',url,requestId:'retry-001'},{tab:{id:1}},resolve));
- assert.ok(result.error);await filenameGate(h);assert.deepEqual(h.calls,['send','pause','send','cancel','suggest']);
+ assert.ok(result.error);await filenameGate(h);assert.deepEqual(h.calls,['pause','cancel','suggest']);
 });
 test('strict mode without a connection token cancels instead of opening browser Save As',async()=>{
  const h=harness({filenameGate:true,exclusive:true,token:''});await filenameGate(h);assert.deepEqual(h.calls,['cancel','suggest']);
@@ -194,7 +226,7 @@ test('managed extension reloads only matching completed newer files and waits fo
  h.context.chrome.runtime.getURL=name=>'chrome-extension://test/'+name;
  h.context.chrome.runtime.getManifest=()=>({version:'1.9.5'});
  h.context.chrome.runtime.reload=()=>reloads++;
- h.context.fetch=async url=>({ok:true,json:async()=>url.endsWith('managed.json')?{managed,version}:url.endsWith('/api/info')?{version}:{version:manifestVersion}});
+ h.context.fetch=async url=>({ok:true,json:async()=>url.endsWith('/api/discovery')?{application:'DownloadNow',protocol:1,port:Number(new URL(url).port),version}:url.endsWith('managed.json')?{managed,version}:url.endsWith('/api/info')?{version}:{version:manifestVersion}});
  managed=false;assert.equal(await h.context.reloadManagedExtension(),false);
  managed=true;manifestVersion='1.9.5';assert.equal(await h.context.reloadManagedExtension(),false);
  manifestVersion='2.0.0';vm.runInContext("inFlight.set('pending',{})",h.context);assert.equal(await h.context.reloadManagedExtension(),false);

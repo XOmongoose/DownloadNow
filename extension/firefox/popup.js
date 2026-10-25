@@ -24,8 +24,12 @@ document.querySelector('#extension-update-download').onclick=async()=>{
 };
 readExtensionUpdate();
 document.querySelector('#connect').onclick=async()=>{
- await bridge.tabs.create({url:'http://127.0.0.1:8765/'});
- status.textContent='Trang ứng dụng sẽ tự ghép nối. Nếu chưa mở được trang, hãy chạy DownloadNow.exe.';
+ try{
+  const result=await bridge.runtime.sendMessage({type:'application-info'});
+  if(result.error)throw Error(result.error);
+  await bridge.tabs.create({url:result.base+'/'});
+  status.textContent='Đã tìm thấy ứng dụng. Trang vừa mở sẽ tự ghép nối.';
+ }catch(error){status.textContent=error.message;}
 };
 function state(){document.querySelector('#capture-state').textContent=capture.checked?'● Tự bắt tải: BẬT':'○ Tự bắt tải: TẮT';}
 bridge.storage.local.get(['token','capture','intercept','lastError','lastStatus']).then(data=>{document.querySelector('#token').value=data.token||'';capture.checked=data.capture!==false;intercept.checked=!!data.intercept;status.textContent=data.lastError||data.lastStatus||'Ghép nối để bắt đầu bắt tải.';state();});
@@ -42,7 +46,7 @@ intercept.onchange=async()=>{
  }catch(e){status.textContent=e.message;}
 };
 document.querySelector('#check').onclick=async()=>{
- try{const r=await fetch('http://127.0.0.1:8765/api/info',{headers:{Authorization:'Bearer '+document.querySelector('#token').value.trim()},signal:AbortSignal.timeout(4000)});if(!r.ok)throw Error(r.status===401?'Mã kết nối sai. Hãy sao chép lại từ ứng dụng.':r.status===404?'Cần mở ứng dụng v1.5.0 trở lên.':'Không thể kết nối.');const info=await r.json();status.textContent='Đã kết nối ứng dụng v'+info.version+'. Lưu mã trước khi bắt tải.';}
+ try{const result=await bridge.runtime.sendMessage({type:'application-info',token:document.querySelector('#token').value.trim()});if(result.error)throw Error(result.error);status.textContent='Đã kết nối ứng dụng v'+result.info.version+' · '+result.base+'. Lưu mã trước khi bắt tải.';}
  catch(e){status.textContent='Chưa kết nối: '+e.message;}
 };
 document.querySelector('#send').onclick=async()=>{const button=document.querySelector('#send');button.disabled=true;status.textContent='Chọn nơi lưu trong hộp thoại Windows…';try{const r=await bridge.runtime.sendMessage({type:'send',url:document.querySelector('#url').value.trim()});status.textContent=r.error||(r.cancelled?'Đã hủy tải.':'Đã thêm vào hàng đợi.');}catch(e){status.textContent=e.message;}finally{button.disabled=false;}};
