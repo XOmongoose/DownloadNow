@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.12.1",
+      "date": "2026-10-25",
+      "title": "Dung lượng tệp trong cửa sổ tải xuống",
+      "changes": [
+        "Căn giữa tiêu đề Thông tin tải xuống và dòng hướng dẫn trong cửa sổ chọn nơi lưu.",
+        "Hiển thị dung lượng tệp dưới tên tệp; đọc tổng dung lượng từ máy chủ, không nhầm một byte của phản hồi phân đoạn thành kích thước tệp.",
+        "Kiểm tra dung lượng ở nền để không chặn chọn thư mục hoặc bắt đầu tải; ghi rõ Chưa xác định hoặc ước tính khi cần."
+      ]
+    },
+    {
       "version": "1.12.0",
       "date": "2026-10-25",
       "title": "Tự chọn cổng trống và tìm đúng ứng dụng",

@@ -17,7 +17,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from media import is_video_page, video_name, download_video, VideoStopped
+from media import is_video_page, video_name, video_size, download_video, VideoStopped
 import google_drive
 import http.cookiejar
 from datetime import datetime
@@ -85,6 +85,22 @@ class Changed(Exception):
 
 
 class Manager:
+    def resolve_download_size(self,url):
+        """Read metadata only; a partial response's Content-Length is not file size."""
+        valid_url(url)
+        if is_video_page(url):return video_size(url)
+        with self._request({'url':url},{'Range':'bytes=0-0'}) as response:
+            mime=response.headers.get('Content-Type','').split(';',1)[0].lower()
+            disposition=response.headers.get('Content-Disposition','').lower()
+            if mime in ('text/html','application/xhtml+xml') and 'attachment' not in disposition:return None
+            if response.status==206:
+                match=re.fullmatch(r'bytes 0-0/(\d+)',response.headers.get('Content-Range',''))
+                return {'bytes':int(match[1]),'estimated':False} if match else None
+            length=response.headers.get('Content-Length','')
+            if response.status==200 and re.fullmatch(r'\d+',length):
+                return {'bytes':int(length),'estimated':False}
+        return None
+
     def resolve_download_name(self, url, supplied='', automatic=False):
         """Resolve endpoint URLs before a Save dialog makes its name explicit."""
         if is_video_page(url):

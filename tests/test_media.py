@@ -7,10 +7,16 @@ import unittest
 from unittest.mock import patch
 
 from engine import Manager
-from media import is_video_page, VideoStopped, download_video
+from media import is_video_page, VideoStopped, download_video, media_size
 
 
 class MediaTests(unittest.TestCase):
+    def test_selected_video_and_audio_sizes_are_combined_as_estimate(self):
+        self.assertEqual(media_size({'requested_formats':[{'filesize':1000},{'filesize_approx':200}]}),{'bytes':1200,'estimated':True})
+
+    def test_unknown_audio_size_is_not_displayed_as_complete_size(self):
+        self.assertIsNone(media_size({'requested_formats':[{'filesize':1000},{}]}))
+
     def setUp(self):
         root=Path(__file__).resolve().parents[1]/'data/test-runs';root.mkdir(parents=True,exist_ok=True)
         self.temp=tempfile.TemporaryDirectory(dir=root)

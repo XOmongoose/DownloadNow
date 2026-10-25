@@ -88,7 +88,8 @@ class SavePrompts:
                 name = self.manager.resolve_download_name(data['url'], data.get('name', ''), automatic)
                 if self.chooser is None:
                     from download_window import download_details
-                    selected = download_details(name,directory,data['url'],self.preferences.get()['remember_save_dir'])
+                    selected = download_details(name,directory,data['url'],self.preferences.get()['remember_save_dir'],
+                                                size_loader=lambda:self.manager.resolve_download_size(data['url']))
                 else:
                     selected = self.chooser(name,directory)
             remember = self.preferences.get()['remember_save_dir']

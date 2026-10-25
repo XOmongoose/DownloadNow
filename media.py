@@ -43,13 +43,38 @@ def process_options():
                 env={**os.environ,'PYINSTALLER_RESET_ENVIRONMENT':'1'})
 
 
-def video_name(url):
+def video_info(url):
     result=subprocess.run(command(url)+['--skip-download','--dump-single-json','--',url],
                           capture_output=True,timeout=100,**process_options())
     if result.returncode:raise ValueError(video_error(result.stderr,url))
     info=json.loads(result.stdout)
     if info.get('_type') in ('playlist','multi_video'):raise ValueError('Hãy dùng liên kết của một video cụ thể.')
+    return info
+
+
+def video_name(url):
+    info=video_info(url)
     return str(info.get('title') or info.get('id') or 'Video')[:150]+'.mp4'
+
+
+def media_size(info):
+    size=info.get('filesize')
+    if isinstance(size,int) and not isinstance(size,bool) and size>=0:
+        return {'bytes':size,'estimated':False}
+    parts=info.get('requested_formats') or info.get('requested_downloads')
+    if isinstance(parts,list) and parts:
+        sizes=[media_size(part) for part in parts if isinstance(part,dict)]
+        if len(sizes)==len(parts) and all(value is not None for value in sizes):
+            # Muxed output includes container overhead, so combined streams are an estimate.
+            return {'bytes':sum(value['bytes'] for value in sizes),'estimated':True}
+    size=info.get('filesize_approx')
+    if isinstance(size,(int,float)) and not isinstance(size,bool) and size>=0:
+        return {'bytes':int(size),'estimated':True}
+    return None
+
+
+def video_size(url):
+    return media_size(video_info(url))
 
 
 def video_error(message,url=''):

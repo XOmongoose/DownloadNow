@@ -379,6 +379,28 @@ class CoreTests(fixtures.DownloadTests):
                 self.manager.capture(self.url+'/private', request_id='capture-0002')
         self.assertEqual(self.manager.jobs, {})
 
+    def test_size_probe_uses_full_range_total_not_one_byte_length(self):
+        response=self.capture_response()
+        response.status=206
+        response.headers={'Content-Type':'application/zip','Content-Length':'1','Content-Range':'bytes 0-0/681868631'}
+        with patch.object(self.manager,'_request',return_value=response):
+            self.assertEqual(self.manager.resolve_download_size(self.url+'/file.zip'),{'bytes':681868631,'estimated':False})
+        response.read.assert_not_called()
+        self.assertFalse(self.manager.jobs)
+
+    def test_size_probe_accepts_full_length_and_empty_file(self):
+        for amount in (0,123456):
+            response=self.capture_response();response.status=200
+            response.headers={'Content-Type':'application/zip','Content-Length':str(amount)}
+            with patch.object(self.manager,'_request',return_value=response):
+                self.assertEqual(self.manager.resolve_download_size(self.url+'/file.zip')['bytes'],amount)
+
+    def test_size_probe_does_not_mistake_html_or_partial_length_for_file_size(self):
+        for status,headers in ((200,{'Content-Type':'text/html','Content-Length':'350'}),(206,{'Content-Type':'application/zip','Content-Length':'1'})):
+            response=self.capture_response();response.status=status;response.headers=headers
+            with patch.object(self.manager,'_request',return_value=response):
+                self.assertIsNone(self.manager.resolve_download_size(self.url+'/file.zip'))
+
     def test_capture_network_failure_does_not_enqueue(self):
         with patch('engine.urllib.request.urlopen', side_effect=OSError('Network unavailable')):
             with self.assertRaisesRegex(ValueError, 'Trình duyệt'):
