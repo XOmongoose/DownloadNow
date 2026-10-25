@@ -27,6 +27,9 @@ APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False
 class LocalHTTPServer(ThreadingHTTPServer):
     allow_reuse_address = False
     allow_reuse_port = False
+    # Browser polling, discovery and save-ticket requests can arrive together.
+    # Keep them queued instead of refusing short bursts while a worker starts.
+    request_queue_size = 64
 
     def server_bind(self):
         if sys.platform=='win32':

@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.13.2",
+      "date": "2026-10-25",
+      "title": "Ổn định thao tác dừng tải và kết nối giao diện",
+      "changes": [
+        "Tự thử lại tối đa ba lần khi đọc trạng thái hoặc gửi lệnh Dừng/Hủy gặp lỗi kết nối tạm thời; có giới hạn thời gian chờ và thông báo tiếng Việt.",
+        "Giữ các nút thao tác ở trạng thái chờ xuyên suốt những lần làm mới danh sách, phản hồi ngay khi đang gửi lệnh và khi ứng dụng đã nhận lệnh.",
+        "Tiện ích tự gửi lại yêu cầu bắt link khi mất phản hồi, dùng nguyên mã chuyển tải để nhận lại cùng hộp lưu hoặc lượt tải, không tạo trùng.",
+        "Tăng hàng đợi kết nối cục bộ cho các yêu cầu đồng thời từ giao diện và tiện ích. Không tự gửi lại lệnh thêm lượt tải, tiếp tục, xóa hoặc cài cập nhật để tránh thao tác trùng."
+      ]
+    },
+    {
       "version": "1.13.1",
       "date": "2026-10-25",
       "title": "Luôn hiển thị thanh tiến độ cập nhật",

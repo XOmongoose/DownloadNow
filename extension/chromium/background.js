@@ -195,10 +195,18 @@ async function send(url,name='',requestId=crypto.randomUUID(),automatic=false) {
  if(!token)throw Error('Chưa ghép nối: dán mã kết nối trong tiện ích rồi nhấn Lưu.');
  const base=await applicationBase();
  let response;
+ const attempts=automatic&&requestId?3:1;
+ for(let attempt=0;attempt<attempts;attempt++){
  try{response=await fetch(base+'/api/'+(automatic?'capture':'jobs'),{
   method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
   body:JSON.stringify({url,ask_save:true,...(name?{name}:{}),...(automatic?{request_id:requestId}:{})}),signal:AbortSignal.timeout(12000)
- });}catch(error){throw Error('Không kết nối được Download Now. Hãy mở ứng dụng rồi thử lại.');}
+ });break;}catch(error){
+  // The same capture request_id returns the existing save ticket/job.
+  // Requests without that deduplication key must never be repeated.
+  if(attempt+1<attempts){await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)));continue;}
+  throw Error('Không kết nối được Download Now. Hãy mở ứng dụng rồi thử lại.');
+ }
+ }
  let data=await response.json();
  if(!response.ok)throw Error(response.status===404?'Cần nâng cấp ứng dụng lên v1.5.0 để chọn nơi lưu.':data.error||'Không thể gửi liên kết.');
  if(data.prompt_id){

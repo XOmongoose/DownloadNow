@@ -34,3 +34,29 @@ test('verification and ready show 100 percent',()=>{
   assert.equal($('#update-progress').value,100);assert.match($('#update-percent').textContent,/100%/);
  }
 });
+function apiHarness(fetch){
+ const source=fs.readFileSync('web/app.js','utf8');
+ const start=source.indexOf('async function api('),end=source.indexOf('async function waitSavePrompt(',start);
+ const context={fetch,token:'test-token',AbortSignal, setTimeout:fn=>{fn();}};
+ vm.createContext(context);vm.runInContext(source.slice(start,end),context);return context.api;
+}
+test('pause recovers a lost response without changing the command',async()=>{
+ const calls=[];
+ const api=apiHarness(async(path,options)=>{calls.push(JSON.parse(options.body));if(calls.length===1)throw TypeError('Failed to fetch');return {ok:true,json:async()=>({ok:true})};});
+ await api('action',{id:'job',action:'pause'});
+ assert.deepEqual(calls,[{id:'job',action:'pause'},{id:'job',action:'pause'}]);
+});
+test('failed add and resume are never resent',async()=>{
+ for(const [path,data] of [['jobs',{url:'https://example.com/file'}],['action',{id:'job',action:'resume'}]]){
+  let calls=0;const api=apiHarness(async()=>{calls++;throw TypeError('Failed to fetch');});
+  await assert.rejects(api(path,data),/Chưa xác nhận/);assert.equal(calls,1);
+ }
+});
+test('application errors are not retried',async()=>{
+ let calls=0;const api=apiHarness(async()=>{calls++;return {ok:false,json:async()=>({error:'Lượt tải đã hủy'})};});
+ await assert.rejects(api('action',{id:'job',action:'pause'}),/Lượt tải đã hủy/);assert.equal(calls,1);
+});
+test('status reconnects but repeated failures are bounded',async()=>{
+ let calls=0;const api=apiHarness(async()=>{calls++;throw TypeError('Failed to fetch');});
+ await assert.rejects(api('jobs'),/Tạm mất kết nối/);assert.equal(calls,3);
+});

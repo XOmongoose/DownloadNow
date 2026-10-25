@@ -32,6 +32,21 @@ test('unreachable application reports a useful connection error',async()=>{
  const h=harness({online:false});
  await assert.rejects(h.context.send('https://youtube.com/shorts/3LPWhCK537I','','video-request-002',true),/Hãy mở ứng dụng/);
 });
+test('lost capture response retries exactly the same deduplicated save ticket',async()=>{
+ const h=harness({promptOutcome:'accepted'}),original=h.context.fetch,bodies=[];
+ h.context.fetch=async(url,options)=>{
+  if(url.endsWith('/api/capture')){bodies.push(options.body);if(bodies.length===1)throw TypeError('Failed to fetch');}
+  return original(url,options);
+ };
+ const result=await h.context.send('https://files.example/file.zip','file.zip','stable-request-123',true);
+ assert.equal(result.id,'job-1');assert.equal(bodies.length,2);assert.equal(bodies[0],bodies[1]);
+});
+test('manual handoff without a deduplication key is not retried',async()=>{
+ const h=harness(),original=h.context.fetch;let count=0;
+ h.context.fetch=async(url,options)=>{if(url.endsWith('/api/jobs')){count++;throw TypeError('Failed to fetch');}return original(url,options);};
+ await assert.rejects(h.context.send('https://files.example/file.zip'),/Không kết nối/);
+ assert.equal(count,1);
+});
 function pair(h,url='http://127.0.0.1:8765/',frameId=0){return new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'pair-app',token:'new-valid-connection-token-12345'},{tab:{id:1},url,frameId},resolve));}
 
 test('discovery skips other software without sending its server a token or download URL',async()=>{

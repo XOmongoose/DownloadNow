@@ -82,7 +82,23 @@ let jobs = [], filter = 'all', noticeTimer;
 const active = j => ['probing','downloading','pausing','cancelling'].includes(j.status);
 function bytes(n) {if (!n) return '0 B';const k=Math.min(4,Math.floor(Math.log(n)/Math.log(1024)));return `${(n/1024**k).toFixed(k?1:0)} ${['B','KB','MB','GB','TB'][k]}`;}
 function notice(message) {$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('#toast').hidden=true,5000);}
-async function api(path, data) {const r=await fetch('/api/'+path,{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(data?{body:JSON.stringify(data)}:{})});const value=await r.json();if(!r.ok) throw Error(value.error||'Không thể kết nối.');return value;}
+async function api(path, data) {
+ // Only reads and idempotent stop/cancel commands may be sent again after a
+ // lost response. Never repeat add, resume, delete, or install requests.
+ const retryable=!data||path==='action'&&['pause','cancel'].includes(data.action);
+ for(let attempt=0;attempt<(retryable?3:1);attempt++){
+  let r,value;
+  try{
+   r=await fetch('/api/'+path,{method:data?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},signal:AbortSignal.timeout(6000),...(data?{body:JSON.stringify(data)}:{})});
+   value=await r.json();
+  }catch(error){
+   if(retryable&&attempt<2){await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));continue;}
+   throw Error(data?'Chưa xác nhận được thao tác vì mất kết nối. Ứng dụng đang thử kết nối lại; kiểm tra trạng thái lượt tải trước khi thao tác tiếp.':'Tạm mất kết nối với Download Now. Đang thử lại…');
+  }
+  if(!r.ok)throw Error(value.error||'Không thể thực hiện thao tác.');
+  return value;
+ }
+}
 async function waitSavePrompt(result){
  if(!result.prompt_id)return result;
  notice('Chọn nơi lưu trong hộp thoại Windows đang mở…');
@@ -96,9 +112,18 @@ async function waitSavePrompt(result){
 }
 function text(tag, value, className) {const e=document.createElement(tag);e.textContent=value;if(className)e.className=className;return e;}
 function choose(value) {filter=value;document.querySelectorAll('[data-filter]').forEach(e=>e.classList.toggle('active',e.dataset.filter===value));document.querySelectorAll('[data-tab]').forEach(e=>e.classList.toggle('active',e.dataset.tab===value));render();}
+const pendingActions=new Map();
 function actionButton(job,label,symbol,operation,disabled=false){
  const button=text('button',label,'row-action labeled-action');button.prepend(icon(symbol));button.title=label+' · '+job.name;button.setAttribute('aria-label',button.title);button.disabled=disabled;
- button.onclick=async()=>{button.disabled=true;try{await api('action',{id:job.id,action:operation});await refresh();}catch(e){notice(e.message);button.disabled=false;}};
+ if(pendingActions.has(job.id))button.disabled=true;
+ button.onclick=async()=>{
+  if(pendingActions.has(job.id))return;
+  pendingActions.set(job.id,operation);button.disabled=true;
+  notice(operation==='pause'?'Đang gửi lệnh dừng tải…':operation==='cancel'?'Đang gửi lệnh hủy tải…':'Đang tiếp tục tải…');
+  try{await api('action',{id:job.id,action:operation});notice(operation==='pause'?'Đã nhận lệnh dừng; đang lưu phần đã tải.':operation==='cancel'?'Đã nhận lệnh hủy tải.':'Đã nhận lệnh tiếp tục tải.');}
+  catch(e){notice(e.message);}
+  finally{pendingActions.delete(job.id);await refresh();button.disabled=false;}
+ };
  return button;
 }
 let historyIds=[];
