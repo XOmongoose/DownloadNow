@@ -201,21 +201,22 @@ api('storage').then(data=>{$('#storage-path').textContent='Lưu tại '+data.dir
 let updateState={},updateOpening=false,serverVersion=null;
 function renderUpdateProgress(s){
  const panel=$('#update-progress-panel'),bar=$('#update-progress');
- panel.hidden=!['downloading','verifying','importing','ready','installing'].includes(s.state)&&!(s.state==='error'&&s.bytes>0);
- if(panel.hidden)return;
+ panel.hidden=false;
  const known=Number.isFinite(s.total_bytes)&&s.total_bytes>0;
  const amount=Math.max(0,Number(s.bytes)||0);
  const percentage=known?Math.min(100,amount/s.total_bytes*100):null;
- if(s.state==='downloading'&&percentage!==null){bar.value=percentage;$('#update-percent').textContent=Math.floor(percentage)+'%';}
- else if(['verifying','ready'].includes(s.state)){bar.value=100;$('#update-percent').textContent='Đã tải xong';}
+ const waiting=['idle','unconfigured','available','up_to_date'].includes(s.state);
+ if(waiting){bar.value=0;$('#update-percent').textContent='0%';}
+ else if(s.state==='downloading'&&percentage!==null){bar.value=percentage;$('#update-percent').textContent=Math.floor(percentage)+'%';}
+ else if(['verifying','ready'].includes(s.state)){bar.value=100;$('#update-percent').textContent='100% · Đã tải xong';}
  else if(s.state==='error'){bar.value=percentage||0;$('#update-percent').textContent='Tải bị gián đoạn';}
- else{bar.removeAttribute('value');$('#update-percent').textContent=s.state==='installing'?'Đang cài…':'Đang tải…';}
+ else{bar.removeAttribute('value');$('#update-percent').textContent=s.state==='installing'?'Đang cài…':s.state==='checking'?'Đang kiểm tra…':'Đang tải…';}
  const phase=s.state==='downloading'?'download':s.state==='installing'?'install':'verify';
- $('#update-phase').textContent=s.state==='downloading'?'Tải ứng dụng và tiện ích':s.state==='installing'?'Chờ ứng dụng mở lại':s.state==='ready'?'Gói đã xác minh, chờ cài đặt':s.state==='error'?'Chưa hoàn tất':`Đang xác minh${s.total_files?' · '+(s.verified_files||0)+'/'+s.total_files+' tệp':''}`;
- $('#update-transfer').textContent=amount?bytes(amount)+(known?' / '+bytes(s.total_bytes):'')+(s.state==='downloading'&&s.speed>0?' · '+bytes(s.speed)+'/s':'')+(s.state==='downloading'&&Number.isFinite(s.eta)&&s.eta>0?' · Còn khoảng '+Math.ceil(s.eta)+' giây':''):s.state==='downloading'?'Đang kết nối với máy chủ cập nhật…':'';
+ $('#update-phase').textContent=waiting?'Chưa bắt đầu tải':s.state==='checking'?'Đang tìm phiên bản mới':s.state==='downloading'?'Tải ứng dụng và tiện ích':s.state==='installing'?'Chờ ứng dụng mở lại':s.state==='ready'?'Gói đã xác minh, chờ cài đặt':s.state==='error'?'Chưa hoàn tất':`Đang xác minh${s.total_files?' · '+(s.verified_files||0)+'/'+s.total_files+' tệp':''}`;
+ $('#update-transfer').textContent=waiting?'Thanh tiến độ sẽ chạy sau khi bạn đồng ý tải bản cập nhật.':amount?bytes(amount)+(known?' / '+bytes(s.total_bytes):' · Máy chủ chưa cung cấp tổng dung lượng')+(s.state==='downloading'&&s.speed>0?' · '+bytes(s.speed)+'/s':'')+(s.state==='downloading'&&Number.isFinite(s.eta)&&s.eta>0?' · Còn khoảng '+Math.ceil(s.eta)+' giây':''):s.state==='downloading'?'Đang kết nối với máy chủ cập nhật…':'';
  document.querySelectorAll('[data-update-step]').forEach(element=>{
   const stages=['download','verify','install'],index=stages.indexOf(element.dataset.updateStep),current=stages.indexOf(phase);
-  element.classList.toggle('step-current',index===current);element.classList.toggle('step-done',index<current||s.state==='ready'&&index<2);
+  element.classList.toggle('step-current',!waiting&&s.state!=='checking'&&index===current);element.classList.toggle('step-done',!waiting&&s.state!=='checking'&&(index<current||s.state==='ready'&&index<2));
  });
 }
 const updateLabels={idle:'Sẵn sàng kiểm tra cập nhật.',unconfigured:'Chưa cấu hình nguồn cập nhật trong tùy chọn nâng cao.',checking:'Đang kiểm tra phiên bản…',available:'Có phiên bản mới. Bạn có muốn cập nhật không?',up_to_date:'Bạn đang dùng phiên bản mới nhất.',downloading:'Đang tải gói cập nhật…',verifying:'Đang xác minh gói cập nhật…',importing:'Đang chuẩn bị gói…',ready:'Đã xác minh gói cập nhật.',installing:'Đang cài cập nhật. Ứng dụng sẽ tự mở lại.',error:'Không thể cập nhật.'};
@@ -235,7 +236,15 @@ $('#update-open').onclick=async()=>{if(updateOpening)return;updateOpening=true;$
 $('#settings-form').onsubmit=async e=>{e.preventDefault();try{await saveSettings();notice('Đã lưu tùy chọn.');}catch(error){notice(error.message);}};
 $('#update-confirm').onclick=async()=>{const button=$('#update-confirm');button.disabled=true;try{await api('update/accept',{version:updateState.version});await readUpdateStatus();}catch(e){notice(e.message);}finally{button.disabled=false;}};
 $('#extension-folder').onclick=async()=>{try{const result=await api('extension/open-folder',{});$('#extension-folder-status').textContent='Nạp thư mục này một lần trong trình duyệt: '+result.path;}catch(e){notice(e.message);}};
-async function pollUpdates(){await readUpdateStatus();setTimeout(pollUpdates,$('#update-dialog').open?1500:10000);}pollUpdates();
+// A fixed tick notices an opened dialog immediately, even if the previous
+// background poll scheduled a ten-second delay. Never overlap status requests.
+let updatePollBusy=false,updatePolledAt=0;
+async function pollUpdates(){
+ if(updatePollBusy||!$('#update-dialog').open&&Date.now()-updatePolledAt<10000)return;
+ updatePollBusy=true;
+ try{await readUpdateStatus();}finally{updatePolledAt=Date.now();updatePollBusy=false;}
+}
+setInterval(pollUpdates,750);pollUpdates();
 async function poll(){await refresh();setTimeout(poll,1200);}poll();
 
 if(new URLSearchParams(location.search).has("update"))$("#update-open").click();

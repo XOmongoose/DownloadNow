@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.13.1",
+      "date": "2026-10-25",
+      "title": "Luôn hiển thị thanh tiến độ cập nhật",
+      "changes": [
+        "Thanh tiến độ hiển thị ngay khi mở thông báo cập nhật, bắt đầu từ 0% trước khi đồng ý tải.",
+        "Cập nhật tiến độ mỗi 0,75 giây khi hộp thoại mở, không còn chờ chu kỳ nền 10 giây; hiển thị rõ 100% khi tải xong.",
+        "Phần trăm tính từ dung lượng thực. Khi máy chủ chưa cung cấp tổng dung lượng, thanh chạy chờ và thông báo rõ thay vì tạo phần trăm giả."
+      ]
+    },
+    {
       "version": "1.13.0",
       "date": "2026-10-25",
       "title": "Tiến độ cập nhật trực quan và tối ưu bộ đệm tải",
