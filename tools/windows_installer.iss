@@ -47,7 +47,7 @@ Source: "{#PackageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Icons]
 Name: "{group}\Download Now"; Filename: "{app}\DownloadNow.exe"; WorkingDir: "{app}"
 Name: "{group}\Browser extensions"; Filename: "{app}\extension"
-Name: "{group}\Installation guide"; Filename: "{app}\CAI-DAT.txt"
+Name: "{group}\Installation guide"; Filename: "{app}\HUONG-DAN.txt"
 Name: "{autodesktop}\Download Now"; Filename: "{app}\DownloadNow.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]

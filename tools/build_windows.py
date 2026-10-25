@@ -82,7 +82,6 @@ def main():
     (package/'extension/chromium/managed.json').write_text(json.dumps({'managed':True,'version':version}),encoding='utf-8')
     shutil.copy2(ROOT/'releases.json',package/'releases.json')
     shutil.copy2(ROOT/'README.md',package/'README.md')
-    shutil.copy2(ROOT/'INSTALLER.md',package/'INSTALLER.md')
     with (package/'README.md').open('a',encoding='utf-8') as notices:
         notices.write('\n\n## Bundled media tool notices and licenses\n')
         for license_file in sorted(media_runtime.glob('*.txt')):
@@ -113,7 +112,7 @@ Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
 130 kiem thu loi/cap nhat va 76 kiem thu mo phong tien ich da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
-    (package/'CAI-DAT.txt').write_text('''DOWNLOAD NOW - TAC GIA: XOmongoose
+    (package/'HUONG-DAN.txt').write_text((package/'HUONG-DAN.txt').read_text('utf-8-sig')+'\n\n'+'''DOWNLOAD NOW - TAC GIA: XOmongoose
 
 CAI TREN MAY KHAC (Windows 10/11 x64)
 1. Chep DownloadNow-Setup-VERSION-Windows-x64.exe sang may can cai.
