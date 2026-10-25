@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "1.13.5",
+      "date": "2026-10-26",
+      "title": "Canh giữa tiêu đề cửa sổ cập nhật",
+      "changes": [
+        "Canh giữa dòng Cập nhật ứng dụng & tiện ích; giữ nút đóng ở góc phải và chừa khoảng trống để không đè lên tiêu đề."
+      ]
+    },
+    {
       "version": "1.13.4",
       "date": "2026-10-26",
       "title": "Chỉ hiện tiến độ sau khi đồng ý cập nhật",
