@@ -24,6 +24,7 @@ from datetime import datetime
 
 CHUNK = 4 * 1024 * 1024
 BLOCK = 1024 * 1024
+MAX_ACTIVE_DOWNLOADS = 4
 
 
 def valid_url(url):
@@ -376,9 +377,9 @@ class Manager:
                     if not j.get('cancel_requested') and j['stop_at'] and now >= j['stop_at']:
                         j['status'] = 'pausing'
                         event.set()
-                # Queue at most two simultaneous files; eight connections per file.
+                # Keep a bounded file queue; each file retains its own workers.
                 for j in self.jobs.values():
-                    if len(self.running) >= 2:
+                    if len(self.running) >= MAX_ACTIVE_DOWNLOADS:
                         break
                     if j['status'] != 'queued' or j['id'] in self.running:
                         continue

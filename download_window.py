@@ -1,5 +1,6 @@
 """IDM-style desktop download details, implemented using standard Tk widgets."""
 from pathlib import Path
+import threading
 from engine import safe_name
 
 
@@ -15,7 +16,47 @@ def format_download_size(info):
     return 'Dung lượng tệp: '+amount+(f' ({exact})' if unit else '')
 
 
+_dialog_queue = None
+_dialog_thread = None
+_dialog_guard = threading.Lock()
+
+
+def _dialog_worker(tasks):
+    import gc
+    while True:
+        args, results = tasks.get()
+        try:
+            result = _download_details(*args)
+            error = None
+        except Exception as exception:
+            result, error = None, ValueError(str(exception))
+        # Tk variables/widgets must be finalized by their owning UI thread,
+        # before a downloader/scheduler thread can collect their reference cycles.
+        gc.collect()
+        results.put((result, error))
+        del args, results, result, error
+
+
 def download_details(name, directory, url, remember=True, size_loader=None):
+    """All native save windows share one long-lived Tk owner thread."""
+    import queue
+    import threading
+    global _dialog_queue, _dialog_thread
+    with _dialog_guard:
+        if _dialog_thread is None or not _dialog_thread.is_alive():
+            _dialog_queue = queue.Queue()
+            _dialog_thread = threading.Thread(target=_dialog_worker,args=(_dialog_queue,),daemon=True,name='DownloadNow-dialogs')
+            _dialog_thread.start()
+        tasks = _dialog_queue
+    results = queue.Queue(maxsize=1)
+    tasks.put(((name,directory,url,remember,size_loader),results))
+    result, error = results.get()
+    if error is not None:
+        raise error
+    return result
+
+
+def _download_details(name, directory, url, remember=True, size_loader=None):
     import tkinter as tk
     from tkinter import filedialog
     result = None
@@ -38,15 +79,15 @@ def download_details(name, directory, url, remember=True, size_loader=None):
     form = tk.Frame(root,bg='white',padx=22,pady=14)
     form.pack(fill='both',expand=True)
     form.columnconfigure(0,weight=1)
-    url_var, name_var, directory_var = tk.StringVar(value=url),tk.StringVar(value=name),tk.StringVar(value=str(directory))
-    remember_var = tk.BooleanVar(value=remember)
+    url_var, name_var, directory_var = tk.StringVar(master=root,value=url),tk.StringVar(master=root,value=name),tk.StringVar(master=root,value=str(directory))
+    remember_var = tk.BooleanVar(master=root,value=remember)
     def label(text,row):
         tk.Label(form,text=text,bg='white',fg='#657268').grid(row=row,column=0,columnspan=2,sticky='w',pady=(5,4))
     label('Địa chỉ tải xuống',0)
     tk.Entry(form,textvariable=url_var,state='readonly',readonlybackground='#F7F8F5',relief='solid',bd=1).grid(row=1,column=0,columnspan=2,sticky='ew',ipady=5)
     label('Tên tệp (lấy từ liên kết tải)',2)
     tk.Entry(form,textvariable=name_var,relief='solid',bd=1).grid(row=3,column=0,columnspan=2,sticky='ew',ipady=5)
-    size_var=tk.StringVar(value='Dung lượng tệp: Đang kiểm tra…' if size_loader else format_download_size(None))
+    size_var=tk.StringVar(master=root,value='Dung lượng tệp: Đang kiểm tra…' if size_loader else format_download_size(None))
     tk.Label(form,textvariable=size_var,bg='white',fg='#795800',font=('Segoe UI',10,'bold')).grid(row=4,column=0,columnspan=2,sticky='w',pady=(7,3))
     if size_loader:
         import queue,threading
@@ -67,7 +108,7 @@ def download_details(name, directory, url, remember=True, size_loader=None):
         if selected:directory_var.set(selected)
     tk.Button(form,text='Duyệt…',command=browse,bg='#FFF5D6',fg='#795800',relief='flat',padx=14,pady=4).grid(row=6,column=1,padx=(10,0))
     tk.Checkbutton(form,text='Ghi nhớ thư mục này cho lần tải sau',variable=remember_var,bg='white',activebackground='white',fg='#513E0A',selectcolor='#FFF5D6').grid(row=7,column=0,columnspan=2,sticky='w',pady=(10,0))
-    error = tk.StringVar()
+    error = tk.StringVar(master=root)
     tk.Label(form,textvariable=error,bg='white',fg='#B2553A',wraplength=660).grid(row=8,column=0,columnspan=2,sticky='w')
     footer = tk.Frame(root,bg='#F8F9F6',padx=22,pady=12)
     footer.pack(fill='x',side='bottom')

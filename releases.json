@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.13.3",
+      "date": "2026-10-26",
+      "title": "Tải nhiều tệp và nhận link liên tiếp không cần mở lại",
+      "changes": [
+        "Cho phép bốn tệp tải đồng thời, tối đa tám kết nối mỗi tệp. Các tệp chờ tự bắt đầu khi có chỗ trống.",
+        "Các hộp chọn nơi lưu dùng chung một luồng giao diện; dọn tài nguyên Tk trên đúng luồng sở hữu để tránh ảnh hưởng các luồng nhận link và tải nền khi mở nhiều hộp liên tiếp.",
+        "Bổ sung kiểm thử bốn tệp đang chạy, tệp thứ năm tự khởi động khi rảnh, hộp lưu liên tiếp cùng luồng và nhận link tiếp theo sau lỗi hộp thoại."
+      ]
+    },
+    {
       "version": "1.13.2",
       "date": "2026-10-25",
       "title": "Ổn định thao tác dừng tải và kết nối giao diện",

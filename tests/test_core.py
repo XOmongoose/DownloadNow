@@ -57,6 +57,34 @@ def request(manager, job, headers=None):
 
 
 class CoreTests(fixtures.DownloadTests):
+    def test_four_files_run_together_and_next_starts_without_restart(self):
+        from engine import MAX_ACTIVE_DOWNLOADS
+        self.assertEqual(MAX_ACTIVE_DOWNLOADS,4)
+        original=self.manager._segment
+        releases={}
+        started=set()
+        def segment(job,*args):
+            started.add(job['id'])
+            if not releases[job['id']].wait(8):raise TimeoutError('test gate timeout')
+            return original(job,*args)
+        with patch.object(self.manager,'_segment',side_effect=segment):
+            try:
+                with self.manager.lock:
+                    ids=[self.manager.add(self.url+f'/parallel-{i}.zip',connections=1) for i in range(5)]
+                    releases.update({ident:threading.Event() for ident in ids})
+                deadline=time.monotonic()+4
+                while len(started)<4 and time.monotonic()<deadline:time.sleep(.01)
+                self.assertEqual(started,set(ids[:4]))
+                self.assertEqual(self.manager.jobs[ids[4]]['status'],'queued')
+                releases[ids[0]].set()
+                self.verify(ids[0])
+                deadline=time.monotonic()+4
+                while ids[4] not in started and time.monotonic()<deadline:time.sleep(.01)
+                self.assertIn(ids[4],started)
+            finally:
+                for release in releases.values():release.set()
+                for ident in releases:self.verify(ident)
+
     @classmethod
     def setUpClass(cls):
         cls.url = 'http://fixture.invalid'
