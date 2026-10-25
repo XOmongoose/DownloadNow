@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.14.0",
+      "date": "2026-10-26",
+      "title": "Chọn tệp xem tốc độ riêng và đồng bộ ô thống kê",
+      "changes": [
+        "Bấm ô Đang tải xuống hoặc Đã hoàn tất để chọn cùng bộ lọc và tab bên dưới; ô tốc độ trở về Tất cả và tổng tốc độ.",
+        "Bấm tên hoặc dòng tệp để xem tốc độ hiện tại, biểu đồ và đỉnh tốc độ 60 giây của riêng tệp đó. Lựa chọn được giữ khi danh sách tự làm mới.",
+        "Tên tệp có hiệu ứng liên kết khi rê chuột; dòng đang chọn được tô nền. Các nút Dừng, Tiếp tục, Hủy và ô chọn lịch sử vẫn thực hiện thao tác riêng."
+      ]
+    },
+    {
       "version": "1.13.5",
       "date": "2026-10-26",
       "title": "Canh giữa tiêu đề cửa sổ cập nhật",

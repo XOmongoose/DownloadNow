@@ -111,7 +111,9 @@ async function waitSavePrompt(result){
  }
 }
 function text(tag, value, className) {const e=document.createElement(tag);e.textContent=value;if(className)e.className=className;return e;}
-function choose(value) {filter=value;document.querySelectorAll('[data-filter]').forEach(e=>e.classList.toggle('active',e.dataset.filter===value));document.querySelectorAll('[data-tab]').forEach(e=>e.classList.toggle('active',e.dataset.tab===value));render();}
+let selectedSpeedId=null;
+function choose(value) {filter=value;selectedSpeedId=null;document.querySelectorAll('[data-filter]').forEach(e=>e.classList.toggle('active',e.dataset.filter===value));document.querySelectorAll('[data-tab]').forEach(e=>e.classList.toggle('active',e.dataset.tab===value));render();}
+function selectSpeedFile(id){selectedSpeedId=id;render();}
 const pendingActions=new Map();
 function actionButton(job,label,symbol,operation,disabled=false){
  const button=text('button',label,'row-action labeled-action');button.prepend(icon(symbol));button.title=label+' · '+job.name;button.setAttribute('aria-label',button.title);button.disabled=disabled;
@@ -158,7 +160,7 @@ function render() {
  const counts={all:jobs.length,active:jobs.filter(active).length,queued:jobs.filter(j=>j.status==='queued').length,completed:jobs.filter(j=>j.status==='completed').length};
  Object.entries(counts).forEach(([k,v])=>$('#count-'+k).textContent=v);
  $('#tab-count').textContent=jobs.length;$('#stat-active').replaceChildren(document.createTextNode(counts.active+' '),text('small','tệp'));$('#stat-completed').replaceChildren(document.createTextNode(counts.completed+' '),text('small','tệp'));
- $('#stat-speed').textContent=bytes(jobs.reduce((s,j)=>s+j.speed,0))+'/s';$('#stat-bytes').textContent=bytes(jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+j.done,0))+' đã tải về';
+ renderSpeed();$('#stat-bytes').textContent=bytes(jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+j.done,0))+' đã tải về';
  const search=$('#search').value.toLocaleLowerCase('vi');const visible=jobs.filter(j=>(filter==='all'||(filter==='active'?active(j):j.status===filter))&&j.name.toLocaleLowerCase('vi').includes(search)).reverse();
  const selectable=visible.filter(canClearHistory),selectAll=$('#history-select-all');
  selectAll.disabled=!selectable.length;selectAll.checked=selectable.length>0&&selectable.every(j=>selectedHistory.has(j.id));selectAll.indeterminate=selectable.some(j=>selectedHistory.has(j.id))&&!selectAll.checked;
@@ -167,8 +169,10 @@ function render() {
  $('#list-summary').textContent=`${visible.length} / ${jobs.length} tệp trong không gian của bạn`;
  const rows=visible.map(j=>{
   const tr=document.createElement('tr'),td=document.createElement('td'),cell=text('div','','file-cell'),ext=j.name.includes('.')?j.name.split('.').pop().slice(0,4).toUpperCase():'FILE';
+  tr.classList.add('selectable-download');tr.classList.toggle('speed-selected',selectedSpeedId===j.id);
+  tr.onclick=event=>{if(!event.target.closest('button,input,a,label'))selectSpeedFile(j.id);};
   const selectCell=text('td','','history-select-cell'),checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.disabled=!canClearHistory(j);checkbox.checked=selectedHistory.has(j.id);checkbox.setAttribute('aria-label','Chọn lịch sử '+j.name);checkbox.onchange=()=>{if(checkbox.checked)selectedHistory.add(j.id);else selectedHistory.delete(j.id);render();};selectCell.append(checkbox);tr.append(selectCell);
-  cell.append(text('span',ext,'file-icon'));const info=text('div','');info.append(text('span',j.name,'file-name'));
+  cell.append(text('span',ext,'file-icon'));const info=text('div',''),nameButton=text('button',j.name,'file-name file-speed-link');nameButton.type='button';nameButton.title='Xem tốc độ của '+j.name;nameButton.setAttribute('aria-pressed',String(selectedSpeedId===j.id));nameButton.onclick=()=>selectSpeedFile(j.id);info.append(nameButton);
   const pct=j.total?Math.min(100,j.done/j.total*100):(j.status==='completed'?100:0);
   let meta=`${bytes(j.done)} · ${pct.toFixed(0)}%`;
   if(j.status==='queued'&&j.start_at)meta='◷ '+new Date(j.start_at*1000).toLocaleString('vi-VN');
@@ -197,16 +201,26 @@ function render() {
 }
 const speedSamples=[];
 function sampleSpeed(){
- const now=Date.now(),speed=jobs.reduce((sum,j)=>sum+(Number.isFinite(j.speed)?Math.max(0,j.speed):0),0);
- speedSamples.push({at:now,value:speed});while(speedSamples.length&&speedSamples[0].at<now-60000)speedSamples.shift();
- const actualPeak=Math.max(0,...speedSamples.map(s=>s.value)),peak=Math.max(1,actualPeak);
- const points=speedSamples.map(s=>[Math.max(0,320*(1-(now-s.at)/60000)),72-60*s.value/peak]);
+ const now=Date.now(),byId=Object.fromEntries(jobs.map(j=>[j.id,Number.isFinite(j.speed)?Math.max(0,j.speed):0]));
+ speedSamples.push({at:now,value:Object.values(byId).reduce((sum,speed)=>sum+speed,0),byId});while(speedSamples.length&&speedSamples[0].at<now-60000)speedSamples.shift();
+}
+function renderSpeed(){
+ const selected=jobs.find(j=>j.id===selectedSpeedId);
+ if(!selected)selectedSpeedId=null;
+ const speed=selected?Math.max(0,Number(selected.speed)||0):jobs.reduce((sum,j)=>sum+(Number.isFinite(j.speed)?Math.max(0,j.speed):0),0);
+ $('#stat-speed').textContent=bytes(speed)+'/s';
+ $('#speed-description').textContent=selected?'Tệp: '+selected.name:'Tổng tốc độ các tệp đang tải';$('#speed-description').title=selected?selected.name:'';
+ document.querySelectorAll('.stats [data-filter]').forEach(card=>{const pressed=card.dataset.filter===filter&&!(card.dataset.filter==='all'&&selected);card.classList.toggle('active',pressed);card.setAttribute('aria-pressed',String(pressed));});
+ const now=Date.now(),samples=speedSamples.filter(s=>!selected||Object.hasOwn(s.byId,selected.id)).map(s=>({at:s.at,value:selected?s.byId[selected.id]:s.value}));
+ const actualPeak=Math.max(0,...samples.map(s=>s.value)),peak=Math.max(1,actualPeak);
+ const points=samples.map(s=>[Math.max(0,320*(1-(now-s.at)/60000)),72-60*s.value/peak]);
  const line=points.map((p,i)=>(i?'L':'M')+p.map(x=>x.toFixed(2)).join(' ')).join(' ');
  $('#speed-line').setAttribute('d',line||'M0 72H320');
  $('#speed-area').setAttribute('d',points.length?'M'+points[0][0].toFixed(2)+' 72 '+line.replace(/^M/,'L')+' L320 72Z':'M0 72H320Z');
  $('#speed-peak').textContent='Đỉnh '+bytes(actualPeak)+'/s';
- $('#speed-live').textContent=jobs.some(j=>j.status==='downloading')?'● Trực tiếp':'Đang chờ tải';
- $('#speed-live').classList.toggle('is-live',jobs.some(j=>j.status==='downloading'));
+ const live=selected?selected.status==='downloading':jobs.some(j=>j.status==='downloading');
+ $('#speed-live').textContent=live?'● Trực tiếp':selected?(labels[selected.status]||'Đang chờ tải'):'Đang chờ tải';
+ $('#speed-live').classList.toggle('is-live',live);
  $('#speed-chart').setAttribute('aria-label','Tốc độ hiện tại '+bytes(speed)+'/s, đỉnh '+bytes(actualPeak)+'/s trong 60 giây gần nhất');
 }
 async function refresh(){try{jobs=await api('jobs');$('#connection-state').textContent='Đã kết nối · cổng '+location.port;sampleSpeed();render();}catch(e){$('#connection-state').textContent='Mất kết nối · đang thử lại';$('#speed-live').textContent='Mất kết nối';}}
@@ -218,6 +232,7 @@ $('#history-scope-all').onchange=updateHistorySummary;
 $('#history-delete-files').onchange=updateHistorySummary;
 $('#history-confirm').onclick=async()=>{const button=$('#history-confirm'),deleteFiles=$('#history-delete-files').checked;button.disabled=true;try{const result=await api('history/clear',{ids:historyIds,delete_files:deleteFiles});$('#history-dialog').close();await refresh();notice('Đã xóa '+result.removed+' mục.'+(deleteFiles?' Đã xóa tệp tương ứng trên máy.':' Tệp trên máy được giữ lại.'));}catch(e){$('#history-dialog').close();await refresh();notice(e.message);}finally{button.disabled=false;}};
 document.querySelectorAll('.close-dialog').forEach(e=>e.onclick=()=>e.closest('dialog').close());document.querySelectorAll('[data-filter]').forEach(e=>e.onclick=()=>choose(e.dataset.filter));document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>choose(e.dataset.tab));$('#search').oninput=render;
+document.querySelectorAll('.stats [data-filter]').forEach(card=>card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose(card.dataset.filter);}});
 $('#add-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector('[type="submit"]');b.disabled=true;$('#form-error').textContent='';try{const data=Object.fromEntries(new FormData(form));data.ask_save=true;data.connections=Number(data.connections);for(const field of ['start_at','stop_at'])data[field]=data[field]?new Date(data[field]).toISOString():null;const result=await waitSavePrompt(await api('jobs',data));if(result.state==='cancelled'){notice('Đã hủy chọn nơi lưu. Chưa tạo lượt tải.');return;}form.reset();$('#add-dialog').close();choose('all');await refresh();notice('Đã thêm tệp vào hàng đợi.');}catch(ex){$('#form-error').textContent=ex.message;}finally{b.disabled=false;}};
 $('#extension-nav').onclick=()=>{$('#pair-token').value=token;$('#extension-dialog').showModal();};$('#copy-token').onclick=async()=>{try{await navigator.clipboard.writeText(token);notice('Đã sao chép mã kết nối.');}catch(e){$('#pair-token').select();notice('Nhấn Ctrl+C để sao chép mã.');}};
 $('#version-open').onclick=()=>$('#version-dialog').showModal();
