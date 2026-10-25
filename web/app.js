@@ -226,7 +226,8 @@ api('storage').then(data=>{$('#storage-path').textContent='Lưu tại '+data.dir
 let updateState={},updateOpening=false,serverVersion=null;
 function renderUpdateProgress(s){
  const panel=$('#update-progress-panel'),bar=$('#update-progress');
- panel.hidden=false;
+ panel.hidden=!['downloading','verifying','importing','ready','installing'].includes(s.state)&&!(s.state==='error'&&s.bytes>0);
+ if(panel.hidden)return;
  const known=Number.isFinite(s.total_bytes)&&s.total_bytes>0;
  const amount=Math.max(0,Number(s.bytes)||0);
  const percentage=known?Math.min(100,amount/s.total_bytes*100):null;

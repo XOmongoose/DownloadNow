@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.13.4",
+      "date": "2026-10-26",
+      "title": "Chỉ hiện tiến độ sau khi đồng ý cập nhật",
+      "changes": [
+        "Ẩn phần trăm và thanh tiến độ khi kiểm tra phiên bản, khi có bản mới chưa đồng ý tải hoặc đang dùng bản mới nhất.",
+        "Sau khi đồng ý tải cập nhật, hiển thị thanh tiến độ theo dung lượng thực, tốc độ và thời gian còn lại; giữ tiến độ khi xác minh và cài đặt."
+      ]
+    },
+    {
       "version": "1.13.3",
       "date": "2026-10-26",
       "title": "Tải nhiều tệp và nhận link liên tiếp không cần mở lại",

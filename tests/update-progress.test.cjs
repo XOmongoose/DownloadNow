@@ -13,14 +13,14 @@ function render(state){
  context.renderUpdateProgress(state);
  return $;
 }
-test('update progress is visible before approval at zero',()=>{
- for(const state of ['idle','available','up_to_date']){
-  const $=render({state});assert.equal($('#update-progress-panel').hidden,false);
-  assert.equal($('#update-progress').value,0);assert.equal($('#update-percent').textContent,'0%');
+test('update progress stays hidden before download approval',()=>{
+ for(const state of ['idle','unconfigured','checking','available','up_to_date']){
+  const $=render({state});assert.equal($('#update-progress-panel').hidden,true);
  }
 });
 test('download percentage is calculated from actual bytes',()=>{
  const $=render({state:'downloading',bytes:56,total_bytes:100,speed:8,eta:5.5});
+ assert.equal($('#update-progress-panel').hidden,false);
  assert.ok(Math.abs($('#update-progress').value-56)<1e-9);assert.equal($('#update-percent').textContent,'56%');
  assert.match($('#update-transfer').textContent,/56 B \/ 100 B.*8 B\/s.*6 giây/);
 });
