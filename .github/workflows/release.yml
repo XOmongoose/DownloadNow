@@ -34,6 +34,11 @@ jobs:
           if ($probe.ExitCode -ne 0) { throw 'Frozen TLS context failed or verification is disabled' }
       - run: python tools/build_extensions.py
       - run: python tools/build_store_bundle.py
+      - name: Prepare installer compiler
+        shell: pwsh
+        run: ./tools/bootstrap_inno.ps1
+      - run: python tools/build_installer.py
+      - run: python tools/smoke_installer.py
       - name: Publish complete release
         shell: pwsh
         env:
@@ -48,7 +53,7 @@ jobs:
           Set-Content -LiteralPath $notesPath -Value $notes -Encoding utf8
           gh release create $tag --verify-tag --draft --title "Download Now $tag" --notes-file $notesPath
           if ($LASTEXITCODE -ne 0) { throw 'Cannot create draft release' }
-          $assets = @(Get-ChildItem dist -File | Where-Object { $_.Name -match '\.(zip|sha256|xpi)$' } | ForEach-Object { $_.FullName })
+          $assets = @(Get-ChildItem dist -File | Where-Object { $_.Name -match '\.(zip|sha256|xpi|exe)$' } | ForEach-Object { $_.FullName })
           gh release upload $tag @assets
           if ($LASTEXITCODE -ne 0) { throw 'Upload failed; release remains a draft' }
           gh release edit $tag --draft=false --latest

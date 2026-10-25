@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.11.0",
+      "date": "2026-10-25",
+      "title": "Bộ cài Windows cho máy khác",
+      "changes": [
+        "Thêm bộ cài Windows x64 tự chứa ứng dụng, bộ xử lý video và tiện ích; không yêu cầu cài Python hoặc Node.js trên máy đích.",
+        "Cài cho tài khoản hiện tại, tạo lối tắt Desktop/Start menu và mục gỡ cài đặt; giữ thư mục dữ liệu khi gỡ ứng dụng.",
+        "Đổi tên tác giả hiển thị và nhà phát hành trong bộ cài thành XOmongoose.",
+        "Gói phát hành không chứa lịch sử, tệp tải hoặc mã kết nối của máy đóng gói. Tiện ích vẫn cần được cho phép cài trong trình duyệt."
+      ]
+    },
+    {
       "version": "1.10.18",
       "date": "2026-10-24",
       "title": "Thông tin tác giả",
