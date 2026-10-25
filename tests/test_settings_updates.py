@@ -1,4 +1,6 @@
 import hashlib
+import io
+import itertools
 import json
 from pathlib import Path
 import tempfile
@@ -294,6 +296,38 @@ class SettingsUpdateTests(unittest.TestCase):
         self.assertEqual(self.updates.snapshot()['state'],'ready')
         self.assertEqual((self.updates.staged/'DownloadNow.exe').read_bytes(),b'MZ-new-executable')
         self.assertFalse((self.updates.staged/'data').exists())
+
+    def download_response(self,data,known=True):
+        class Response(io.BytesIO):
+            headers={'Content-Length':str(len(data))} if known else {}
+            def geturl(self):return 'https://example.com/update.zip'
+            def read1(self,size):return super().read1(min(size,73))
+        return Response(data)
+
+    def test_update_reports_real_bytes_total_percent_and_verification(self):
+        data=self.package().read_bytes();states=[];original=self.updates._set
+        def record(**values):original(**values);states.append(self.updates.snapshot())
+        ticks=itertools.count(0,.25)
+        with patch('updater.urllib.request.urlopen',return_value=self.download_response(data)),patch('updater.time.monotonic',side_effect=lambda:next(ticks)),patch.object(self.updates,'_set',side_effect=record):
+            self.updates._download({'url':'https://example.com/update.zip','version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()})
+        self.assertTrue(any(s['state']=='downloading' and 0<s.get('percent',0)<100 and s['speed']>0 and s['eta']>0 for s in states))
+        self.assertTrue(any(s['state']=='verifying' for s in states))
+        final=self.updates.snapshot()
+        self.assertEqual((final['state'],final['bytes'],final['total_bytes'],final['percent']),('ready',len(data),len(data),100))
+
+    def test_update_without_total_does_not_invent_a_percentage(self):
+        data=self.package().read_bytes();states=[];original=self.updates._set;ticks=itertools.count(0,.25)
+        def record(**values):original(**values);states.append(self.updates.snapshot())
+        with patch('updater.urllib.request.urlopen',return_value=self.download_response(data,False)),patch('updater.time.monotonic',side_effect=lambda:next(ticks)),patch.object(self.updates,'_set',side_effect=record):
+            self.updates._download({'url':'https://example.com/update.zip','version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()})
+        self.assertTrue(any(s['state']=='downloading' and s['bytes']>0 for s in states))
+        self.assertTrue(all(s['percent'] is None for s in states if s['state']=='downloading'))
+
+    def test_truncated_update_is_never_staged(self):
+        data=self.package().read_bytes();response=self.download_response(data[:-10]);response.headers={'Content-Length':str(len(data))}
+        with patch('updater.urllib.request.urlopen',return_value=response),self.assertRaisesRegex(ValueError,'chưa đủ'):
+            self.updates._download({'url':'https://example.com/update.zip','version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()})
+        self.assertIsNone(self.updates.staged)
 
     def test_tampered_package_is_rejected(self):
         with self.assertRaises(ValueError):self.updates._prepare(self.package(tamper=True))

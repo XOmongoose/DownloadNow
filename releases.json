@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.13.0",
+      "date": "2026-10-25",
+      "title": "Tiến độ cập nhật trực quan và tối ưu bộ đệm tải",
+      "changes": [
+        "Thanh tải gói cập nhật có phần trăm theo byte thực, dung lượng đã tải/tổng, tốc độ và thời gian còn lại; hiển thị riêng các bước Tải về, Xác minh và Cài đặt.",
+        "Nếu chưa biết tổng dung lượng, hiển thị trạng thái đang tải thay vì tự tạo phần trăm. Gói thiếu byte hoặc sai SHA-256 không được cài.",
+        "Tăng bộ đệm tải tệp lên 1 MB, gom ghi đĩa và xả định kỳ; đọc dữ liệu mạng sẵn có để vẫn kiểm tra dừng/hủy trên kết nối chậm.",
+        "Đã kiểm tra toàn vẹn dữ liệu và dừng/tiếp tục trong bộ kiểm thử. Chưa có phép đo cùng liên kết trên máy người dùng để khẳng định nhanh hơn Chrome."
+      ]
+    },
+    {
       "version": "1.12.1",
       "date": "2026-10-25",
       "title": "Dung lượng tệp trong cửa sổ tải xuống",

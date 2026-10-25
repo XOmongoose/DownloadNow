@@ -23,7 +23,7 @@ import http.cookiejar
 from datetime import datetime
 
 CHUNK = 4 * 1024 * 1024
-BLOCK = 64 * 1024
+BLOCK = 1024 * 1024
 
 
 def valid_url(url):
@@ -601,17 +601,25 @@ class Manager:
                         wanted = f"bytes {start + have}-{end}/{j['total']}"
                         if r.status != 206 or r.headers.get('Content-Range') != wanted:
                             raise Changed('Máy chủ đã thay đổi tệp hoặc không còn hỗ trợ Range. Hãy tiếp tục để kiểm tra lại.')
-                    with path.open('ab' if j['ranged'] else 'wb') as f:
+                    read=getattr(r,'read1',r.read)
+                    with path.open('ab' if j['ranged'] else 'wb',buffering=BLOCK) as f:
+                        last_flush=time.monotonic()
                         while True:
                             if stop.is_set():
                                 raise Paused()
-                            data = r.read(BLOCK)
+                            # read1 returns available network bytes promptly, keeping
+                            # pause/cancel responsive even on slow connections.
+                            data = read(BLOCK)
                             if not data:
                                 break
                             if expected is not None and have + len(data) > expected:
                                 raise Changed('Máy chủ trả về dữ liệu vượt kích thước dự kiến.')
                             f.write(data)
                             have += len(data)
+                            now=time.monotonic()
+                            if now-last_flush>=.25:
+                                f.flush()
+                                last_flush=now
                         f.flush()
                         os.fsync(f.fileno())
                     if expected is not None and have != expected:

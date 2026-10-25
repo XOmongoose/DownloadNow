@@ -114,7 +114,7 @@ def github_release_info(repository):
         if not words or not re.fullmatch('[a-fA-F0-9]{64}',words[0]) or len(words)>2 or (len(words)==2 and words[1].lstrip('*')!=filename):
             raise ValueError('Tệp checksum không khớp tên gói cập nhật.')
         checksum=words[0]
-    return {'version':version,'url':url,'sha256':checksum.lower(),
+    return {'version':version,'url':url,'sha256':checksum.lower(),'size':asset.get('size'),
             'notes':str(release.get('body') or release.get('name') or '')[:4000]}
 
 
@@ -159,7 +159,7 @@ class UpdateService:
 
     def _start(self,state,operation):
         with self.lock:
-            if self.state['state'] in ('checking','downloading','importing','installing'):
+            if self.state['state'] in ('checking','downloading','verifying','importing','installing'):
                 raise ValueError('Đang xử lý cập nhật. Vui lòng chờ.')
             self.state={'state':state,'current_version':self.current}
         def run():
@@ -231,16 +231,33 @@ class UpdateService:
         self.work.mkdir(exist_ok=True)
         archive = self.work/(uuid.uuid4().hex+'.zip')
         digest,total = hashlib.sha256(),0
-        with urllib.request.urlopen(https_url(info['url']),timeout=20) as response, archive.open('xb') as output:
+        started=last_tick=time.monotonic()
+        last_bytes=0
+        with urllib.request.urlopen(https_url(info['url']),timeout=20) as response, archive.open('xb',buffering=1024*1024) as output:
             https_url(response.geturl())
-            while block:=response.read(1024*1024):
+            declared=response.headers.get('Content-Length','')
+            expected=int(declared) if isinstance(declared,str) and declared.isdigit() else info.get('size')
+            expected=expected if isinstance(expected,int) and not isinstance(expected,bool) and 0<expected<=LIMIT else None
+            self._set(state='downloading',phase='download',bytes=0,total_bytes=expected,speed=0,eta=None,percent=0 if expected else None)
+            read=getattr(response,'read1',response.read)
+            while block:=read(256*1024):
                 total+=len(block)
                 if total>LIMIT:raise ValueError('Gói cập nhật vượt giới hạn 512 MB.')
                 digest.update(block)
                 output.write(block)
-                self._set(bytes=total)
+                now=time.monotonic()
+                if now-last_tick>=.2:
+                    speed=(total-last_bytes)/max(now-last_tick,.001)
+                    self._set(bytes=total,speed=speed,eta=max(0,(expected-total)/speed) if expected and speed else None,
+                              percent=min(100,total/expected*100) if expected else None)
+                    last_tick,last_bytes=now,total
             output.flush()
             os.fsync(output.fileno())
+        if expected and total!=expected:
+            self._set(bytes=total,percent=min(100,total/expected*100))
+            raise ValueError('Gói cập nhật tải chưa đủ dung lượng. Hãy thử lại.')
+        self._set(state='verifying',phase='verify',bytes=total,speed=total/max(time.monotonic()-started,.001),eta=0,
+                  percent=100 if expected else None)
         if digest.hexdigest().lower()!=info['sha256'].lower():
             raise ValueError('SHA-256 không khớp. Gói cập nhật không được cài.')
         self._prepare(archive,info['version'])
@@ -298,12 +315,14 @@ class UpdateService:
             if marker not in required or json.loads(package.read(prefix+marker))!={'managed':True,'version':new_version}:
                 raise ValueError('Gói thiếu cấu hình đồng bộ tiện ích.')
             top={'DownloadNow.exe','README.md','HUONG-DAN.txt','releases.json','SHA256SUMS.txt'}
-            for name in required:
+            self._set(state='verifying',phase='verify',verified_files=0,total_files=len(required))
+            for index,name in enumerate(required,1):
                 path=PurePosixPath(name)
                 extension=(len(path.parts)>=3 and path.parts[0]=='extension' and path.parts[1] in ('chromium','firefox') and path.suffix in ('.js','.json','.html','.css','.png','.ico','.svg','.txt','.md'))
                 if name not in top and not extension:raise ValueError('Gói chứa tệp ngoài ứng dụng hoặc dữ liệu người dùng.')
                 if hashlib.sha256(package.read(prefix+name)).hexdigest()!=sums[name]:
                     raise ValueError('Tệp trong gói bị hỏng: '+name)
+                self._set(verified_files=index)
             if package.read(prefix+'DownloadNow.exe')[:2]!=b'MZ':raise ValueError('Tệp EXE không hợp lệ.')
             self.work.mkdir(exist_ok=True)
             destination=self.work/('staged-'+uuid.uuid4().hex)
@@ -314,7 +333,7 @@ class UpdateService:
                 with package.open(full) as source,target.open('xb') as output:
                     while block:=source.read(1024*1024):output.write(block)
         self.staged=destination
-        self._set(state='ready',version=new_version,notes=release.get('title',''))
+        self._set(state='ready',phase='ready',percent=100,version=new_version,notes=release.get('title',''))
 
     def install(self,prompts):
         if not getattr(sys,'frozen',False) or sys.platform!='win32':
@@ -354,7 +373,7 @@ class UpdateService:
                     self.install(prompts)
                 return
         # Never discard a verified package while waiting for an idle queue.
-        if state in ('available','ready','checking','downloading','importing','installing'):
+        if state in ('available','ready','checking','downloading','verifying','importing','installing'):
             return
         if values['auto_check_updates'] and values['update_feed'] and time.time()-values['last_update_check']>86400:
             self.preferences.set(last_update_check=time.time())

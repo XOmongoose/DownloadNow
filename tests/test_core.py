@@ -30,6 +30,10 @@ class Response(io.BytesIO):
             time.sleep(.025)
         return super().read(size)
 
+    def read1(self,size=-1):
+        # Model available network chunks independently of the caller's buffer.
+        return self.read(min(size,65536) if self.drop or self.slow else size)
+
 
 transport_lock = threading.Lock()
 
