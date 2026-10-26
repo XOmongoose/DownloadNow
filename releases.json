@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.15.1",
+      "date": "2026-10-26",
+      "title": "Bố cục trạng thái tải và nút thao tác bằng icon",
+      "changes": [
+        "Hàng trên gồm tốc độ và biểu đồ chiếm hai phần ba chiều rộng, ô Đang tải xuống nằm bên phải.",
+        "Hàng dưới gồm bốn ô Hàng đợi, Đã hoàn tất, Tạm dừng và Cần kiểm tra. Đồng bộ số lượng, bộ lọc và các tab tương ứng.",
+        "Toàn bộ nút trong cột Thao tác dùng icon cùng kích thước, có chú thích khi rê chuột và nhãn cho trình đọc màn hình. Bố cục tự xếp lại trên màn hình nhỏ."
+      ]
+    },
+    {
       "version": "1.15.0",
       "date": "2026-10-26",
       "title": "Thiết lập tiện ích ngay sau khi cài ứng dụng",

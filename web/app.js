@@ -116,7 +116,7 @@ function choose(value) {filter=value;selectedSpeedId=null;document.querySelector
 function selectSpeedFile(id){selectedSpeedId=id;render();}
 const pendingActions=new Map();
 function actionButton(job,label,symbol,operation,disabled=false){
- const button=text('button',label,'row-action labeled-action');button.prepend(icon(symbol));button.title=label+' · '+job.name;button.setAttribute('aria-label',button.title);button.disabled=disabled;
+ const button=text('button','','row-action');button.prepend(icon(symbol));button.title=label+' · '+job.name;button.setAttribute('aria-label',button.title);button.disabled=disabled;
  if(pendingActions.has(job.id))button.disabled=true;
  button.onclick=async()=>{
   if(pendingActions.has(job.id))return;
@@ -157,9 +157,10 @@ function render() {
  const eligibleIds=new Set(jobs.filter(canClearHistory).map(j=>j.id));
  for(const id of selectedHistory)if(!eligibleIds.has(id))selectedHistory.delete(id);
  if($('#history-dialog').open)updateHistorySummary();
- const counts={all:jobs.length,active:jobs.filter(active).length,queued:jobs.filter(j=>j.status==='queued').length,completed:jobs.filter(j=>j.status==='completed').length};
+ const counts={all:jobs.length,active:jobs.filter(active).length,queued:jobs.filter(j=>j.status==='queued').length,completed:jobs.filter(j=>j.status==='completed').length,paused:jobs.filter(j=>j.status==='paused').length,error:jobs.filter(j=>j.status==='error').length};
  Object.entries(counts).forEach(([k,v])=>$('#count-'+k).textContent=v);
  $('#tab-count').textContent=jobs.length;$('#stat-active').replaceChildren(document.createTextNode(counts.active+' '),text('small','tệp'));$('#stat-queued').replaceChildren(document.createTextNode(counts.queued+' '),text('small','tệp'));$('#stat-completed').replaceChildren(document.createTextNode(counts.completed+' '),text('small','tệp'));
+ $('#stat-paused').replaceChildren(document.createTextNode(counts.paused+' '),text('small','tệp'));$('#stat-error').replaceChildren(document.createTextNode(counts.error+' '),text('small','tệp'));
  renderSpeed();$('#stat-bytes').textContent=bytes(jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+j.done,0))+' đã tải về';
  const search=$('#search').value.toLocaleLowerCase('vi');const visible=jobs.filter(j=>(filter==='all'||(filter==='active'?active(j):j.status===filter))&&j.name.toLocaleLowerCase('vi').includes(search)).reverse();
  const selectable=visible.filter(canClearHistory),selectAll=$('#history-select-all');
@@ -189,14 +190,15 @@ function render() {
    group.append(actionButton(j,pause?'Dừng':'Tiếp tục',pause?'pause':'play',pause?'pause':'resume',stopping),actionButton(j,'Hủy','close','cancel',j.status==='cancelling'));
    actions.append(group);
   }else if(j.status==='completed') {
-   const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'),document.createTextNode('Thư mục'));folder.title='Mở thư mục chứa '+j.name;folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
-   const open=text('button','Mở tệp','row-action labeled-action');open.prepend(icon('play'));open.title='Mở tệp '+j.name;open.setAttribute('aria-label',open.title);open.onclick=async()=>{open.disabled=true;try{await api('open-file',{id:j.id});}catch(e){notice(e.message);}finally{open.disabled=false;}};group.append(open);
+   const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'));folder.title='Mở thư mục chứa '+j.name;folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
+   const open=text('button','','row-action');open.prepend(icon('play'));open.title='Mở tệp '+j.name;open.setAttribute('aria-label',open.title);open.onclick=async()=>{open.disabled=true;try{await api('open-file',{id:j.id});}catch(e){notice(e.message);}finally{open.disabled=false;}};group.append(open);
    const location=text('button','','row-action');location.append(icon('copy'));location.title='Xem và sao chép đường dẫn tệp';location.setAttribute('aria-label',location.title+' '+j.name);location.onclick=()=>{$('#file-location-path').value=j.file_path||'';$('#file-location-name').textContent=j.name;$('#file-location-dialog').showModal();};group.append(folder,location);actions.append(group);
   }
   if(['completed','cancelled'].includes(j.status)){
-   const again=text('button','Tải lại','row-action labeled-action');again.prepend(icon('retry'));again.setAttribute('aria-label','Tải lại '+j.name);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};
+   const again=text('button','','row-action');again.prepend(icon('retry'));again.title='Tải lại '+j.name;again.setAttribute('aria-label',again.title);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};
    const remove=text('button','','row-action delete-action');remove.append(icon('trash'));remove.title='Xóa lịch sử '+j.name;remove.setAttribute('aria-label',remove.title);remove.onclick=()=>openHistory(j.id);const group=text('div','','file-actions history-row-actions');group.append(again,remove);actions.append(group);
   }
+  const actionGroup=text('div','','file-actions');actionGroup.append(...actions.querySelectorAll('button'));actions.replaceChildren(actionGroup);
   tr.append(actions);return tr;
  });$('#job-list').replaceChildren(...rows);
 }
