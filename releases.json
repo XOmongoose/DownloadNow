@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.14.2",
+      "date": "2026-10-26",
+      "title": "Tải gói cập nhật qua nhiều kết nối",
+      "changes": [
+        "Gói cập nhật từ 8 MB có dung lượng xác định dùng bốn kết nối khi máy chủ xác nhận hỗ trợ Range. Máy chủ không hỗ trợ sẽ dùng một kết nối.",
+        "Khi gián đoạn, thử lại tối đa ba lần từ byte còn thiếu của đoạn; kiểm tra Content-Range, ETag và SHA-256 toàn bộ gói trước khi giải nén và cài.",
+        "Hộp cập nhật hiển thị số kết nối thực tế. Tốc độ vẫn phụ thuộc đường truyền tới GitHub; chưa xác nhận mức tăng tốc trên máy người dùng."
+      ]
+    },
+    {
       "version": "1.14.1",
       "date": "2026-10-26",
       "title": "Tốc độ ở hàng riêng và ba ô trạng thái tải",

@@ -1,5 +1,7 @@
 """Optional HTTPS update feed, verified portable packages and idle-only install."""
 import hashlib
+import concurrent.futures
+import http.client
 import ctypes
 import json
 import os
@@ -228,6 +230,90 @@ class UpdateService:
         self._start('downloading',lambda:self._download(info))
 
     def _download(self,info):
+        size=info.get('size')
+        if not isinstance(size,int) or isinstance(size,bool) or not 8*1024*1024<=size<=LIMIT:
+            return self._download_single(info)
+        request=urllib.request.Request(https_url(info['url']),headers={
+            'Range':'bytes=0-0','Accept-Encoding':'identity','User-Agent':'DownloadNow-Updater'})
+        with urllib.request.urlopen(request,timeout=20) as response:
+            url=https_url(response.geturl())
+            ranged=getattr(response,'status',200)==206
+            if ranged and response.headers.get('Content-Range')!=f'bytes 0-0/{size}':
+                raise ValueError('Dung lượng gói cập nhật đã thay đổi. Hãy kiểm tra phiên bản lại.')
+            etag=response.headers.get('ETag')
+            if ranged:response.read(1)
+        if not ranged:
+            return self._download_single(info)
+        self._download_parallel(info,url,size,etag)
+
+    def _download_parallel(self,info,url,size,etag):
+        self.work.mkdir(exist_ok=True)
+        archive=self.work/(uuid.uuid4().hex+'.zip')
+        with archive.open('xb') as output:output.truncate(size)
+        started=time.monotonic()
+        tick,last_bytes=started,0
+        received=0
+        progress_lock=threading.Lock()
+        failed=threading.Event()
+        self._set(state='downloading',phase='download',bytes=0,total_bytes=size,speed=0,eta=None,percent=0,connections=4)
+        def progress(count):
+            nonlocal received,tick,last_bytes
+            with progress_lock:
+                received+=count
+                now=time.monotonic()
+                if now-tick>=.2:
+                    speed=(received-last_bytes)/max(now-tick,.001)
+                    self._set(bytes=received,speed=speed,eta=(size-received)/speed if speed else None,percent=received/size*100)
+                    tick,last_bytes=now,received
+        def segment(start,end):
+            offset=start
+            for attempt in range(3):
+                if failed.is_set():raise OSError('Đã dừng tải gói chưa hoàn tất.')
+                headers={'Range':f'bytes={offset}-{end}','Accept-Encoding':'identity','User-Agent':'DownloadNow-Updater'}
+                if etag and not etag.startswith('W/'):headers['If-Range']=etag
+                try:
+                    with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=20) as response:
+                        https_url(response.geturl())
+                        if response.status!=206 or response.headers.get('Content-Range')!=f'bytes {offset}-{end}/{size}':
+                            raise ValueError('Máy chủ không trả đúng phần gói cập nhật. Gói chưa được cài.')
+                        if etag and response.headers.get('ETag',etag)!=etag:
+                            raise ValueError('Gói cập nhật đã thay đổi trong khi tải.')
+                        read=getattr(response,'read1',response.read)
+                        with archive.open('r+b',buffering=1024*1024) as output:
+                            output.seek(offset)
+                            while block:=read(256*1024):
+                                if failed.is_set():raise OSError('Đã dừng tải gói chưa hoàn tất.')
+                                if offset+len(block)>end+1:raise ValueError('Phần cập nhật vượt dung lượng dự kiến.')
+                                output.write(block);offset+=len(block);progress(len(block))
+                            output.flush();os.fsync(output.fileno())
+                        if offset!=end+1:raise OSError('Kết nối ngắt khi tải gói cập nhật.')
+                    return
+                except (OSError,urllib.error.URLError,http.client.HTTPException) as error:
+                    if isinstance(error,urllib.error.HTTPError):
+                        code=error.code
+                        error.close()
+                        if code not in (408,429,500,502,503,504):raise
+                    if offset==end+1:raise
+                    if attempt==2 or failed.is_set():raise
+                    failed.wait(.3*(attempt+1))
+        step=(size+3)//4
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            futures=[pool.submit(segment,start,min(start+step,size)-1) for start in range(0,size,step)]
+            try:
+                for future in concurrent.futures.as_completed(futures):future.result()
+            except BaseException:
+                failed.set()
+                raise
+        if received!=size:raise ValueError('Gói cập nhật tải chưa đủ dung lượng.')
+        self._set(state='verifying',phase='verify',bytes=received,total_bytes=size,percent=100,speed=received/max(time.monotonic()-started,.001),eta=0)
+        digest=hashlib.sha256()
+        with archive.open('rb') as source:
+            while block:=source.read(1024*1024):digest.update(block)
+        if digest.hexdigest().lower()!=info['sha256'].lower():
+            raise ValueError('SHA-256 không khớp. Gói cập nhật không được cài.')
+        self._prepare(archive,info['version'])
+
+    def _download_single(self,info):
         self.work.mkdir(exist_ok=True)
         archive = self.work/(uuid.uuid4().hex+'.zip')
         digest,total = hashlib.sha256(),0
@@ -238,7 +324,7 @@ class UpdateService:
             declared=response.headers.get('Content-Length','')
             expected=int(declared) if isinstance(declared,str) and declared.isdigit() else info.get('size')
             expected=expected if isinstance(expected,int) and not isinstance(expected,bool) and 0<expected<=LIMIT else None
-            self._set(state='downloading',phase='download',bytes=0,total_bytes=expected,speed=0,eta=None,percent=0 if expected else None)
+            self._set(state='downloading',phase='download',bytes=0,total_bytes=expected,speed=0,eta=None,percent=0 if expected else None,connections=1)
             read=getattr(response,'read1',response.read)
             while block:=read(256*1024):
                 total+=len(block)

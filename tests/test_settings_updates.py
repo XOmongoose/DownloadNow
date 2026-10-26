@@ -329,6 +329,63 @@ class SettingsUpdateTests(unittest.TestCase):
             self.updates._download({'url':'https://example.com/update.zip','version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()})
         self.assertIsNone(self.updates.staged)
 
+    def parallel_response(self,data,requests,drop=False,bad_range=False):
+        lock=threading.Lock()
+        def open_range(request,timeout):
+            start,end=map(int,request.get_header('Range')[6:].split('-'))
+            with lock:requests.append((start,end))
+            class Response(io.BytesIO):
+                status=206
+                headers={'Content-Range':f'bytes {start}-{end}/{len(data)}' if not bad_range else 'bytes 0-0/1','ETag':'"fixed"'}
+                def geturl(self):return 'https://cdn.example/update.zip'
+                def read1(self,size):
+                    if drop and start==0 and self.tell()>=73:raise ConnectionResetError('temporary disconnect')
+                    return super().read1(min(size,73))
+            return Response(data[start:end+1])
+        return open_range
+
+    def test_parallel_update_assembles_exact_package_and_reports_progress(self):
+        data=self.package().read_bytes();requests=[]
+        with patch('updater.urllib.request.urlopen',side_effect=self.parallel_response(data,requests)):
+            self.updates._download_parallel({'version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()},'https://cdn.example/update.zip',len(data),'"fixed"')
+        self.assertEqual(len(requests),4)
+        state=self.updates.snapshot()
+        self.assertEqual((state['state'],state['bytes'],state['percent'],state['connections']),('ready',len(data),100,4))
+        self.assertEqual((self.updates.staged/'DownloadNow.exe').read_bytes(),b'MZ-new-executable')
+
+    def test_parallel_update_retries_only_missing_range_bytes(self):
+        data=self.package().read_bytes();requests=[]
+        with patch('updater.urllib.request.urlopen',side_effect=self.parallel_response(data,requests,drop=True)):
+            self.updates._download_parallel({'version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()},'https://cdn.example/update.zip',len(data),'"fixed"')
+        self.assertTrue(any(start==73 for start,end in requests))
+        self.assertEqual(self.updates.snapshot()['bytes'],len(data))
+        self.assertEqual(self.updates.snapshot()['state'],'ready')
+
+    def test_parallel_update_rejects_wrong_range(self):
+        data=self.package().read_bytes()
+        with patch('updater.urllib.request.urlopen',side_effect=self.parallel_response(data,[],bad_range=True)),self.assertRaisesRegex(ValueError,'đúng phần'):
+            self.updates._download_parallel({'version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()},'https://cdn.example/update.zip',len(data),'"fixed"')
+        self.assertIsNone(self.updates.staged)
+
+    def test_parallel_update_rejects_bad_sha256(self):
+        data=self.package().read_bytes()
+        with patch('updater.urllib.request.urlopen',side_effect=self.parallel_response(data,[])),self.assertRaisesRegex(ValueError,'SHA-256'):
+            self.updates._download_parallel({'version':'2.0.0','sha256':'a'*64},'https://cdn.example/update.zip',len(data),'"fixed"')
+        self.assertIsNone(self.updates.staged)
+
+    def test_update_without_range_falls_back_to_one_connection(self):
+        data=self.package().read_bytes()
+        with patch('updater.urllib.request.urlopen',side_effect=lambda *args,**kwargs:self.download_response(data)) as request:
+            self.updates._download({'url':'https://example.com/update.zip','size':8*1024*1024,'version':'2.0.0','sha256':hashlib.sha256(data).hexdigest()})
+        self.assertEqual(request.call_count,2)
+        self.assertEqual(self.updates.snapshot()['state'],'ready')
+
+    def test_range_probe_rejects_insecure_redirect(self):
+        response=self.download_response(b'x');response.geturl=lambda:'http://example.com/update.zip'
+        with patch('updater.urllib.request.urlopen',return_value=response),self.assertRaises(ValueError):
+            self.updates._download({'url':'https://example.com/update.zip','size':8*1024*1024,'version':'2.0.0','sha256':'a'*64})
+        self.assertIsNone(self.updates.staged)
+
     def test_tampered_package_is_rejected(self):
         with self.assertRaises(ValueError):self.updates._prepare(self.package(tamper=True))
         self.assertIsNone(self.updates.staged)
