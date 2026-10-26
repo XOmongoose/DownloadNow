@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.15.3",
+      "date": "2026-10-27",
+      "title": "Dời xóa lịch sử cạnh tìm kiếm và rút gọn chú thích xóa",
+      "changes": [
+        "Đưa Xóa lịch sử sang sát bên trái ô tìm kiếm, bỏ khung và nền nút; đổi màu, gạch chân khi rê chuột và có viền khi dùng bàn phím.",
+        "Icon thùng rác trong từng dòng chỉ hiển thị chú thích Xóa; vẫn mở hộp xác nhận và giữ các tùy chọn xóa lịch sử hoặc xóa kèm tệp."
+      ]
+    },
+    {
       "version": "1.15.2",
       "date": "2026-10-26",
       "title": "Chia khung trên theo ba phần tư và rút gọn chú thích icon",

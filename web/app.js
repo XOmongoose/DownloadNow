@@ -196,7 +196,7 @@ function render() {
   }
   if(['completed','cancelled'].includes(j.status)){
    const again=text('button','','row-action');again.prepend(icon('retry'));again.title='Tải lại';again.setAttribute('aria-label',again.title);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};
-   const remove=text('button','','row-action delete-action');remove.append(icon('trash'));remove.title='Xóa lịch sử';remove.setAttribute('aria-label',remove.title);remove.onclick=()=>openHistory(j.id);const group=text('div','','file-actions history-row-actions');group.append(again,remove);actions.append(group);
+   const remove=text('button','','row-action delete-action');remove.append(icon('trash'));remove.title='Xóa';remove.setAttribute('aria-label',remove.title);remove.onclick=()=>openHistory(j.id);const group=text('div','','file-actions history-row-actions');group.append(again,remove);actions.append(group);
   }
   const actionGroup=text('div','','file-actions');actionGroup.append(...actions.querySelectorAll('button'));actions.replaceChildren(actionGroup);
   tr.append(actions);return tr;
