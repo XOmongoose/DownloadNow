@@ -235,7 +235,21 @@ $('#history-confirm').onclick=async()=>{const button=$('#history-confirm'),delet
 document.querySelectorAll('.close-dialog').forEach(e=>e.onclick=()=>e.closest('dialog').close());document.querySelectorAll('[data-filter]').forEach(e=>e.onclick=()=>choose(e.dataset.filter));document.querySelectorAll('[data-tab]').forEach(e=>e.onclick=()=>choose(e.dataset.tab));$('#search').oninput=render;
 document.querySelectorAll('.stats [data-filter]').forEach(card=>card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose(card.dataset.filter);}});
 $('#add-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector('[type="submit"]');b.disabled=true;$('#form-error').textContent='';try{const data=Object.fromEntries(new FormData(form));data.ask_save=true;data.connections=Number(data.connections);for(const field of ['start_at','stop_at'])data[field]=data[field]?new Date(data[field]).toISOString():null;const result=await waitSavePrompt(await api('jobs',data));if(result.state==='cancelled'){notice('Đã hủy chọn nơi lưu. Chưa tạo lượt tải.');return;}form.reset();$('#add-dialog').close();choose('all');await refresh();notice('Đã thêm tệp vào hàng đợi.');}catch(ex){$('#form-error').textContent=ex.message;}finally{b.disabled=false;}};
-$('#extension-nav').onclick=()=>{$('#pair-token').value=token;$('#extension-dialog').showModal();};$('#copy-token').onclick=async()=>{try{await navigator.clipboard.writeText(token);notice('Đã sao chép mã kết nối.');}catch(e){$('#pair-token').select();notice('Nhấn Ctrl+C để sao chép mã.');}};
+$('#extension-nav').onclick=async()=>{
+ $('#pair-token').value=token;$('#extension-dialog').showModal();
+ try{
+  const setup=await api('extension/setup');$('#extension-install-folder').value=setup.folder;
+  document.querySelectorAll('[data-setup-browser]').forEach(button=>button.disabled=!setup.browsers.some(b=>b.id===button.dataset.setupBrowser&&b.installed));
+  await readUpdateStatus();
+ }catch(error){$('#extension-setup-status').textContent=error.message;}
+};
+document.querySelectorAll('[data-setup-browser]').forEach(button=>button.onclick=async()=>{
+ button.disabled=true;
+ try{const result=await api('extension/setup',{browser:button.dataset.setupBrowser});$('#extension-install-folder').value=result.folder;notice('Đã mở '+result.browser+'. Nạp thư mục tiện ích và xác nhận trong trình duyệt.');}
+ catch(error){notice(error.message);}finally{button.disabled=false;}
+});
+$('#extension-copy-folder').onclick=async()=>{try{await navigator.clipboard.writeText($('#extension-install-folder').value);notice('Đã sao chép thư mục tiện ích.');}catch(error){$('#extension-install-folder').select();notice('Nhấn Ctrl+C để sao chép thư mục.');}};
+$('#copy-token').onclick=async()=>{try{await navigator.clipboard.writeText(token);notice('Đã sao chép mã kết nối.');}catch(e){$('#pair-token').select();notice('Nhấn Ctrl+C để sao chép mã.');}};
 $('#version-open').onclick=()=>$('#version-dialog').showModal();
 $('#copy-file-path').onclick=async()=>{try{await navigator.clipboard.writeText($('#file-location-path').value);notice('Đã sao chép đường dẫn tệp.');}catch(e){$('#file-location-path').focus();$('#file-location-path').select();notice('Nhấn Ctrl+C để sao chép đường dẫn.');}};
 api('storage').then(data=>{$('#storage-path').textContent='Lưu tại '+data.directory;$('#storage-path').title=data.directory;}).catch(()=>{});
@@ -266,6 +280,7 @@ async function readSettings(){const s=await api('settings');$('#update-feed').va
 async function saveSettings(){await api('settings',{update_feed:$('#update-feed').value.trim(),auto_check_updates:$('#auto-check-updates').checked,auto_install_updates:false,remember_save_dir:$('#remember-save-folder').checked});}
 function renderExtensionSync(sync){
  const label=$('#update-sync');
+ $('#extension-setup-status').textContent=sync?.state==='synced'?'✓ Tiện ích đã kết nối và đồng bộ với ứng dụng v'+sync.version:sync?.clients?.length?'Đã nhận kết nối từ trình duyệt. Kiểm tra phiên bản và dùng thư mục cạnh ứng dụng để cập nhật cùng nhau.':'Chưa nhận kết nối. Nạp tiện ích rồi mở lại trang ứng dụng trong trình duyệt để tự ghép nối.';
  if(!sync||!sync.clients.length){label.textContent='Gói cập nhật chứa cả ứng dụng và tiện ích cùng phiên bản. Chưa nhận xác nhận từ trình duyệt; mở ứng dụng trong trình duyệt có tiện ích để kiểm tra.';return;}
  const versions=sync.clients.map(c=>c.browser+' v'+c.version).join(', ');
  label.textContent=sync.state==='synced'?'✓ Đã đồng bộ: ứng dụng v'+sync.version+' · '+versions:sync.clients.some(c=>!c.managed)?'Ứng dụng v'+sync.version+' · '+versions+'. Tiện ích đang dùng thư mục riêng hoặc bản cửa hàng; xem Tiện ích trình duyệt để thiết lập cập nhật cùng ứng dụng.':'Đang chờ tiện ích tự nạp lại: '+versions+' → v'+sync.version+'.';
@@ -282,7 +297,7 @@ $('#extension-folder').onclick=async()=>{try{const result=await api('extension/o
 // background poll scheduled a ten-second delay. Never overlap status requests.
 let updatePollBusy=false,updatePolledAt=0;
 async function pollUpdates(){
- if(updatePollBusy||!$('#update-dialog').open&&Date.now()-updatePolledAt<10000)return;
+ if(updatePollBusy||!$('#update-dialog').open&&!$('#extension-dialog').open&&Date.now()-updatePolledAt<10000)return;
  updatePollBusy=true;
  try{await readUpdateStatus();}finally{updatePolledAt=Date.now();updatePollBusy=false;}
 }
@@ -290,4 +305,5 @@ setInterval(pollUpdates,750);pollUpdates();
 async function poll(){await refresh();setTimeout(poll,1200);}poll();
 
 if(new URLSearchParams(location.search).has("update"))$("#update-open").click();
+if(new URLSearchParams(location.search).has('extensions'))$('#extension-nav').click();
 if(new URLSearchParams(location.search).has("extensions"))$("#extension-nav").click();

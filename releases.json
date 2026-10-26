@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.15.0",
+      "date": "2026-10-26",
+      "title": "Thiết lập tiện ích ngay sau khi cài ứng dụng",
+      "changes": [
+        "Bộ cài có lựa chọn mở thiết lập tiện ích sau khi cài, thêm lối tắt thiết lập trong Start menu và hỗ trợ tham số --setup-browser.",
+        "Nhận diện Chrome, Edge, Opera đã cài; mở đúng trang quản lý tiện ích cùng trang ghép nối và hiển thị đường dẫn thư mục có nút sao chép.",
+        "Kiểm tra kết nối và phiên bản tự động khi mở cửa sổ thiết lập. Bản tiện ích chưa lên cửa hàng vẫn cần người dùng nạp/xác nhận lần đầu trong trình duyệt; bộ cài không ép cài bằng chính sách.",
+        "Tiếp tục phát hành bộ cài và các gói ứng dụng, tiện ích qua GitHub Releases."
+      ]
+    },
+    {
       "version": "1.14.3",
       "date": "2026-10-26",
       "title": "Giảm chia nhỏ các lượt tải Google Drive",

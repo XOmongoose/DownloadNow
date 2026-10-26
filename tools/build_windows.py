@@ -109,7 +109,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-157 kiem thu loi/cap nhat va 96 kiem thu mo phong tien ich/giao dien da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+163 kiem thu loi/cap nhat va 96 kiem thu mo phong tien ich/giao dien da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     (package/'HUONG-DAN.txt').write_text((package/'HUONG-DAN.txt').read_text('utf-8-sig')+'\n\n'+'''DOWNLOAD NOW - TAC GIA: XOmongoose
@@ -118,10 +118,13 @@ CAI TREN MAY KHAC (Windows 10/11 x64)
 1. Chep DownloadNow-Setup-VERSION-Windows-x64.exe sang may can cai.
 2. Mo bo cai, chon thu muc va bam Install. Khong can Python hay Node.js.
 3. Mo Download Now tu Desktop hoac Start menu.
-4. Tien ich trinh duyet: mo Browser extensions trong Start menu,
-   nap thu muc extension/chromium cho Chrome/Edge/Opera.
+4. Giu lua chon Set up browser extensions after installation trong bo cai.
+   Mo lai tu Start menu > Download Now > Set up browser extensions.
+   Chon Chrome/Edge/Opera, sao chep duong dan thu muc da chuan bi,
+   bat Developer mode va chon Load unpacked de xac nhan lan dau.
    Firefox can ban da ky Mozilla hoac che do thu nghiem.
-5. Mo giao dien Download Now de tien ich tu ghep noi.
+5. Tien ich mo trang Download Now de tu ghep noi; ung dung kiem tra dong bo.
+   Chua co ban cua hang: khong tu cai ngam hoac ep chinh sach trinh duyet.
 
 Mac dinh cai rieng cho tai khoan Windows hien tai trong LocalAppData/Programs/DownloadNow.
 Du lieu, tuy chon va tep tai nam trong data canh DownloadNow.exe.

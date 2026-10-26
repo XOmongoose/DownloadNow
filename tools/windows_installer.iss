@@ -40,6 +40,7 @@ SetupLogging=yes
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"
+Name: "browserextensions"; Description: "Set up browser extensions after installation (browser confirmation required)"; GroupDescription: "Browser integration:"
 
 [Files]
 Source: "{#PackageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "data\*,.git\*,__pycache__\*,*.pyc"
@@ -47,13 +48,20 @@ Source: "{#PackageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 [Icons]
 Name: "{group}\Download Now"; Filename: "{app}\DownloadNow.exe"; WorkingDir: "{app}"
 Name: "{group}\Browser extensions"; Filename: "{app}\extension"
+Name: "{group}\Set up browser extensions"; Filename: "{app}\DownloadNow.exe"; Parameters: "--setup-browser"; WorkingDir: "{app}"
 Name: "{group}\Installation guide"; Filename: "{app}\HUONG-DAN.txt"
 Name: "{autodesktop}\Download Now"; Filename: "{app}\DownloadNow.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\DownloadNow.exe"; Description: "Open Download Now"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\DownloadNow.exe"; Parameters: "{code:StartupParameters}"; Description: "Open Download Now"; Flags: nowait postinstall skipifsilent
 
 [Code]
+function StartupParameters(Param: String): String;
+begin
+  if WizardIsTaskSelected('browserextensions') then Result := '--setup-browser'
+  else Result := '';
+end;
+
 function CreateFile(lpFileName: String; dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile: LongWord): LongWord;
   external 'CreateFileW@kernel32.dll stdcall';
 function CloseHandle(hObject: LongWord): Boolean;

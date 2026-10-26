@@ -44,7 +44,7 @@ def main():
             sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
         base=f'http://127.0.0.1:{port}'
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        process=subprocess.Popen([str(exe),'--no-browser','--port',str(port)],**options)
+        process=subprocess.Popen([str(exe),'--setup-browser','--no-browser','--port',str(port)],**options)
         for _ in range(100):
             try:
                 token=(profile/'bridge-token.txt').read_text().strip()
@@ -62,6 +62,9 @@ def main():
         else:raise AssertionError('Cannot read installed app')
         assert 'Tác giả: <strong>XOmongoose</strong></span>' in page
         assert jobs==[], 'Installer must not contain the developer download history'
+        setup=json.load(opener.open(urllib.request.Request(base+'/api/extension/setup',headers=headers)))
+        assert Path(setup['folder'])==(target/'extension/chromium').resolve()
+        assert setup['requires_confirmation'] and setup['distribution']=='unpacked'
         blocked=subprocess.run(args,timeout=45,**options)
         assert blocked.returncode!=0, 'Reinstallation must refuse to replace the running app'
         print('Install verified: clean queue, publisher, extensions, TLS, app startup and running-app guard.',flush=True)

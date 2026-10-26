@@ -58,6 +58,11 @@ class BackgroundLaunchTests(unittest.TestCase):
             self.assertTrue(app.open_running_app(self.root,8765,True))
             browser.assert_not_called()
 
+    def test_setup_flag_opens_setup_on_existing_listener(self):
+        with patch('app.socket.create_connection'),patch('app.webbrowser.open') as browser:
+            self.assertTrue(app.open_running_app(self.root,8765,False,True))
+        browser.assert_called_once_with('http://127.0.0.1:8765/?extensions=1')
+
     def test_occupied_port_is_skipped_without_closing_its_owner(self):
         import errno
         expected=MagicMock()

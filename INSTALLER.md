@@ -2,11 +2,14 @@
 
 Tác giả: **XOmongoose**.
 
-1. Tải `DownloadNow-Setup-1.14.3-Windows-x64.exe` từ GitHub Releases của `XOmongoose/DownloadNow` và chép sang máy đích.
+1. Tải `DownloadNow-Setup-1.15.0-Windows-x64.exe` từ GitHub Releases của `XOmongoose/DownloadNow` và chép sang máy đích.
 2. Chạy bộ cài trên Windows 10/11 x64, chọn thư mục và bấm **Install**.
 3. Mở **Download Now** từ Desktop hoặc Start menu. Máy đích không cần Python hay Node.js.
-4. Với Chrome, Edge hoặc Opera, mở **Download Now → Browser extensions** trong Start menu và nạp thư mục `chromium` bằng chức năng tải tiện ích đã giải nén của trình duyệt. Firefox cần gói được Mozilla ký hoặc chế độ thử nghiệm.
-5. Mở giao diện ứng dụng để tiện ích ghép nối. Bộ cài không tự cấp quyền hay cài ngầm tiện ích trình duyệt.
+4. Giữ lựa chọn **Set up browser extensions after installation** trong bộ cài. Khi mở ứng dụng sau cài đặt, cửa sổ thiết lập tiện ích sẽ xuất hiện; có thể mở lại bằng **Start menu → Download Now → Set up browser extensions**.
+5. Chọn Chrome, Edge hoặc Opera. Ứng dụng mở trang quản lý tiện ích và trang ghép nối, hiển thị đúng thư mục với nút sao chép. Bật chế độ dành cho nhà phát triển, chọn **Load unpacked / Tải tiện ích đã giải nén** và chọn thư mục đó một lần. Firefox cần gói được Mozilla ký hoặc chế độ thử nghiệm.
+6. Tiện ích mở trang ứng dụng để tự ghép nối; cửa sổ thiết lập tự kiểm tra kết nối và phiên bản. Cập nhật qua GitHub sẽ thay cả ứng dụng và tiện ích trong thư mục quản lý.
+
+Hiện tiện ích chưa phát hành trên cửa hàng. Chrome trên Windows yêu cầu bản phát hành qua Chrome Web Store để phân phối theo luồng cài thông thường; bộ cài này chuẩn bị và hướng dẫn thiết lập, không thể cài ngầm hoặc tự xác nhận thay người dùng. Xem [quy định phân phối chính thức của Chrome](https://developer.chrome.com/docs/extensions/how-to/distribute).
 
 Bộ cài mặc định dùng `%LOCALAPPDATA%\Programs\DownloadNow` cho tài khoản hiện tại. Tệp tải, lịch sử và cấu hình nằm trong thư mục `data` cạnh EXE. Gói phát hành không chứa dữ liệu hoặc mã kết nối của người đóng gói.
 

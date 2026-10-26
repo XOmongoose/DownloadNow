@@ -19,6 +19,7 @@ from save_dialogs import SavePrompts
 from preferences import Preferences
 from updater import UpdateService, update_source, apply_update
 from extension_status import ExtensionStatus
+import browser_setup
 
 BASE = Path(__file__).resolve().parent
 APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
@@ -148,6 +149,8 @@ def make_server(manager, port=8765):
                     return self.reply({**updates.snapshot(),'extension_sync':extensions.snapshot()})
                 if path == '/api/extension/status':
                     return self.reply(extensions.snapshot())
+                if path == '/api/extension/setup':
+                    return self.reply(browser_setup.setup_info(APP_HOME))
                 if path.startswith('/api/prompts/'):
                     try:
                         return self.reply(prompts.get(path.rsplit('/',1)[-1]))
@@ -212,6 +215,9 @@ def make_server(manager, port=8765):
                     if set(data)!={'version'} or not isinstance(data['version'],str):raise ValueError('Phiên bản không hợp lệ.')
                     updates.accept(data['version'])
                     return self.reply({'ok':True},202)
+                if path == '/api/extension/setup':
+                    if set(data)!={'browser'}:raise ValueError('Tham số trình duyệt không hợp lệ.')
+                    return self.reply(browser_setup.open_setup(data['browser'],APP_HOME,f'http://127.0.0.1:{self.server.server_port}'))
                 if path == '/api/extension/open-folder':
                     folder=APP_HOME/'extension'/'chromium'
                     if not (folder/'manifest.json').is_file():raise ValueError('Không tìm thấy tiện ích kèm ứng dụng. Hãy giải nén đầy đủ gói ứng dụng.')
@@ -285,7 +291,7 @@ def background_streams(directory):
     if sys.stderr is None:sys.stderr=output
 
 
-def open_running_app(directory,port,no_browser=False):
+def open_running_app(directory,port,no_browser=False,setup_browser=False):
     """After the data lock is held, reopen the local listener without HTTP races."""
     try:
         if not (directory/'bridge-token.txt').is_file():return False
@@ -301,7 +307,7 @@ def open_running_app(directory,port,no_browser=False):
             except OSError:
                 if attempt==3:raise
                 time.sleep(.2)
-        if not no_browser:webbrowser.open(address)
+        if not no_browser:webbrowser.open(address+('/?extensions=1' if setup_browser else ''))
         return True
     except (OSError,ValueError):return False
 
@@ -321,6 +327,7 @@ def main():
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--data', type=Path, default=APP_HOME / 'data')
     parser.add_argument('--no-browser', action='store_true', help='Do not open the browser automatically')
+    parser.add_argument('--setup-browser',action='store_true',help='Open browser extension setup')
     parser.add_argument('--self-test-tls',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--apply-update',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--update-source',help=argparse.SUPPRESS)
@@ -347,7 +354,7 @@ def main():
     try:
         storage_lock = lock_data(args.data.resolve())
     except OSError:
-        if open_running_app(args.data.resolve(),args.port,args.no_browser):return 0
+        if open_running_app(args.data.resolve(),args.port,args.no_browser,args.setup_browser):return 0
         startup_error('Dữ liệu đang được ứng dụng khác sử dụng hoặc không có quyền ghi. Hãy đóng bản đang chạy.')
         return 1
     manager = Manager(args.data)
@@ -367,8 +374,9 @@ def main():
     print(f'Tệp tải về: {manager.output}')
     print('Ứng dụng chạy nền. Đóng tab trình duyệt không dừng tải hoặc lịch tải.')
     server.updates.start_auto_check(server.prompts)
-    if getattr(sys, 'frozen', False) and not args.no_browser:
-        threading.Timer(.8, webbrowser.open, args=(f'http://127.0.0.1:{server.server_port}',)).start()
+    if (getattr(sys, 'frozen', False) or args.setup_browser) and not args.no_browser:
+        url=f'http://127.0.0.1:{server.server_port}'+('/?extensions=1' if args.setup_browser else '')
+        threading.Timer(.8, webbrowser.open, args=(url,)).start()
     def stop(*_):
         threading.Thread(target=server.shutdown, daemon=True).start()
     signal.signal(signal.SIGINT, stop)
