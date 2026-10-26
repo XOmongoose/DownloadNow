@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.15.2",
+      "date": "2026-10-26",
+      "title": "Chia khung trên theo ba phần tư và rút gọn chú thích icon",
+      "changes": [
+        "Khung tốc độ rộng bằng ba ô trạng thái phía dưới; ô Đang tải xuống thẳng hàng và rộng bằng ô Cần kiểm tra.",
+        "Chú thích và nhãn của icon trong cột Thao tác chỉ ghi chức năng, không kèm tên tệp."
+      ]
+    },
+    {
       "version": "1.15.1",
       "date": "2026-10-26",
       "title": "Bố cục trạng thái tải và nút thao tác bằng icon",

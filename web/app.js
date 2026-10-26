@@ -116,7 +116,7 @@ function choose(value) {filter=value;selectedSpeedId=null;document.querySelector
 function selectSpeedFile(id){selectedSpeedId=id;render();}
 const pendingActions=new Map();
 function actionButton(job,label,symbol,operation,disabled=false){
- const button=text('button','','row-action');button.prepend(icon(symbol));button.title=label+' · '+job.name;button.setAttribute('aria-label',button.title);button.disabled=disabled;
+ const button=text('button','','row-action');button.prepend(icon(symbol));button.title=label;button.setAttribute('aria-label',button.title);button.disabled=disabled;
  if(pendingActions.has(job.id))button.disabled=true;
  button.onclick=async()=>{
   if(pendingActions.has(job.id))return;
@@ -190,13 +190,13 @@ function render() {
    group.append(actionButton(j,pause?'Dừng':'Tiếp tục',pause?'pause':'play',pause?'pause':'resume',stopping),actionButton(j,'Hủy','close','cancel',j.status==='cancelling'));
    actions.append(group);
   }else if(j.status==='completed') {
-   const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'));folder.title='Mở thư mục chứa '+j.name;folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
-   const open=text('button','','row-action');open.prepend(icon('play'));open.title='Mở tệp '+j.name;open.setAttribute('aria-label',open.title);open.onclick=async()=>{open.disabled=true;try{await api('open-file',{id:j.id});}catch(e){notice(e.message);}finally{open.disabled=false;}};group.append(open);
-   const location=text('button','','row-action');location.append(icon('copy'));location.title='Xem và sao chép đường dẫn tệp';location.setAttribute('aria-label',location.title+' '+j.name);location.onclick=()=>{$('#file-location-path').value=j.file_path||'';$('#file-location-name').textContent=j.name;$('#file-location-dialog').showModal();};group.append(folder,location);actions.append(group);
+   const group=text('div','','file-actions'),folder=text('button','','row-action');folder.append(icon('folder'));folder.title='Mở thư mục';folder.setAttribute('aria-label',folder.title);folder.onclick=async()=>{folder.disabled=true;try{await api('open-folder',{id:j.id});}catch(e){notice(e.message);}finally{folder.disabled=false;}};
+   const open=text('button','','row-action');open.prepend(icon('play'));open.title='Mở tệp';open.setAttribute('aria-label',open.title);open.onclick=async()=>{open.disabled=true;try{await api('open-file',{id:j.id});}catch(e){notice(e.message);}finally{open.disabled=false;}};group.append(open);
+   const location=text('button','','row-action');location.append(icon('copy'));location.title='Xem và sao chép đường dẫn tệp';location.setAttribute('aria-label',location.title);location.onclick=()=>{$('#file-location-path').value=j.file_path||'';$('#file-location-name').textContent=j.name;$('#file-location-dialog').showModal();};group.append(folder,location);actions.append(group);
   }
   if(['completed','cancelled'].includes(j.status)){
-   const again=text('button','','row-action');again.prepend(icon('retry'));again.title='Tải lại '+j.name;again.setAttribute('aria-label',again.title);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};
-   const remove=text('button','','row-action delete-action');remove.append(icon('trash'));remove.title='Xóa lịch sử '+j.name;remove.setAttribute('aria-label',remove.title);remove.onclick=()=>openHistory(j.id);const group=text('div','','file-actions history-row-actions');group.append(again,remove);actions.append(group);
+   const again=text('button','','row-action');again.prepend(icon('retry'));again.title='Tải lại';again.setAttribute('aria-label',again.title);again.onclick=async()=>{again.disabled=true;try{await api('redownload',{id:j.id});await refresh();notice('Đã tạo lượt tải mới trong thư mục cũ. Tệp đã tải được giữ nguyên.');}catch(e){notice(e.message);again.disabled=false;}};
+   const remove=text('button','','row-action delete-action');remove.append(icon('trash'));remove.title='Xóa lịch sử';remove.setAttribute('aria-label',remove.title);remove.onclick=()=>openHistory(j.id);const group=text('div','','file-actions history-row-actions');group.append(again,remove);actions.append(group);
   }
   const actionGroup=text('div','','file-actions');actionGroup.append(...actions.querySelectorAll('button'));actions.replaceChildren(actionGroup);
   tr.append(actions);return tr;
