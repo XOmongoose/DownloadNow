@@ -2,7 +2,7 @@
 
 Tác giả: **XOmongoose**.
 
-1. Tải `DownloadNow-Setup-1.14.0-Windows-x64.exe` từ GitHub Releases của `XOmongoose/DownloadNow` và chép sang máy đích.
+1. Tải `DownloadNow-Setup-1.14.1-Windows-x64.exe` từ GitHub Releases của `XOmongoose/DownloadNow` và chép sang máy đích.
 2. Chạy bộ cài trên Windows 10/11 x64, chọn thư mục và bấm **Install**.
 3. Mở **Download Now** từ Desktop hoặc Start menu. Máy đích không cần Python hay Node.js.
 4. Với Chrome, Edge hoặc Opera, mở **Download Now → Browser extensions** trong Start menu và nạp thư mục `chromium` bằng chức năng tải tiện ích đã giải nén của trình duyệt. Firefox cần gói được Mozilla ký hoặc chế độ thử nghiệm.

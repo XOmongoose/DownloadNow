@@ -21,7 +21,9 @@ test('selection survives new polling samples',()=>{
  const {context:c,$}=harness();c.sampleSpeed();c.selectSpeedFile('b');c.jobs[1].speed=25;c.sampleSpeed();c.renderSpeed();assert.equal(c.selectedSpeedId,'b');assert.equal($('#stat-speed').textContent,'25/s');
 });
 test('switching a stat filter clears file selection and restores total',()=>{
- const {context:c,$}=harness();c.sampleSpeed();c.selectSpeedFile('a');c.choose('completed');assert.equal(c.filter,'completed');assert.equal(c.selectedSpeedId,null);assert.equal($('#stat-speed').textContent,'30/s');
+ for(const filter of ['active','queued','completed']){
+  const {context:c,$}=harness();c.sampleSpeed();c.selectSpeedFile('a');c.choose(filter);assert.equal(c.filter,filter);assert.equal(c.selectedSpeedId,null);assert.equal($('#stat-speed').textContent,'30/s');
+ }
 });
 test('deleted selection falls back to aggregate without stale data',()=>{
  const {context:c,$}=harness();c.sampleSpeed();c.selectSpeedFile('a');c.jobs=c.jobs.filter(j=>j.id!=='a');c.sampleSpeed();c.renderSpeed();assert.equal(c.selectedSpeedId,null);assert.equal($('#stat-speed').textContent,'20/s');

@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.14.1",
+      "date": "2026-10-26",
+      "title": "Tốc độ ở hàng riêng và ba ô trạng thái tải",
+      "changes": [
+        "Đưa tốc độ hiện tại và biểu đồ lên một hàng riêng phủ chiều ngang phía trên.",
+        "Ba ô bên dưới lần lượt là Đang tải xuống, Hàng đợi và Đã hoàn tất; bấm từng ô để đồng bộ bộ lọc và tab danh sách.",
+        "Thêm tab Hàng đợi và số tệp đang chờ; tiếp tục hỗ trợ chọn tệp để xem tốc độ riêng."
+      ]
+    },
+    {
       "version": "1.14.0",
       "date": "2026-10-26",
       "title": "Chọn tệp xem tốc độ riêng và đồng bộ ô thống kê",

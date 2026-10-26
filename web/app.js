@@ -159,7 +159,7 @@ function render() {
  if($('#history-dialog').open)updateHistorySummary();
  const counts={all:jobs.length,active:jobs.filter(active).length,queued:jobs.filter(j=>j.status==='queued').length,completed:jobs.filter(j=>j.status==='completed').length};
  Object.entries(counts).forEach(([k,v])=>$('#count-'+k).textContent=v);
- $('#tab-count').textContent=jobs.length;$('#stat-active').replaceChildren(document.createTextNode(counts.active+' '),text('small','tệp'));$('#stat-completed').replaceChildren(document.createTextNode(counts.completed+' '),text('small','tệp'));
+ $('#tab-count').textContent=jobs.length;$('#stat-active').replaceChildren(document.createTextNode(counts.active+' '),text('small','tệp'));$('#stat-queued').replaceChildren(document.createTextNode(counts.queued+' '),text('small','tệp'));$('#stat-completed').replaceChildren(document.createTextNode(counts.completed+' '),text('small','tệp'));
  renderSpeed();$('#stat-bytes').textContent=bytes(jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+j.done,0))+' đã tải về';
  const search=$('#search').value.toLocaleLowerCase('vi');const visible=jobs.filter(j=>(filter==='all'||(filter==='active'?active(j):j.status===filter))&&j.name.toLocaleLowerCase('vi').includes(search)).reverse();
  const selectable=visible.filter(canClearHistory),selectAll=$('#history-select-all');
