@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.14.3",
+      "date": "2026-10-26",
+      "title": "Giảm chia nhỏ các lượt tải Google Drive",
+      "changes": [
+        "Các lượt Google Drive mới dùng một kết nối dài thay vì liên tục mở yêu cầu mới cho từng đoạn 4 MB; các nguồn HTTP khác vẫn dùng tải phân đoạn.",
+        "Giữ kiểm tra Range, số byte và điều kiện nhận diện tệp khi tiếp tục. Hiển thị 1 kết nối dài trên lượt Google Drive đang tải.",
+        "Phép đo lặp trên mẫu 128 MB của tệp Drive được cung cấp cho thấy luồng dài nhanh hơn cấu hình cũ trên máy kiểm thử; chưa xác nhận vượt Chrome trên máy người dùng."
+      ]
+    },
+    {
       "version": "1.14.2",
       "date": "2026-10-26",
       "title": "Tải gói cập nhật qua nhiều kết nối",

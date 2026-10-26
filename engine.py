@@ -439,6 +439,7 @@ class Manager:
         folder.mkdir(exist_ok=True)
         try:
             total, ranged, etag, modified, suggested_name = self._probe(j, stop)
+            drive_stream=bool(google_drive.file_id(j['url']))
             if stop.is_set():raise Paused()
             with self.lock:
                 # Resolve the final server filename once, before publishing a file.
@@ -460,15 +461,19 @@ class Manager:
             if not j['ranges']:
                 if ranged and total:
                     # Workers claim pending segments dynamically as they finish.
-                    size = max(256 * 1024, min(CHUNK, (total + j['connections'] - 1) // j['connections']))
+                    # Drive is slower when each few MiB requires a new confirmed
+                    # HTTPS request. Keep its response open for a long range.
+                    size = total if drive_stream else max(256 * 1024, min(CHUNK, (total + j['connections'] - 1) // j['connections']))
                     j['ranges'] = [[start, min(start + size, total) - 1] for start in range(0, total, size)]
                 else:
                     j['ranges'] = [[0, total - 1 if total is not None else None]]
             with self.lock:
-                j.update(total=total, ranged=ranged, etag=etag, modified=modified, status='downloading', error='')
+                workers=1 if not ranged or drive_stream and len(j['ranges'])==1 else j['connections']
+                j.update(total=total, ranged=ranged, etag=etag, modified=modified, status='downloading', error='',
+                         effective_connections=workers,transfer_mode='drive_stream' if drive_stream and len(j['ranges'])==1 else 'segmented')
                 self.samples[j['id']] = (time.monotonic(), self._done(j))
                 self.save()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=j['connections'] if ranged else 1) as pool:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(self._segment, j, i, bounds, folder, stop) for i, bounds in enumerate(j['ranges'])]
                 try:
                     for f in concurrent.futures.as_completed(futures):

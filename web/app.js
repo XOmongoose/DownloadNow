@@ -178,6 +178,7 @@ function render() {
   if(j.status==='queued'&&j.start_at)meta='◷ '+new Date(j.start_at*1000).toLocaleString('vi-VN');
   if(j.status==='error')meta=j.error;
   if(j.status==='downloading'&&j.speed&&j.total)meta+=` · còn ${Math.ceil((j.total-j.done)/j.speed)} giây`;
+  if(j.status==='downloading'&&j.transfer_mode==='drive_stream')meta+=' · 1 kết nối dài';
   const subtitle=text('span',meta,'file-meta');subtitle.title=j.error||j.url;info.append(subtitle);
   if(j.status==='completed'&&j.file_path){const location=text('span',j.file_path,'file-meta file-location');location.title=j.file_path;info.append(location);}
   if(active(j)){const bar=text('div','','progress'),fill=text('div','','progress-fill');fill.style.width=pct+'%';bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuenow',pct.toFixed(0));bar.setAttribute('aria-label',j.name);bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','100');bar.append(fill);info.append(bar);}

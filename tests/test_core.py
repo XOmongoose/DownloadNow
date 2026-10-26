@@ -57,6 +57,34 @@ def request(manager, job, headers=None):
 
 
 class CoreTests(fixtures.DownloadTests):
+    def test_drive_uses_one_long_range_and_preserves_exact_bytes(self):
+        ident=self.manager.add('https://drive.google.com/file/d/public-drive-id-123/view',name='drive.zip')
+        self.verify(ident)
+        job=self.manager.jobs[ident]
+        self.assertEqual(job['ranges'],[[0,len(PAYLOAD)-1]])
+        self.assertEqual(job['effective_connections'],1)
+        self.assertEqual(job['transfer_mode'],'drive_stream')
+
+    def test_drive_long_range_retries_from_saved_offset(self):
+        Source.drop_once=True
+        ident=self.manager.add('https://drive.google.com/file/d/public-drive-id-123/view',name='drive-retry.zip')
+        self.verify(ident)
+        self.assertIn((65536,len(PAYLOAD)-1),Source.ranges_seen)
+
+    def test_drive_long_range_can_pause_and_resume(self):
+        Source.slow=True
+        ident=self.manager.add('https://drive.google.com/file/d/public-drive-id-123/view',name='drive-resume.zip')
+        end=time.monotonic()+5
+        while time.monotonic()<end:
+            if self.manager.jobs[ident]['status']=='downloading' and self.manager._done(self.manager.jobs[ident])>0:break
+            time.sleep(.01)
+        self.manager.action(ident,'pause')
+        self.wait(ident,('paused',))
+        saved=self.manager._done(self.manager.jobs[ident]);self.assertGreater(saved,0)
+        Source.slow=False
+        self.manager.action(ident,'resume');self.verify(ident)
+        self.assertIn((saved,len(PAYLOAD)-1),Source.ranges_seen)
+
     def test_four_files_run_together_and_next_starts_without_restart(self):
         from engine import MAX_ACTIVE_DOWNLOADS
         self.assertEqual(MAX_ACTIVE_DOWNLOADS,4)
