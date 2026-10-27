@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.15.7",
+      "date": "2026-10-27",
+      "title": "Chọn nguồn theo trình phát Tin đang hiển thị",
+      "changes": [
+        "Mỗi lần bấm Tải Tin, đánh dấu và dò đúng trình phát đang hiển thị thay vì ưu tiên JSON của Tin đầu tiên theo địa chỉ trang.",
+        "Không dùng nguồn của trình phát cũ hoặc Tin nạp trước; kiểm tra lại trình phát và nguồn sau khi dò.",
+        "Bổ sung kiểm thử chuyển Tin khi URL không đổi, tái sử dụng trình phát blob, nguồn HD/SD và từ chối nguồn mơ hồ."
+      ]
+    },
+    {
       "version": "1.15.6",
       "date": "2026-10-27",
       "title": "Bổ sung dò nguồn video trong thành phần Tin Facebook",

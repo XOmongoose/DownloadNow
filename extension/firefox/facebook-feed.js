@@ -74,13 +74,18 @@ globalThis.DownloadNowFacebook=(()=>{
   // Old extension contexts can leave DOM behind after runtime.reload().
   for(const host of doc.querySelectorAll('[data-downloadnow-feed],[data-downloadnow-story]'))host.remove();
   async function source(video){
-   const initial=page();let url=resolve(video,initial,doc);
-   if(!url&&storyIdentity(initial)){
-    const result=await bridge.runtime.sendMessage({type:'resolve-facebook-story-source',page:initial});
-    if(new URL(page()).pathname!==new URL(initial).pathname)throw Error('Tin đã thay đổi. Bấm tải lại trên đúng Tin.');
+   const initial=page();let url;
+   if(new URL(initial).pathname.startsWith('/stories/')){
+    if(!video)throw Error('Chưa xác định được video Tin đang hiển thị. Đợi video hiện rồi thử lại.');
+    const target=crypto.randomUUID(),src=video.currentSrc||video.src||'';
+    video.setAttribute('data-downloadnow-target',target);
+    let result;
+    try{result=await bridge.runtime.sendMessage({type:'resolve-facebook-story-source',page:initial,target});}
+    finally{if(video.getAttribute('data-downloadnow-target')===target)video.removeAttribute('data-downloadnow-target');}
+    if(new URL(page()).pathname!==new URL(initial).pathname||selected(doc)!==video||(video.currentSrc||video.src||'')!==src)throw Error('Tin đã thay đổi. Bấm tải lại trên đúng Tin.');
     if(!result?.url)throw Error(result?.error||'Chưa tìm được nguồn MP4 phù hợp của Tin đang mở.');
     url=direct(result.url);if(!url)throw Error('Nguồn video Facebook không hợp lệ.');
-   }
+   }else url=resolve(video,initial,doc);
    return url;
   }
   async function send(video,button){

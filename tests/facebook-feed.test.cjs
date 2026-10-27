@@ -63,19 +63,21 @@ test('per-video button resolves a recycled feed element again at click time',asy
 
 function storyUI({enabled=true,data=null,probe=null}={}){
  const hosts=[],messages=[],notices=[];let timer,page='https://www.facebook.com/stories/1959327764084753/'+story+'/';
- const doc={querySelectorAll:s=>s==='script[type="application/json"]'&&data?[{textContent:JSON.stringify(data)}]:[],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){this.removed=true;},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
- const bridge={runtime:{onMessage:{addListener(){}},sendMessage:async m=>{messages.push(m);return m.type==='resolve-facebook-story-source'&&probe?probe():{ok:true};}}};
+ const attrs={};let v;
+ const doc={querySelectorAll:s=>s==='video'?[v]:s==='script[type="application/json"]'&&data?[{textContent:JSON.stringify(data)}]:[],body:{append:h=>hosts.push(h)},createElement:()=>({style:{},setAttribute(){},remove(){this.removed=true;},attachShadow(){const shadow={children:[],append(x){this.children.push(x);}};this.shadow=shadow;return shadow;}})};
+ v={currentSrc:'blob:current',src:'',isConnected:true,paused:false,ended:false,parentElement:{contains:()=>true},ownerDocument:doc,getBoundingClientRect:()=>({left:100,right:500,top:100,bottom:500,width:400,height:400}),setAttribute:(k,x)=>attrs[k]=x,getAttribute:k=>attrs[k],removeAttribute:k=>delete attrs[k]};doc.elementFromPoint=()=>v;
+ const bridge={runtime:{onMessage:{addListener(){}},sendMessage:async m=>{messages.push(m);return m.type==='resolve-facebook-story-source'?(probe?probe():data?{url:'https://v.fbcdn.net/selected.mp4'}:{}):{ok:true};}}};
  const c=vm.createContext({URL,atob:x=>Buffer.from(x,'base64').toString(),window:{location:{href:page},innerHeight:900,innerWidth:1200,addEventListener(){}},setInterval:f=>{timer=f;},requestAnimationFrame:f=>f(),crypto:require('node:crypto').webcrypto});
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension/chromium/facebook-feed.js'),'utf8'),c);
  c.DownloadNowFacebook.attach({doc,bridge,enabled:()=>enabled,notice:t=>notices.push(t),page:()=>page});
  return {hosts,messages,notices,click:()=>hosts.at(-1).shadow.children[0].onclick({preventDefault(){},stopPropagation(){}}),navigate:p=>{page=p;timer();}};
 }
 
-test('fixed Story button remains visible without a video element and downloads only its matching source',async()=>{
+test('fixed Story button asks the marked visible player for its source on every click',async()=>{
  const h=storyUI({data:{id:story,video:{id:'v1',browser_native_hd_url:'https://v.fbcdn.net/selected.mp4'}}});
  assert.equal(h.hosts.length,1);assert.equal(h.hosts[0].shadow.children[0].textContent,'↓ Tải Tin Facebook');
  assert.match(h.hosts[0].style.cssText,/right:24px;bottom:88px/);
- await h.click();assert.equal(h.messages[0].url,'https://v.fbcdn.net/selected.mp4');
+ await h.click();assert.equal(h.messages.find(m=>m.type==='capture-link').url,'https://v.fbcdn.net/selected.mp4');
  h.navigate('https://www.facebook.com/');assert.equal(h.hosts[0].removed,true);
 });
 
