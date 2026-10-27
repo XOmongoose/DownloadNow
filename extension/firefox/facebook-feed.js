@@ -48,7 +48,7 @@ globalThis.DownloadNowFacebook=(()=>{
     const raw=script.textContent||'';budget-=raw.length;if(budget<0)break;if(!story||raw.length>4000000||!raw.includes(story)&&!(numeric&&raw.includes(numeric)))continue;
     try{const url=storyMedia(JSON.parse(raw),story);if(url)return url;}catch(e){}
    }
-   return direct(video?.currentSrc)||direct(video?.src);
+   return null;
   }
   if(!video)return null;
   const enclosing=video.closest('a[href]');const own=enclosing&&canonical(enclosing.href,page);if(own)return own;
@@ -77,7 +77,7 @@ globalThis.DownloadNowFacebook=(()=>{
    const initial=page();let url=resolve(video,initial,doc);
    if(!url&&storyIdentity(initial)){
     const result=await bridge.runtime.sendMessage({type:'resolve-facebook-story-source',page:initial});
-    if(storyIdentity(page())!==storyIdentity(initial))throw Error('Tin đã thay đổi. Bấm tải lại trên đúng Tin.');
+    if(new URL(page()).pathname!==new URL(initial).pathname)throw Error('Tin đã thay đổi. Bấm tải lại trên đúng Tin.');
     if(!result?.url)throw Error(result?.error||'Chưa tìm được nguồn MP4 phù hợp của Tin đang mở.');
     url=direct(result.url);if(!url)throw Error('Nguồn video Facebook không hợp lệ.');
    }
@@ -91,7 +91,7 @@ globalThis.DownloadNowFacebook=(()=>{
    try{const url=await source(video);if(!url)throw Error('Chưa tìm được nguồn video của mục đang mở.');
     button.textContent='Đang chọn nơi lưu…';
     let result=await bridge.runtime.sendMessage({type:'capture-link',url,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
-    const fallback=direct(video?.currentSrc)||direct(video?.src);
+    const fallback=new URL(page()).pathname.startsWith('/stories/')?null:direct(video?.currentSrc)||direct(video?.src);
     if(!result?.ok&&fallback&&fallback!==url)result=await bridge.runtime.sendMessage({type:'capture-link',url:fallback,name:'Facebook video.mp4',requestId:crypto.randomUUID()});
     if(!result?.ok)throw Error(result?.error||'Không kết nối được ứng dụng.');notice(result.cancelled?'Đã hủy tải.':'Đã thêm video vào Download Now.');}
    catch(e){notice(e.message);}finally{button.disabled=false;button.textContent=label;}

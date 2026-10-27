@@ -337,7 +337,7 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   (async()=>{
    const page=new URL(sender.url||''),requested=new URL(message.page||'');
    const hosts=['facebook.com','www.facebook.com','m.facebook.com','web.facebook.com'];
-   if(!fromPage||sender.frameId!==0||page.protocol!=='https:'||!hosts.includes(page.hostname)||!page.pathname.startsWith('/stories/')||requested.origin!==page.origin||requested.pathname!==page.pathname)throw Error('Trang Tin không hợp lệ hoặc đã thay đổi.');
+   if(!fromPage||sender.frameId!==0||page.protocol!=='https:'||!hosts.includes(page.hostname)||requested.origin!==page.origin||!requested.pathname.startsWith('/stories/'))throw Error('Trang Tin không hợp lệ hoặc đã thay đổi.');
    const settings=await bridge.storage.local.get(['capture','intercept','token']);
    if(!settings.capture||!settings.intercept||!settings.token)throw Error('Bật bắt link và kết nối ứng dụng trước.');
    const results=await bridge.scripting.executeScript({target:{tabId:sender.tab.id,frameIds:[0]},world:'MAIN',func:globalThis.DownloadNowFacebookProbe,args:[requested.href]});

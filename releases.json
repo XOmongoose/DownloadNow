@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.15.4",
+      "date": "2026-10-27",
+      "title": "Sửa tải Tin Facebook khi chuyển người xem",
+      "changes": [
+        "Cho phép nhận Tin hiện tại khi Facebook chuyển người hoặc mở Tin từ bảng tin mà không tải lại trang; kiểm tra lại đúng đường dẫn trong trang trước khi lấy nguồn.",
+        "Không dùng nguồn MP4 còn lưu trên trình phát của Tin trước khi chưa xác nhận được nguồn của Tin hiện tại."
+      ]
+    },
+    {
       "version": "1.15.3",
       "date": "2026-10-27",
       "title": "Dời xóa lịch sử cạnh tìm kiếm và rút gọn chú thích xóa",

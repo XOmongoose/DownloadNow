@@ -100,3 +100,12 @@ test('Story button refuses the result if navigation changes during async resolut
 test('initial Story JSON supports progressive delivery fields without mixing video identities',()=>{
  assert.equal(fb.storyMedia({id:story,video:{id:'v1',progressive_urls:[{progressive_url:'https://v.fbcdn.net/a.mp4'},{progressive_url:'https://v.fbcdn.net/b.mp4'}]}},story)?.endsWith('.mp4'),true);
 });
+
+test('Story never falls back to a recycled player URL from the previous owner',()=>{
+ assert.equal(fb.resolve(video(null,'https://v.fbcdn.net/previous.mp4'),'https://www.facebook.com/stories/second/new/',doc),null);
+});
+test('same Story button resolves each successive owner from its current identity',async()=>{
+ let current='https://v.fbcdn.net/first.mp4';const h=storyUI({probe:()=>({url:current})});
+ await h.click();h.navigate('https://www.facebook.com/stories/second/new/');current='https://v.fbcdn.net/second.mp4';await h.click();
+ assert.deepEqual(h.messages.filter(m=>m.type==='capture-link').map(m=>m.url),['https://v.fbcdn.net/first.mp4','https://v.fbcdn.net/second.mp4']);
+});

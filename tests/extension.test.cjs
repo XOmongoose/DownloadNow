@@ -341,8 +341,8 @@ test('Story probe runs only in the originating top-level Facebook tab and valida
  assert.equal(result.url,'https://v.fbcdn.net/video.mp4');assert.equal(spec.world,'MAIN');assert.equal(spec.target.tabId,123);assert.deepEqual(Array.from(spec.target.frameIds),[0]);
 });
 
-test('Story probe rejects foreign senders and changed Story paths without executing page code',async()=>{
- for(const [url,frameId] of [['https://evil.test/stories/owner/story/',0],['https://www.facebook.com/stories/owner/other/',0],['https://www.facebook.com/stories/owner/story/',1]]){
+test('Story probe rejects foreign senders and subframes without executing page code',async()=>{
+ for(const [url,frameId] of [['https://evil.test/stories/owner/story/',0],['https://www.facebook.com/stories/owner/story/',1]]){
   const h=harness();let executed=false;h.bridge.scripting.executeScript=async()=>{executed=true;};
   const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'resolve-facebook-story-source',page:'https://www.facebook.com/stories/owner/story/'},{url,tab:{id:1},frameId},resolve));
   assert.ok(result.error);assert.equal(executed,false);
@@ -354,3 +354,12 @@ test('Story probe rejects forged media output from the page',async()=>{
  h.bridge.scripting.executeScript=async()=>[{frameId:0,result:{url:'https://evil.test/file.mp4'}}];
  const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'resolve-facebook-story-source',page},{url:page,tab:{id:1},frameId:0},resolve));assert.match(result.error,/không hợp lệ/);
 });
+
+ test('Story probe accepts SPA navigation from feed and previous owner, passing the current path to MAIN verification',async()=>{
+ for(const old of ['https://www.facebook.com/','https://www.facebook.com/stories/first/old/']){
+ const h=harness(),page='https://www.facebook.com/stories/second/new/';let spec;
+ h.bridge.scripting.executeScript=async s=>{spec=s;return [{frameId:0,result:{url:'https://v.fbcdn.net/new.mp4'}}];};
+ const result=await new Promise(resolve=>h.bridge.runtime.onMessage.listeners[0]({type:'resolve-facebook-story-source',page},{url:old,tab:{id:1},frameId:0},resolve));
+ assert.equal(result.url,'https://v.fbcdn.net/new.mp4');assert.equal(spec.args[0],page);
+ }
+ });

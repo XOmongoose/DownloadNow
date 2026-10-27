@@ -2,7 +2,7 @@
 // validated media URL, never page data, cookies, credentials or browser storage.
 globalThis.DownloadNowFacebookProbe=function(expected){
  function identity(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&['facebook.com','www.facebook.com','m.facebook.com','web.facebook.com'].includes(u.hostname)&&u.pathname.startsWith('/stories/')?decodeURIComponent(u.pathname.split('/')[3]||''):null;}catch(e){return null;}}
- const story=identity(expected);if(!story||identity(location.href)!==story)return {error:'Tin đã thay đổi. Bấm tải lại trên đúng Tin.'};
+ const story=identity(expected);if(!story||(identity(location.href)!==story||new URL(location.href).pathname!==new URL(expected).pathname))return {error:'Tin đã thay đổi. Bấm tải lại trên đúng Tin.'};
  const aliases=new Set([story]);try{const id=atob(story).match(/:(\d+)$/)?.[1];if(id)aliases.add(id);}catch(e){}
  function direct(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&u.hostname.endsWith('.fbcdn.net')&&/\.mp4$/i.test(u.pathname)?u.href:null;}catch(e){return null;}}
  const skip=new Set(['return','child','sibling','stateNode','_owner','alternate','ref','children']);
@@ -38,6 +38,6 @@ globalThis.DownloadNowFacebookProbe=function(expected){
    for(const [,v] of values)if(v&&typeof v==='object')pending.push([v,id]);
   }
  }
- if(identity(location.href)!==story)return {error:'Tin đã thay đổi. Bấm tải lại trên đúng Tin.'};
+ if((identity(location.href)!==story||new URL(location.href).pathname!==new URL(expected).pathname))return {error:'Tin đã thay đổi. Bấm tải lại trên đúng Tin.'};
  return media.size===1?{url:[...media.values()][0],story}:{error:media.size>1?'Tin có nhiều nguồn video, chưa xác định được tệp cần tải.':'Video đang phát nhưng chưa tìm được nguồn MP4 phù hợp của đúng Tin này.'};
 };

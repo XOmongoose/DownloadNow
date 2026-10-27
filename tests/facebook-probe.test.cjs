@@ -31,3 +31,7 @@ test('returns only the selected media URL and Story identity, not component data
  const result=probe({id:story,privateField:'not-returned',video:{id:'v1',playable_url:'https://v.fbcdn.net/a.mp4'}});
  assert.deepEqual(Object.keys(result).sort(),['story','url']);
 });
+
+test('rejects a different owner even when a Story suffix is reused',()=>{
+ assert.match(probe({},page,page.replace('1399901183414478','another-owner')).error,/thay đổi/);
+});
