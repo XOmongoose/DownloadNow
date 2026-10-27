@@ -5,8 +5,10 @@ globalThis.DownloadNowFacebookProbe=function(expected){
  const story=identity(expected);if(!story||(identity(location.href)!==story||new URL(location.href).pathname!==new URL(expected).pathname))return {error:'Tin đã thay đổi. Bấm tải lại trên đúng Tin.'};
  const aliases=new Set([story]);try{const id=atob(story).match(/:(\d+)$/)?.[1];if(id)aliases.add(id);}catch(e){}
  function direct(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&u.hostname.endsWith('.fbcdn.net')&&/\.mp4$/i.test(u.pathname)?u.href:null;}catch(e){return null;}}
- const skip=new Set(['return','child','sibling','stateNode','_owner','alternate','ref','children']);
+ const skip=new Set(['return','child','sibling','stateNode','_owner','alternate','ref']);
  function entries(node){try{return Object.entries(Object.getOwnPropertyDescriptors(node)).filter(([k,d])=>!skip.has(k)&&'value' in d).map(([k,d])=>[k,d.value]);}catch(e){return [];}}
+ // React children contain Story attachments too. Walk their data properties,
+ // retaining cycle/budget guards and excluding Fiber back-links and DOM nodes.
  const roots=[];
  // Limit inspection to media elements and their component ancestors. Do not
  // search window, the Relay store, request history, or unrelated page state.
@@ -21,7 +23,7 @@ globalThis.DownloadNowFacebookProbe=function(expected){
  }
  const matches=[],seen=new WeakSet(),stack=roots.slice();let budget=60000;
  while(stack.length&&budget-->0){
-  const node=stack.pop();if(!node||typeof node!=='object'||seen.has(node))continue;seen.add(node);
+  const node=stack.pop();if(!node||typeof node!=='object'||seen.has(node)||Object.getOwnPropertyDescriptor(node,'nodeType')?.value)continue;seen.add(node);
   const values=entries(node);
   if(values.some(([k,v])=>['id','story_id','story_fbid','storyID','storyId'].includes(k)&&aliases.has(String(v))))matches.push(node);
   for(const [,v] of values)if(v&&typeof v==='object')stack.push(v);
@@ -30,7 +32,7 @@ globalThis.DownloadNowFacebookProbe=function(expected){
  for(const match of matches){
   const pending=[[match,'story']],visited=new WeakSet();let remaining=15000;
   while(pending.length&&remaining-->0){
-   const [node,parentId]=pending.pop();if(!node||typeof node!=='object'||visited.has(node))continue;visited.add(node);
+   const [node,parentId]=pending.pop();if(!node||typeof node!=='object'||visited.has(node)||Object.getOwnPropertyDescriptor(node,'nodeType')?.value)continue;visited.add(node);
    const values=entries(node),id=values.find(([k,v])=>['id','video_id','videoID'].includes(k)&&typeof v!=='object')?.[1]||parentId;
    const fields=['browser_native_hd_url','playable_url_quality_hd','browser_native_sd_url','playable_url','progressive_url'];
    const url=fields.map(key=>direct(values.find(([k])=>k===key)?.[1])).find(Boolean);

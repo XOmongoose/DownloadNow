@@ -35,3 +35,19 @@ test('returns only the selected media URL and Story identity, not component data
 test('rejects a different owner even when a Story suffix is reused',()=>{
  assert.match(probe({},page,page.replace('1399901183414478','another-owner')).error,/thay đổi/);
 });
+
+test('finds the supplied Story through React children while excluding a neighbour',()=>{
+ const requested='UzpfSVNDOjE1OTIwMzc5MTIxNzM0ODY=',url='https://www.facebook.com/stories/1293026967448904/'+requested+'/';
+ const data={children:[{props:{story:{id:'other',children:{playable_url:'https://v.fbcdn.net/wrong.mp4'}}}},{props:{story:{id:'1592037912173486',children:{props:{video:{id:'v1',browser_native_hd_url:'https://v.fbcdn.net/right.mp4'}}}}}}]};
+ assert.equal(probe(data,url,url).url,'https://v.fbcdn.net/right.mp4');
+});
+test('walks cyclic React children without invoking accessors or entering DOM nodes',()=>{
+ const data={id:story,children:{props:{video:{id:'v1',playable_url:'https://v.fbcdn.net/right.mp4'}}}};
+ data.children.loop=data;data.dom={nodeType:1,id:story,playable_url:'https://v.fbcdn.net/wrong.mp4'};
+ Object.defineProperty(data.children,'nodeType',{get(){throw Error('nodeType getter');}});
+ Object.defineProperty(data.children,'secret',{enumerable:true,get(){throw Error('getter');}});
+ assert.equal(probe(data).url,'https://v.fbcdn.net/right.mp4');
+});
+test('does not borrow media from a neighbouring child when requested Story has no video',()=>{
+ assert.equal(probe({children:[{props:{id:story}},{props:{id:'other',playable_url:'https://v.fbcdn.net/wrong.mp4'}}]}).url,undefined);
+});

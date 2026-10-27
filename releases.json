@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.15.6",
+      "date": "2026-10-27",
+      "title": "Bổ sung dò nguồn video trong thành phần Tin Facebook",
+      "changes": [
+        "Dò thêm dữ liệu children của thành phần Tin Facebook để tìm video theo đúng mã Tin hiện tại.",
+        "Giữ giới hạn dò, chống vòng lặp, bỏ qua getter và không chọn nguồn của Tin bên cạnh; bổ sung kiểm thử cấu trúc lồng nhau."
+      ]
+    },
+    {
       "version": "1.15.5",
       "date": "2026-10-27",
       "title": "Hiển thị giờ và ngày tải tệp",
