@@ -28,3 +28,14 @@ test('switching a stat filter clears file selection and restores total',()=>{
 test('deleted selection falls back to aggregate without stale data',()=>{
  const {context:c,$}=harness();c.sampleSpeed();c.selectSpeedFile('a');c.jobs=c.jobs.filter(j=>j.id!=='a');c.sampleSpeed();c.renderSpeed();assert.equal(c.selectedSpeedId,null);assert.equal($('#stat-speed').textContent,'20/s');
 });
+
+test('download time uses completion, preserves old creation dates and never invents missing history',()=>{
+ const source=fs.readFileSync('web/app.js','utf8'),c=vm.createContext({Date,Number});
+ vm.runInContext(source.slice(source.indexOf('function downloadTime('),source.indexOf('function notice(')),c);
+ const start=1700000000,end=start+90;
+ assert.equal(c.downloadTime({created:start,completed_at:end}).label,'Hoàn tất lúc');
+ assert.equal(c.downloadTime({created:start}).label,'Thêm lượt tải lúc');
+ assert.notEqual(c.downloadTime({created:start}).value,c.downloadTime({created:start,completed_at:end}).value);
+ assert.equal(c.downloadTime({}).value,'Chưa ghi nhận');
+ assert.equal(c.downloadTime({created:Infinity}).value,'Chưa ghi nhận');
+});

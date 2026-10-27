@@ -53,6 +53,9 @@ class MediaTests(unittest.TestCase):
         job=self.job()
         with patch('engine.download_video',side_effect=self.fake_download):self.manager._run(job,threading.Event())
         self.assertEqual(job['status'],'completed')
+        self.assertGreater(job['completed_at'],0)
+        persisted=json.loads((self.manager.root/'state.json').read_text('utf-8'))
+        self.assertEqual(persisted[job['id']]['completed_at'],job['completed_at'])
         self.assertEqual((self.manager.output/job['name']).read_bytes(),b'test-mp4')
         self.assertFalse((self.manager.parts/job['id']).exists())
 

@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.15.5",
+      "date": "2026-10-27",
+      "title": "Hiển thị giờ và ngày tải tệp",
+      "changes": [
+        "Thêm cột Thời gian tải có thể chỉnh độ rộng, hiển thị giờ phút giây và ngày tháng năm theo giờ trên máy.",
+        "Lưu thời điểm hoàn tất của tệp và video; lịch sử cũ hiển thị thời điểm thêm lượt tải nếu có, không suy đoán thời điểm hoàn tất."
+      ]
+    },
+    {
       "version": "1.15.4",
       "date": "2026-10-27",
       "title": "Sửa tải Tin Facebook khi chuyển người xem",

@@ -506,7 +506,7 @@ class Manager:
                     if not filecmp.cmp(assembled, target, shallow=False):
                         raise ValueError('Tệp đích đã tồn tại với nội dung khác. Hãy đổi tên lượt tải mới.')
                 assembled.unlink(missing_ok=True)
-                j.update(status='completed', done=target.stat().st_size)
+                j.update(status='completed', done=target.stat().st_size, completed_at=time.time())
                 self.save()
             for part in folder.glob('*.part'):
                 part.unlink()
@@ -566,7 +566,7 @@ class Manager:
                 except FileExistsError:
                     if not filecmp.cmp(assembled,target,shallow=False):raise ValueError('Tệp đích đã tồn tại. Hãy đổi tên để giữ nguyên tệp cũ.')
                 assembled.unlink(missing_ok=True)
-                j.update(status='completed',done=target.stat().st_size,total=target.stat().st_size,media_speed=0)
+                j.update(status='completed',done=target.stat().st_size,total=target.stat().st_size,media_speed=0,completed_at=time.time())
                 self.save()
             self._discard_partial(j)
         except VideoStopped:

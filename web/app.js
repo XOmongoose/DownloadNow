@@ -25,13 +25,13 @@ document.querySelectorAll('[data-icon]').forEach(element=>element.replaceChildre
 (() => {
  const table=document.querySelector('.table-scroll table');
  const headings=[...table.querySelectorAll('thead th')];
- const key='downloadnow.column-widths.v1';
- const defaults=[36,Math.max(320,table.parentElement.clientWidth-670),140,140,120,234];
- const minimums=[36,200,110,115,100,200];
+ const key='downloadnow.column-widths.v2';
+ const defaults=[36,Math.max(320,table.parentElement.clientWidth-830),140,140,120,160,234];
+ const minimums=[36,200,110,115,100,145,200];
  let widths=[...defaults];
  try{
   const saved=JSON.parse(localStorage.getItem(key));
-  if(Array.isArray(saved)&&saved.length===6&&saved.every((n,i)=>Number.isFinite(n)&&n>=minimums[i]&&n<=2000))widths=saved;
+  if(Array.isArray(saved)&&saved.length===7&&saved.every((n,i)=>Number.isFinite(n)&&n>=minimums[i]&&n<=2000))widths=saved;
  }catch(error){/* Storage may be unavailable in private browser profiles. */}
  const group=document.createElement('colgroup');
  const columns=widths.map(()=>{const col=document.createElement('col');group.append(col);return col;});
@@ -81,6 +81,14 @@ const labels = {queued:'Trong hàng đợi', probing:'Đang kết nối', downlo
 let jobs = [], filter = 'all', noticeTimer;
 const active = j => ['probing','downloading','pausing','cancelling'].includes(j.status);
 function bytes(n) {if (!n) return '0 B';const k=Math.min(4,Math.floor(Math.log(n)/Math.log(1024)));return `${(n/1024**k).toFixed(k?1:0)} ${['B','KB','MB','GB','TB'][k]}`;}
+function downloadTime(job) {
+ const finished=Number.isFinite(job.completed_at)&&job.completed_at>0;
+ const stamp=finished?job.completed_at:job.created;
+ if(!Number.isFinite(stamp)||stamp<=0)return {value:'Chưa ghi nhận',label:'Lượt tải cũ chưa lưu thời gian'};
+ const date=new Date(stamp*1000);
+ if(!Number.isFinite(date.getTime()))return {value:'Chưa ghi nhận',label:'Thời gian không hợp lệ'};
+ return {value:date.toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'}),label:finished?'Hoàn tất lúc':'Thêm lượt tải lúc'};
+}
 function notice(message) {$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('#toast').hidden=true,5000);}
 async function api(path, data) {
  // Only reads and idempotent stop/cancel commands may be sent again after a
@@ -185,6 +193,7 @@ function render() {
   if(active(j)){const bar=text('div','','progress'),fill=text('div','','progress-fill');fill.style.width=pct+'%';bar.setAttribute('role','progressbar');bar.setAttribute('aria-valuenow',pct.toFixed(0));bar.setAttribute('aria-label',j.name);bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','100');bar.append(fill);info.append(bar);}
   cell.append(info);td.append(cell);tr.append(td,text('td',j.total===null?'Chưa xác định':bytes(j.total)));
   const status=document.createElement('td');status.append(text('span',labels[j.status],`status ${j.status}`));tr.append(status,text('td',j.speed?bytes(j.speed)+'/s':'—'));
+  const timing=downloadTime(j),timeCell=text('td','','download-time');timeCell.append(text('span',timing.value),text('small',timing.label));timeCell.title=timing.label+' '+timing.value;tr.append(timeCell);
   const actions=document.createElement('td');actions.className='download-actions';if(!['completed','cancelled'].includes(j.status)){
    const group=text('div','','file-actions'),stopping=['pausing','cancelling'].includes(j.status),pause=active(j)||j.status==='queued';
    group.append(actionButton(j,pause?'Dừng':'Tiếp tục',pause?'pause':'play',pause?'pause':'resume',stopping),actionButton(j,'Hủy','close','cancel',j.status==='cancelling'));
