@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.17.1",
+      "date": "2026-10-31",
+      "title": "Ẩn nút tải video trang hiện tại trong popup",
+      "changes": [
+        "Ẩn nút Tải video trang hiện tại và mô tả của nút trong popup tiện ích.",
+        "Giữ cửa sổ Windows độc lập và kết nối tiện ích của v1.17.0."
+      ]
+    },
+    {
       "version": "1.17.0",
       "date": "2026-10-31",
       "title": "Cửa sổ Windows độc lập bằng WebView2",

@@ -2,13 +2,13 @@
 
 Tác giả: **XOmongoose**.
 
-Bộ cài cho Windows 10/11 x64: tải **DownloadNow-Setup-1.17.0-Windows-x64.exe** từ GitHub Releases. Không cần cài Python hay Node.js trên máy đích. Xem [hướng dẫn cài đặt](INSTALLER.md).
+Bộ cài cho Windows 10/11 x64: tải **DownloadNow-Setup-1.17.1-Windows-x64.exe** từ GitHub Releases. Không cần cài Python hay Node.js trên máy đích. Xem [hướng dẫn cài đặt](INSTALLER.md).
 
 Ứng dụng quản lý tải HTTP/HTTPS chạy cục bộ, giao diện tiếng Việt. Không cần thư viện Python bên ngoài.
 
 ## Phiên bản và nâng cấp giao diện
 
-Phiên bản hiện tại: **1.17.0**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
+Phiên bản hiện tại: **1.17.1**. Nhấn nút phiên bản ở thanh bên để xem lịch sử thay đổi. Tiện ích cũng hiển thị phiên bản trong popup.
 
 Mỗi lần nâng cấp, thêm mục mới lên đầu `releases.json`, tăng `major.minor.patch` phù hợp rồi chạy `python tools/sync_release.py`. Lệnh đồng bộ phiên bản, lịch sử trong giao diện và hai gói tiện ích từ cùng một nguồn. Sau đó tải lại giao diện; với tiện ích đã cài cần nhấn Reload ở trang quản lý tiện ích.
 
@@ -277,4 +277,4 @@ Nếu Python phân phối có tệp chính sách CA bổ sung được ssl.py th
 
 Cài đặt ứng dụng: chọn Sáng / Tối / Theo hệ thống, chạy nền và khởi động cùng Windows. Bản EXE đăng ký khởi động cho tài khoản hiện tại, không cần quyền quản trị. Tắt chạy nền sẽ dừng sau khoảng hai phút không có tab giao diện; tải dở lưu lại để tiếp tục. Công tắc trong popup tiện ích ngừng bắt link/gửi tải, không gỡ tiện ích và không dừng các tệp đã vào ứng dụng.
 
-Từ v1.17.0, bản EXE mở cửa sổ Windows riêng qua Microsoft Edge WebView2 Runtime, không cần tab trình duyệt. Bộ máy tải vẫn dùng kết nối loopback cho tiện ích. Microsoft Edge WebView2 Runtime cần có trên máy: https://developer.microsoft.com/microsoft-edge/webview2/ . Khi đóng cửa sổ, thiết lập chạy nền quyết định thời gian giữ bộ máy tải.
+Từ v1.17.1, bản EXE mở cửa sổ Windows riêng qua Microsoft Edge WebView2 Runtime, không cần tab trình duyệt. Bộ máy tải vẫn dùng kết nối loopback cho tiện ích. Microsoft Edge WebView2 Runtime cần có trên máy: https://developer.microsoft.com/microsoft-edge/webview2/ . Khi đóng cửa sổ, thiết lập chạy nền quyết định thời gian giữ bộ máy tải.
