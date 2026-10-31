@@ -327,3 +327,5 @@ $('#app-settings-form').onsubmit=async e=>{e.preventDefault();try{await api('set
 api('settings').then(s=>applyTheme(s.theme||'system')).catch(()=>{});
 function uiHeartbeat(){api('ui/heartbeat',{}).catch(()=>{});}
 uiHeartbeat();setInterval(uiHeartbeat,20000);document.addEventListener('visibilitychange',uiHeartbeat);
+
+$('#app-exit').onclick=async()=>{if(!confirm('Thoát Download Now và lưu các lượt tải dở để tiếp tục lần sau?'))return;try{await api('app/exit',{confirm:true});$('#app-settings-message').textContent='Đang lưu và thoát ứng dụng…';}catch(e){notice(e.message);}};

@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.17.3",
+      "date": "2026-10-31",
+      "title": "Thoát tiến trình nền trước khi nâng cấp",
+      "changes": [
+        "Bộ cài tương tác dùng helper yêu cầu thoát qua kết nối cục bộ có xác thực và đợi tiến trình kết thúc trước khi thay EXE.",
+        "Với bản cũ không hỗ trợ thoát, hỏi xác nhận riêng trước khi dừng tiến trình có đường dẫn EXE đúng thư mục cài đặt.",
+        "Thêm Cài đặt > Thoát ứng dụng; đóng cả cửa sổ riêng và bộ máy tải, giữ lượt tải dở."
+      ]
+    },
+    {
       "version": "1.17.2",
       "date": "2026-10-31",
       "title": "Bộ cài thay thế phiên bản cũ và nhắc đóng ứng dụng",

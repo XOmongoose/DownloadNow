@@ -33,7 +33,7 @@ VersionInfoCopyright=Copyright (C) XOmongoose
 WizardStyle=modern
 Compression=lzma2/fast
 SolidCompression=yes
-CloseApplications=yes
+CloseApplications=no
 CloseApplicationsFilter=DownloadNow.exe
 UsePreviousAppDir=yes
 UsePreviousTasks=yes
@@ -71,11 +71,23 @@ function CloseHandle(hObject: LongWord): Boolean;
   external 'CloseHandle@kernel32.dll stdcall';
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
-var LockPath: String; LockHandle: LongWord;
+var LockPath, Parameters: String; LockHandle: LongWord; ExitCode: Integer;
 begin
   Result := '';
-  { Interactive setup uses Restart Manager to ask before closing the old EXE. }
-  if not WizardSilent then Exit;
+  if not WizardSilent and FileExists(ExpandConstant('{app}\DownloadNow.exe')) then begin
+    ExtractTemporaryFile('DownloadNow.exe');
+    Parameters := '--prepare-install --install-root ' + AddQuotes(ExpandConstant('{app}'));
+    if not Exec(ExpandConstant('{tmp}\DownloadNow.exe'), Parameters, '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then ExitCode := 2;
+    if ExitCode <> 0 then begin
+      if MsgBox('Bản đang chạy chưa thoát được an toàn.' + #13#10 +
+        'Bạn có đồng ý dừng các tiến trình Download Now trong đúng thư mục cài đặt để nâng cấp?' + #13#10 +
+        'Tiến độ chưa kịp lưu có thể phải tải lại. Tệp đã hoàn tất và lịch sử được giữ nguyên.', mbConfirmation, MB_YESNO) <> IDYES then begin
+        Result := 'Bạn chưa đồng ý đóng bản cũ. Đã dừng nâng cấp.'; Exit;
+      end;
+      if not Exec(ExpandConstant('{tmp}\DownloadNow.exe'), Parameters + ' --force-install-close', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then ExitCode := 2;
+      if ExitCode <> 0 then begin Result := 'Không đóng được bản cũ. Hãy chọn Cài đặt > Thoát ứng dụng rồi thử lại.'; Exit; end;
+    end;
+  end;
   LockPath := ExpandConstant('{app}\data\instance.lock');
   if FileExists(LockPath) then begin
     LockHandle := CreateFile(LockPath, $80000000, 0, 0, 3, $80, 0);
@@ -95,7 +107,7 @@ begin
     if not WizardSilent then
       Result := MsgBox('Đã có Download Now ' + ExistingVersion + '.' + #13#10 +
         'Bộ cài sẽ thay thế phiên bản cũ bằng v{#AppVersion} trong thư mục đã cài.' + #13#10 +
-        'Hãy tạm dừng lượt tải. Nếu ứng dụng đang chạy, bước tiếp theo sẽ yêu cầu đóng ứng dụng.' + #13#10 +
+        'Hãy tạm dừng lượt tải. Bộ cài sẽ yêu cầu ứng dụng lưu trạng thái và thoát trước khi cài.' + #13#10 +
         'Lịch sử, cài đặt và tệp đã tải được giữ nguyên. Tiếp tục?', mbConfirmation, MB_YESNO) = IDYES;
   end;
 end;

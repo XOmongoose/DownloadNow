@@ -22,6 +22,7 @@ from extension_status import ExtensionStatus
 import browser_setup
 import desktop_settings
 import desktop_window
+import install_shutdown
 
 BASE = Path(__file__).resolve().parent
 APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
@@ -192,6 +193,11 @@ def make_server(manager, port=8765):
                 path = urlsplit(self.path).path
                 if updates.snapshot()['state']=='installing':
                     return self.reply({'error':'Đang cập nhật. Vui lòng chờ ứng dụng mở lại.'},409)
+                if path == '/api/app/exit':
+                    if data.get('confirm') is not True:raise ValueError('Cần xác nhận thoát ứng dụng.')
+                    (manager.root/'desktop-exit.txt').write_text(str(time.time_ns()),encoding='utf-8')
+                    threading.Timer(.5,server.shutdown).start()
+                    return self.reply({'ok':True})
                 if path == '/api/window/open':
                     route=data.get('route','')
                     if route not in ('','extensions=1','update=1'):raise ValueError('Cửa sổ không hợp lệ.')
@@ -341,6 +347,9 @@ def main():
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--data', type=Path, default=APP_HOME / 'data')
     parser.add_argument('--no-browser', action='store_true', help='Do not open the browser automatically')
+    parser.add_argument('--prepare-install',action='store_true',help=argparse.SUPPRESS)
+    parser.add_argument('--install-root',type=Path,help=argparse.SUPPRESS)
+    parser.add_argument('--force-install-close',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--desktop-url',help=argparse.SUPPRESS)
     parser.add_argument('--startup',action='store_true',help='Launch at Windows sign-in')
     parser.add_argument('--setup-browser',action='store_true',help='Open browser extension setup')
@@ -358,6 +367,10 @@ def main():
             context=ssl.create_default_context()
             return 0 if context.verify_mode==ssl.CERT_REQUIRED and context.check_hostname else 1
         except Exception:return 1
+    if args.prepare_install:
+        if not args.install_root:return 1
+        try:return install_shutdown.prepare(args.install_root,args.force_install_close)
+        except Exception:return 2
     if args.apply_update:
         if not all((args.update_source,args.update_destination,args.update_backup,args.update_parent)):
             return 1

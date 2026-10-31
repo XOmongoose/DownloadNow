@@ -42,10 +42,14 @@ def run(url,root):
         window=webview.create_window(TITLE,url,width=1320,height=900,min_size=(900,650),text_select=True)
         window.events.closed+=lambda:stopped.set()
         last=request.stat().st_mtime_ns if request.exists() else 0
+        exit_file=root/'desktop-exit.txt'
+        exit_stamp=exit_file.stat().st_mtime_ns if exit_file.exists() else 0
         def reopen():
             nonlocal last
             while not stopped.wait(.5):
                 try:
+                    if exit_file.exists() and exit_file.stat().st_mtime_ns!=exit_stamp:
+                        window.destroy();return
                     stamp=request.stat().st_mtime_ns
                     if stamp==last:continue
                     last=stamp;target=local_url(json.loads(request.read_text('utf-8'))['url'])
