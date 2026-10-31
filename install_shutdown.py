@@ -2,6 +2,9 @@
 import ctypes
 from ctypes import wintypes
 import json
+import hmac
+import hashlib
+import secrets
 from pathlib import Path
 import time
 import urllib.request
@@ -36,18 +39,22 @@ def process_ids(root):
     finally:kernel.CloseHandle(snapshot)
     return result
 
+def exit_signature(token,at,nonce):
+    return hmac.new(token.encode(),f'exit:{at}:{nonce}'.encode(),hashlib.sha256).hexdigest()
+
+def valid_exit_request(value,token,started,now):
+    try:
+        at=value['at'];nonce=value['nonce']
+        return type(at) in (float,int) and started<=at<=now+5 and now-at<120 and isinstance(nonce,str) and len(nonce)==32 and hmac.compare_digest(value['signature'],exit_signature(token,at,nonce))
+    except (KeyError,TypeError,ValueError):return False
+
 def request_shutdown(root):
     folder=Path(root)/'data'
-    port=json.loads((folder/'bridge-endpoint.json').read_text('utf-8'))['port']
-    if type(port) is not int or not 1024<=port<=65535:raise ValueError('Cổng không hợp lệ.')
     token=(folder/'bridge-token.txt').read_text('utf-8').strip()
-    opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(f'http://127.0.0.1:{port}/api/discovery',timeout=5) as response:
-        info=json.load(response)
-        if info.get('application')!='DownloadNow' or info.get('protocol')!=1 or info.get('port')!=port:raise ValueError('Cổng không phải Download Now.')
-    request=urllib.request.Request(f'http://127.0.0.1:{port}/api/app/exit',data=b'{"confirm":true}',headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'})
-    with opener.open(request,timeout=5) as response:
-        if response.status!=200:raise ValueError('Ứng dụng chưa hỗ trợ thoát an toàn.')
+    at=time.time();nonce=secrets.token_hex(16)
+    value={'at':at,'nonce':nonce,'signature':exit_signature(token,at,nonce)}
+    request=folder/'shutdown-request.json';temporary=request.with_suffix('.tmp')
+    temporary.write_text(json.dumps(value),encoding='utf-8');temporary.replace(request)
 
 def prepare(root,force=False,timeout=45):
     root=Path(root).resolve()

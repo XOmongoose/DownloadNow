@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.17.4",
+      "date": "2026-10-31",
+      "title": "Thoát an toàn qua yêu cầu cục bộ có xác thực",
+      "changes": [
+        "Thêm yêu cầu thoát ký HMAC trong thư mục dữ liệu, không phụ thuộc HTTP để bộ cài đóng bộ máy tải.",
+        "Từ chối yêu cầu thoát cũ hoặc chữ ký sai; giữ xác nhận riêng khi cần dừng bản cũ chưa hỗ trợ."
+      ]
+    },
+    {
       "version": "1.17.3",
       "date": "2026-10-31",
       "title": "Thoát tiến trình nền trước khi nâng cấp",

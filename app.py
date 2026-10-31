@@ -410,8 +410,16 @@ def main():
     server.updates.start_auto_check(server.prompts)
     desktop_preferences=Preferences(manager.root)
     server.ui_last_seen=None
+    server_started=time.time()
     def monitor_ui():
-        while not server.updates.stop.wait(5):
+        while not server.updates.stop.wait(1):
+            try:
+                request=json.loads((manager.root/'shutdown-request.json').read_text('utf-8'))
+                bridge_token=(manager.root/'bridge-token.txt').read_text('utf-8').strip()
+                if install_shutdown.valid_exit_request(request,bridge_token,server_started,time.time()):
+                    (manager.root/'desktop-exit.txt').write_text(str(time.time_ns()),encoding='utf-8')
+                    server.shutdown();return
+            except (OSError,ValueError):pass
             if desktop_preferences.path.exists():
                 try:values=json.loads(desktop_preferences.path.read_text('utf-8'))
                 except (OSError,ValueError):continue

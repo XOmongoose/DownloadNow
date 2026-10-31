@@ -15,6 +15,11 @@ class InstallShutdownTests(unittest.TestCase):
             self.assertEqual(install_shutdown.prepare(self.root),0);request.assert_not_called()
 
     def test_graceful_exit_waits_for_installed_processes(self):
+        value={'at':100,'nonce':'a'*32};value['signature']=install_shutdown.exit_signature('token',value['at'],value['nonce'])
+        self.assertTrue(install_shutdown.valid_exit_request(value,'token',99,101))
+        self.assertFalse(install_shutdown.valid_exit_request(value,'wrong-token',99,101))
+        self.assertFalse(install_shutdown.valid_exit_request(value,'token',102,103))
+        self.assertFalse(install_shutdown.valid_exit_request(value,'token',99,300))
         with patch('install_shutdown.process_ids',side_effect=[[1],[]]),patch('install_shutdown.request_shutdown') as request:
             self.assertEqual(install_shutdown.prepare(self.root),0);request.assert_called_once_with(self.root)
 

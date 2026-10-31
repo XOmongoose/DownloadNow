@@ -67,7 +67,10 @@ def main():
         assert setup['requires_confirmation'] and setup['distribution']=='unpacked'
         blocked=subprocess.run(args,timeout=45,**options)
         assert blocked.returncode!=0, 'Reinstallation must refuse to replace the running app'
-        subprocess.run([str(exe),'--prepare-install','--install-root',str(target)],check=True,timeout=90,**options)
+        helper=target.parent/('UpgradeHelper-'+uuid.uuid4().hex+'.exe')
+        import shutil
+        shutil.copy2(exe,helper)
+        subprocess.run([str(helper),'--prepare-install','--install-root',str(target)],check=True,timeout=90,**options)
         process.wait(timeout=45)
         assert marker.read_text('utf-8')=='Preserve downloads on uninstall'
         subprocess.run(args,check=True,timeout=120,**options)
