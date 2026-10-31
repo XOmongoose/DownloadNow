@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.17.2",
+      "date": "2026-10-31",
+      "title": "Bộ cài thay thế phiên bản cũ và nhắc đóng ứng dụng",
+      "changes": [
+        "Bộ cài nhận diện bản đã cài, thông báo nâng cấp và dùng lại thư mục cũ để thay thế tệp ứng dụng.",
+        "Bật Windows Restart Manager trong bộ cài tương tác để liệt kê và hỏi đóng Download Now đang dùng tệp cần cập nhật.",
+        "Giữ lịch sử, cài đặt và tệp tải; không xóa các thư mục portable khác trên máy."
+      ]
+    },
+    {
       "version": "1.17.1",
       "date": "2026-10-31",
       "title": "Ẩn nút tải video trang hiện tại trong popup",

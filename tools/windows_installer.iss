@@ -1,4 +1,4 @@
-#ifndef AppVersion
+﻿#ifndef AppVersion
   #error AppVersion is required
 #endif
 #ifndef PackageDir
@@ -33,7 +33,10 @@ VersionInfoCopyright=Copyright (C) XOmongoose
 WizardStyle=modern
 Compression=lzma2/fast
 SolidCompression=yes
-CloseApplications=no
+CloseApplications=yes
+CloseApplicationsFilter=DownloadNow.exe
+UsePreviousAppDir=yes
+UsePreviousTasks=yes
 RestartApplications=no
 Uninstallable=yes
 SetupLogging=yes
@@ -71,6 +74,8 @@ function PrepareToInstall(var NeedsRestart: Boolean): String;
 var LockPath: String; LockHandle: LongWord;
 begin
   Result := '';
+  { Interactive setup uses Restart Manager to ask before closing the old EXE. }
+  if not WizardSilent then Exit;
   LockPath := ExpandConstant('{app}\data\instance.lock');
   if FileExists(LockPath) then begin
     LockHandle := CreateFile(LockPath, $80000000, 0, 0, 3, $80, 0);
@@ -78,5 +83,19 @@ begin
       Result := 'Download Now is running in this folder. Pause your downloads and close Download Now before installing.'
     else
       CloseHandle(LockHandle);
+  end;
+end;
+
+function InitializeSetup(): Boolean;
+var ExistingPath, ExistingVersion: String;
+begin
+  Result := True;
+  if RegQueryStringValue(HKCU64, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F1D4BC1-5435-4A86-B8F2-2D91D7003F4C}_is1', 'InstallLocation', ExistingPath) then begin
+    RegQueryStringValue(HKCU64, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F1D4BC1-5435-4A86-B8F2-2D91D7003F4C}_is1', 'DisplayVersion', ExistingVersion);
+    if not WizardSilent then
+      Result := MsgBox('Đã có Download Now ' + ExistingVersion + '.' + #13#10 +
+        'Bộ cài sẽ thay thế phiên bản cũ bằng v{#AppVersion} trong thư mục đã cài.' + #13#10 +
+        'Hãy tạm dừng lượt tải. Nếu ứng dụng đang chạy, bước tiếp theo sẽ yêu cầu đóng ứng dụng.' + #13#10 +
+        'Lịch sử, cài đặt và tệp đã tải được giữ nguyên. Tiếp tục?', mbConfirmation, MB_YESNO) = IDYES;
   end;
 end;

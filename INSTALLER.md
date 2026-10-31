@@ -2,7 +2,7 @@
 
 Tác giả: **XOmongoose**.
 
-1. Tải `DownloadNow-Setup-1.17.1-Windows-x64.exe` từ GitHub Releases của `XOmongoose/DownloadNow` và chép sang máy đích.
+1. Tải `DownloadNow-Setup-1.17.2-Windows-x64.exe` từ GitHub Releases của `XOmongoose/DownloadNow` và chép sang máy đích.
 2. Chạy bộ cài trên Windows 10/11 x64, chọn thư mục và bấm **Install**.
 3. Mở **Download Now** từ Desktop hoặc Start menu. Máy đích không cần Python hay Node.js.
 4. Giữ lựa chọn **Set up browser extensions after installation** trong bộ cài. Khi mở ứng dụng sau cài đặt, cửa sổ thiết lập tiện ích sẽ xuất hiện; có thể mở lại bằng **Start menu → Download Now → Set up browser extensions**.
@@ -31,3 +31,5 @@ python tools/smoke_installer.py
 ```
 
 Compiler Inno Setup 6.7.3 được tải từ kho chính thức và kiểm tra SHA-256 cùng chữ ký nhà phát hành. Bước smoke test cài vào thư mục kiểm thử riêng, kiểm tra ứng dụng và gỡ lại; không thay bản ứng dụng thực tế. GitHub Actions chạy các bước này trước khi phát hành.
+
+Khi nâng cấp qua bộ cài tương tác: thông báo bản đã cài, hỏi đóng chương trình bằng Windows Restart Manager, ghi đè các tệp ứng dụng trong thư mục cũ và cập nhật cùng mục Uninstall. Không gọi gỡ cài đặt và không xóa data hoặc thư mục portable khác. Bản cài im lặng giữ chặn nếu instance.lock đang được sử dụng.
