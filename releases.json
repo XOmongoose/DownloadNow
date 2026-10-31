@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.17.0",
+      "date": "2026-10-31",
+      "title": "Cửa sổ Windows độc lập bằng WebView2",
+      "changes": [
+        "Mở Download Now trong cửa sổ Windows riêng, không tự mở tab trình duyệt khi chạy bản EXE.",
+        "Mở lại ứng dụng sẽ đưa cửa sổ hiện có lên; đóng cửa sổ vẫn giữ bộ máy tải khi bật chạy nền.",
+        "Giữ tiện ích trình duyệt, dữ liệu tải và cập nhật; cần Microsoft Edge WebView2 Runtime."
+      ]
+    },
+    {
       "version": "1.16.1",
       "date": "2026-10-31",
       "title": "Chuyển Cài đặt xuống cuối nhóm Công cụ",

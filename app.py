@@ -21,6 +21,7 @@ from updater import UpdateService, update_source, apply_update
 from extension_status import ExtensionStatus
 import browser_setup
 import desktop_settings
+import desktop_window
 
 BASE = Path(__file__).resolve().parent
 APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
@@ -143,7 +144,7 @@ def make_server(manager, port=8765):
                 if path == '/api/jobs':
                     return self.reply(manager.snapshot())
                 if path == '/api/info':
-                    return self.reply({'version': version(), 'features': ['capture-preflight','save-dialog','remember-folder','updates']})
+                    return self.reply({'version': version(), 'features': ['capture-preflight','save-dialog','remember-folder','updates']+(['desktop-window'] if getattr(sys,'frozen',False) else [])})
                 if path == '/api/settings':
                     return self.reply({**{key:value for key,value in preferences.get().items() if key!='last_update_check'},'start_with_windows':desktop_settings.startup_enabled()})
                 if path == '/api/update/status':
@@ -191,6 +192,11 @@ def make_server(manager, port=8765):
                 path = urlsplit(self.path).path
                 if updates.snapshot()['state']=='installing':
                     return self.reply({'error':'Đang cập nhật. Vui lòng chờ ứng dụng mở lại.'},409)
+                if path == '/api/window/open':
+                    route=data.get('route','')
+                    if route not in ('','extensions=1','update=1'):raise ValueError('Cửa sổ không hợp lệ.')
+                    desktop_window.launch(f'http://127.0.0.1:{self.server.server_port}/'+('?' + route if route else ''),manager.root)
+                    return self.reply({'ok':True})
                 if path == '/api/ui/heartbeat':
                     server.ui_last_seen=time.monotonic()
                     return self.reply({'ok':True})
@@ -313,7 +319,9 @@ def open_running_app(directory,port,no_browser=False,setup_browser=False):
             except OSError:
                 if attempt==3:raise
                 time.sleep(.2)
-        if not no_browser:webbrowser.open(address+('/?extensions=1' if setup_browser else ''))
+        if not no_browser:
+            if getattr(sys,'frozen',False):desktop_window.launch(address+('/?extensions=1' if setup_browser else ''),directory)
+            else:webbrowser.open(address+('/?extensions=1' if setup_browser else ''))
         return True
     except (OSError,ValueError):return False
 
@@ -333,6 +341,7 @@ def main():
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--data', type=Path, default=APP_HOME / 'data')
     parser.add_argument('--no-browser', action='store_true', help='Do not open the browser automatically')
+    parser.add_argument('--desktop-url',help=argparse.SUPPRESS)
     parser.add_argument('--startup',action='store_true',help='Launch at Windows sign-in')
     parser.add_argument('--setup-browser',action='store_true',help='Open browser extension setup')
     parser.add_argument('--self-test-tls',action='store_true',help=argparse.SUPPRESS)
@@ -358,6 +367,11 @@ def main():
     except OSError:
         startup_error('Không thể ghi nhật ký. Hãy đặt Download Now trong thư mục có quyền ghi.')
         return 1
+    if args.desktop_url:
+        try:return desktop_window.run(args.desktop_url,args.data)
+        except Exception as error:
+            startup_error('Không mở được cửa sổ Download Now. Cần Microsoft Edge WebView2 Runtime. '+str(error))
+            return 1
     try:
         storage_lock = lock_data(args.data.resolve())
     except OSError:
@@ -393,7 +407,7 @@ def main():
     threading.Thread(target=monitor_ui,daemon=True).start()
     if (getattr(sys, 'frozen', False) or args.setup_browser) and not args.no_browser and not (args.startup and desktop_preferences.get()['run_in_background']):
         url=f'http://127.0.0.1:{server.server_port}'+('/?extensions=1' if args.setup_browser else '')
-        threading.Timer(.8, webbrowser.open, args=(url,)).start()
+        threading.Timer(.8, desktop_window.launch, args=(url,args.data)).start()
     def stop(*_):
         threading.Thread(target=server.shutdown, daemon=True).start()
     signal.signal(signal.SIGINT, stop)

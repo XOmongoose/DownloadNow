@@ -25,10 +25,9 @@ document.querySelector('#extension-update-download').onclick=async()=>{
 readExtensionUpdate();
 document.querySelector('#connect').onclick=async()=>{
  try{
-  const result=await bridge.runtime.sendMessage({type:'application-info'});
+  const result=await bridge.runtime.sendMessage({type:'application-open'});
   if(result.error)throw Error(result.error);
-  await bridge.tabs.create({url:result.base+'/'});
-  status.textContent='Đã tìm thấy ứng dụng. Trang vừa mở sẽ tự ghép nối.';
+  status.textContent=result.native?'Đã mở cửa sổ Download Now.':'Đã mở trang ghép nối tiện ích. Sau khi ghép nối, ứng dụng dùng cửa sổ riêng.';
  }catch(error){status.textContent=error.message;}
 };
 function state(){document.querySelector('#capture-state').textContent=capture.checked?'● Tự bắt tải: BẬT':'○ Tự bắt tải: TẮT';}

@@ -68,6 +68,18 @@ async function synchronizeExtension(){
  return extensionSyncInFlight;
 }
 
+async function openApplicationWindow(route=''){
+ const base=await applicationBase(),{token}=await bridge.storage.local.get('token');
+ if(token){
+  const info=await fetch(base+'/api/info',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(5000)});
+  if(info.ok&&(await info.json()).features?.includes('desktop-window')){
+   const response=await fetch(base+'/api/window/open',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({route}),signal:AbortSignal.timeout(5000)});
+   if(!response.ok)throw Error('Không mở được cửa sổ Download Now.');return {native:true};
+  }
+ }
+ await bridge.tabs.create({url:base+'/'+(route?'?'+route:'')});return {native:false};
+}
+
 async function managedExtension(){
  try{
   const response=await fetch(bridge.runtime.getURL('managed.json'),{cache:'no-store'});
@@ -326,6 +338,10 @@ if(bridge.downloads.onDeterminingFilename){
 
 bridge.runtime.onMessage.addListener((message,sender,reply)=>{
  const fromPage=!!sender.tab;
+ if(message.type==='application-open'){
+  if(fromPage){reply({error:'Chỉ dùng trong tiện ích.'});return false;}
+  openApplicationWindow().then(reply).catch(e=>reply({error:e.message}));return true;
+ }
  if(message.type==='application-info'){
   if(fromPage){reply({error:'Chỉ dùng trong tiện ích.'});return false;}
   (async()=>{
@@ -406,7 +422,7 @@ bridge.runtime.onMessage.addListener((message,sender,reply)=>{
   (async()=>{
    if(await reloadManagedExtension())return {reloading:true};
    // Ask the application to check; its own dialog obtains user approval.
-   await bridge.tabs.create({url:(await applicationBase())+'/?update=1'});
+   await openApplicationWindow('update=1');
    return {ok:true};
   })().then(reply).catch(e=>reply({error:e.message}));return true;
  }

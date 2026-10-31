@@ -373,3 +373,17 @@ test('master switch blocks browser handoff and manual send without changing capt
  h.settings.extensionEnabled=true;await h.context.send('https://files.example/a.zip','','test-enabled',true);
  assert.ok(h.calls.includes('send'));
 });
+
+test('paired native app opens a desktop window without creating browser tabs',async()=>{
+ const h=harness(),calls=[],original=h.context.fetch;h.bridge.tabs={create:async()=>calls.push('tab')};
+ h.context.fetch=async(url,options)=>{
+ if(url.endsWith('/api/info'))return {ok:true,json:async()=>({features:['desktop-window']})};
+ if(url.endsWith('/api/window/open')){calls.push(JSON.parse(options.body).route);assert.equal(options.headers.Authorization,'Bearer test-token');return {ok:true};}
+ return original(url,options);
+ };
+ assert.equal((await h.context.openApplicationWindow('update=1')).native,true);assert.deepEqual(calls,['update=1']);
+});
+test('unpaired extension opens pairing page rather than invoking an unauthenticated native command',async()=>{
+ const h=harness({token:''}),tabs=[];h.bridge.tabs={create:async spec=>tabs.push(spec.url)};
+ assert.equal((await h.context.openApplicationWindow()).native,false);assert.equal(tabs.length,1);assert.match(tabs[0],/^http:\/\/127\.0\.0\.1:/);
+});

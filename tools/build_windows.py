@@ -69,6 +69,7 @@ def main():
     ssl_policy=Path(ssl.__file__).with_name('codex-rejected-cas.pem')
     if ssl_policy.is_file():ssl_data=['--add-data',f'{ssl_policy}:.']
     subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--onefile', '--windowed', '--noupx',
+                    '--collect-all','webview','--hidden-import','webview.platforms.edgechromium',
                     '--name', 'DownloadNow', '--icon', str(icon), '--version-file', str(info),
                     '--add-data', f'{ROOT / "web"}:web', '--add-data', f'{ROOT / "releases.json"}:.',
                     '--add-data', f'{icon}:.',
@@ -90,8 +91,8 @@ def main():
 
 1. Giai nen toan bo ZIP vao thu muc co quyen ghi (vi du Documents).
 2. Chay DownloadNow.exe. Khong can cai Python.
-3. Giao dien tu mo tai http://127.0.0.1:8765.
-4. Ung dung chay nen, khong hien CMD. Dong tab trinh duyet khong dung tai.
+3. Giao dien mo trong cua so Download Now rieng (Microsoft Edge WebView2).
+4. Ung dung chay nen, khong hien CMD. Dong cua so khong dung tai neu da bat chay nen.
 5. Mo lai DownloadNow.exe de quay lai giao dien dang chay.
 
 Du lieu va hang doi: thu muc data canh DownloadNow.exe.
@@ -109,7 +110,7 @@ extension/firefox/manifest.json de thu tren Firefox. Xem README.md.
 Safari can dong goi rieng tren macOS.
 
 Ban EXE chua ky so. Day la ban portable thu nghiem, khong phai bo cai MSI.
-167 kiem thu loi/cap nhat va 110 kiem thu mo phong tien ich/giao dien da qua; kiem thu HTTP socket va giao dien native chua qua day du.
+171 kiem thu loi/cap nhat va 112 kiem thu mo phong tien ich/giao dien da qua; kiem thu HTTP socket va giao dien native chua qua day du.
 Khong bao dam tang toc 8 lan. Xem README.md ve gioi han chuc nang.
 ''', encoding='utf-8-sig')
     (package/'HUONG-DAN.txt').write_text((package/'HUONG-DAN.txt').read_text('utf-8-sig')+'\n\n'+'''DOWNLOAD NOW - TAC GIA: XOmongoose
