@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "1.17.5",
+      "date": "2026-10-31",
+      "title": "Giãn giao diện theo toàn bộ cửa sổ",
+      "changes": [
+        "Bỏ giới hạn chiều rộng 1800px của nội dung để thống kê, biểu đồ và danh sách tải lấp đầy cửa sổ khi phóng to trên màn hình rộng."
+      ]
+    },
+    {
       "version": "1.17.4",
       "date": "2026-10-31",
       "title": "Thoát an toàn qua yêu cầu cục bộ có xác thực",
