@@ -20,6 +20,7 @@ from preferences import Preferences
 from updater import UpdateService, update_source, apply_update
 from extension_status import ExtensionStatus
 import browser_setup
+import desktop_settings
 
 BASE = Path(__file__).resolve().parent
 APP_HOME = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else BASE
@@ -144,7 +145,7 @@ def make_server(manager, port=8765):
                 if path == '/api/info':
                     return self.reply({'version': version(), 'features': ['capture-preflight','save-dialog','remember-folder','updates']})
                 if path == '/api/settings':
-                    return self.reply({key:value for key,value in preferences.get().items() if key!='last_update_check'})
+                    return self.reply({**{key:value for key,value in preferences.get().items() if key!='last_update_check'},'start_with_windows':desktop_settings.startup_enabled()})
                 if path == '/api/update/status':
                     return self.reply({**updates.snapshot(),'extension_sync':extensions.snapshot()})
                 if path == '/api/extension/status':
@@ -190,10 +191,13 @@ def make_server(manager, port=8765):
                 path = urlsplit(self.path).path
                 if updates.snapshot()['state']=='installing':
                     return self.reply({'error':'Đang cập nhật. Vui lòng chờ ứng dụng mở lại.'},409)
+                if path == '/api/ui/heartbeat':
+                    server.ui_last_seen=time.monotonic()
+                    return self.reply({'ok':True})
                 if path == '/api/settings':
-                    if set(data)-{'remember_save_dir','last_save_dir','update_feed','auto_check_updates','auto_install_updates'}:
+                    if set(data)-{'remember_save_dir','last_save_dir','update_feed','auto_check_updates','auto_install_updates','theme','run_in_background','start_with_windows'}:
                         raise ValueError('Tùy chọn không hợp lệ.')
-                    for key in ('remember_save_dir','auto_check_updates','auto_install_updates'):
+                    for key in ('remember_save_dir','auto_check_updates','auto_install_updates','run_in_background','start_with_windows'):
                         if key in data and not isinstance(data[key],bool):raise ValueError('Tùy chọn bật/tắt không hợp lệ.')
                     for key in ('last_save_dir','update_feed'):
                         if key in data and not isinstance(data[key],str):raise ValueError('Đường dẫn hoặc nguồn cập nhật không hợp lệ.')
@@ -201,6 +205,8 @@ def make_server(manager, port=8765):
                         raise ValueError('Thư mục ghi nhớ không tồn tại.')
                     if 'update_feed' in data:data['update_feed']=update_source(data['update_feed'])
                     if data.get('remember_save_dir') is False:data['last_save_dir']=''
+                    if 'theme' in data and data['theme'] not in ('light','dark','system'):raise ValueError('Chế độ giao diện không hợp lệ.')
+                    if 'start_with_windows' in data:desktop_settings.set_startup(data.pop('start_with_windows'),manager.root)
                     preferences.set(**data)
                     return self.reply({'ok':True})
                 if path == '/api/update/check':
@@ -327,6 +333,7 @@ def main():
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--data', type=Path, default=APP_HOME / 'data')
     parser.add_argument('--no-browser', action='store_true', help='Do not open the browser automatically')
+    parser.add_argument('--startup',action='store_true',help='Launch at Windows sign-in')
     parser.add_argument('--setup-browser',action='store_true',help='Open browser extension setup')
     parser.add_argument('--self-test-tls',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--apply-update',action='store_true',help=argparse.SUPPRESS)
@@ -374,7 +381,17 @@ def main():
     print(f'Tệp tải về: {manager.output}')
     print('Ứng dụng chạy nền. Đóng tab trình duyệt không dừng tải hoặc lịch tải.')
     server.updates.start_auto_check(server.prompts)
-    if (getattr(sys, 'frozen', False) or args.setup_browser) and not args.no_browser:
+    desktop_preferences=Preferences(manager.root)
+    server.ui_last_seen=None
+    def monitor_ui():
+        while not server.updates.stop.wait(5):
+            if desktop_preferences.path.exists():
+                try:values=json.loads(desktop_preferences.path.read_text('utf-8'))
+                except (OSError,ValueError):continue
+                if desktop_settings.should_stop_background(values.get('run_in_background',True),server.ui_last_seen,time.monotonic()):
+                    server.shutdown();return
+    threading.Thread(target=monitor_ui,daemon=True).start()
+    if (getattr(sys, 'frozen', False) or args.setup_browser) and not args.no_browser and not (args.startup and desktop_preferences.get()['run_in_background']):
         url=f'http://127.0.0.1:{server.server_port}'+('/?extensions=1' if args.setup_browser else '')
         threading.Timer(.8, webbrowser.open, args=(url,)).start()
     def stop(*_):

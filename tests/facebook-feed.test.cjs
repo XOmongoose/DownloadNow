@@ -85,8 +85,8 @@ test('unavailable Story tries dynamic source resolution without downloading HTML
  const h=storyUI();await h.click();assert.equal(h.messages.filter(m=>m.type==='capture-link').length,0);assert.equal(h.messages[0].type,'resolve-facebook-story-source');assert.match(h.notices[0],/Chưa tìm được nguồn MP4/);assert.doesNotMatch(h.notices[0],/ảnh/);
 });
 
-test('unpaired Story action stays visible and explains how to connect',async()=>{
- const h=storyUI({enabled:false});assert.equal(h.hosts.length,1);await h.click();assert.equal(h.messages.length,0);assert.match(h.notices[0],/mở ứng dụng để kết nối/);
+test('disabled Story capture does not add a download button',()=>{
+ const h=storyUI({enabled:false});assert.equal(h.hosts.length,0);assert.equal(h.messages.length,0);
 });
 
 test('Story button sends a dynamically resolved MP4 through the normal download queue',async()=>{

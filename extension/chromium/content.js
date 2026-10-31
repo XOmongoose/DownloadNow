@@ -4,9 +4,9 @@
  const bridge=globalThis.browser||globalThis.chrome;
  let enabled=false,exclusive=true;
  const types=/\.(?:zip|rar|7z|tar|gz|bz2|xz|zst|exe|msi|iso|dmg|pkg|apk|pdf|epub|docx?|xlsx?|pptx?|csv|txt|mp4|mkv|webm|mov|avi|mp3|wav|flac|ogg|m4a)$/i;
- const refresh=()=>bridge.storage.local.get(['capture','intercept','token','downloadNowOnly']).then(s=>{enabled=!!(s.capture&&s.intercept&&s.token);exclusive=s.downloadNowOnly!==false;});
+ const refresh=()=>bridge.storage.local.get(['capture','intercept','token','downloadNowOnly','extensionEnabled']).then(s=>{enabled=!!(s.extensionEnabled!==false&&s.capture&&s.intercept&&s.token);exclusive=s.downloadNowOnly!==false;});
  refresh();
- bridge.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&(changes.capture||changes.intercept||changes.token||changes.downloadNowOnly))refresh();});
+ bridge.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&(changes.capture||changes.intercept||changes.token||changes.downloadNowOnly||changes.extensionEnabled))refresh();});
  if(globalThis.DownloadNowFacebook&&typeof window!=='undefined'&&globalThis.DownloadNowFacebook.facebook(window.location.href))globalThis.DownloadNowFacebook.attach({doc:document,bridge,enabled:()=>enabled,notice:showNotice});
  function videoPage(value){
   try{const u=new URL(value),host=u.hostname.replace(/^(www\.|m\.)/,'');

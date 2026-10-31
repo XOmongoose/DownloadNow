@@ -318,3 +318,12 @@ async function poll(){await refresh();setTimeout(poll,1200);}poll();
 if(new URLSearchParams(location.search).has("update"))$("#update-open").click();
 if(new URLSearchParams(location.search).has('extensions'))$('#extension-nav').click();
 if(new URLSearchParams(location.search).has("extensions"))$("#extension-nav").click();
+
+function applyTheme(value){document.documentElement.dataset.theme=value;try{localStorage.setItem('downloadnow.theme',value);}catch(e){}}
+try{applyTheme(localStorage.getItem('downloadnow.theme')||'system');}catch(e){applyTheme('system');}
+$('#app-settings-open').onclick=async()=>{$('#app-settings-dialog').showModal();$('#app-settings-message').textContent='Đang đọc cài đặt…';$('#app-settings-form button[type=submit]').disabled=true;try{const s=await api('settings');$('#app-theme').value=s.theme||'system';$('#app-background').checked=s.run_in_background!==false;$('#app-startup').checked=!!s.start_with_windows;$('#app-settings-message').textContent='';$('#app-settings-form button[type=submit]').disabled=false;}catch(e){$('#app-settings-message').textContent=e.message;}};
+$('#app-theme').onchange=e=>applyTheme(e.target.value);
+$('#app-settings-form').onsubmit=async e=>{e.preventDefault();try{await api('settings',{theme:$('#app-theme').value,run_in_background:$('#app-background').checked,start_with_windows:$('#app-startup').checked});applyTheme($('#app-theme').value);$('#app-settings-message').textContent='Đã lưu cài đặt.';}catch(error){$('#app-settings-message').textContent=error.message;}};
+api('settings').then(s=>applyTheme(s.theme||'system')).catch(()=>{});
+function uiHeartbeat(){api('ui/heartbeat',{}).catch(()=>{});}
+uiHeartbeat();setInterval(uiHeartbeat,20000);document.addEventListener('visibilitychange',uiHeartbeat);

@@ -55,3 +55,7 @@ document.querySelector('#send-current-video').onclick=async()=>{
  const button=document.querySelector('#send-current-video');button.disabled=true;status.textContent='Đang phân tích video và chọn nơi lưu…';
  try{const result=await bridge.runtime.sendMessage({type:'send-current-video'});if(result.error)throw Error(result.error);status.textContent=result.cancelled?'Đã hủy tải.':'Đã thêm video vào hàng đợi.';}catch(e){status.textContent=e.message;}finally{button.disabled=false;}
 };
+
+const extensionEnabled=document.querySelector('#extension-enabled');
+bridge.storage.local.get('extensionEnabled').then(s=>extensionEnabled.checked=s.extensionEnabled!==false);
+extensionEnabled.onchange=async()=>{await bridge.storage.local.set({extensionEnabled:extensionEnabled.checked});status.textContent=extensionEnabled.checked?'Đã bật tiện ích.':'Đã tắt bắt link và gửi tải; lượt tải trong ứng dụng tiếp tục.';};

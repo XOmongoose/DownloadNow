@@ -136,7 +136,7 @@ function syncInterception() {
  return interceptionSync;
 }
 async function applyInterception() {
- const {intercept}=await bridge.storage.local.get('intercept');
+ const settings=await bridge.storage.local.get(['intercept','extensionEnabled']);const intercept=settings.intercept&&settings.extensionEnabled!==false;
  const registered=await bridge.scripting.getRegisteredContentScripts({ids:[CONTENT_ID]});
  const permitted=await bridge.permissions.contains({origins});
  const scripts=['facebook-feed.js','content.js'];
@@ -186,10 +186,11 @@ bridge.runtime.onInstalled.addListener(async(details={})=>{
 });
 bridge.runtime.onStartup.addListener(()=>{syncInterception().catch(e=>record(e.message,true));if(globalThis.DownloadNowUpdates)checkExtensionUpdate().catch(e=>bridge.storage.local.set({extensionUpdateError:e.message}));});
 bridge.storage.onChanged.addListener((changes,area)=>{
- if(area==='local' && changes.intercept)syncInterception().catch(e=>record(e.message,true));
+ if(area==='local' && (changes.intercept||changes.extensionEnabled))syncInterception().catch(e=>record(e.message,true));
 });
 
 async function send(url,name='',requestId=crypto.randomUUID(),automatic=false) {
+ if((await bridge.storage.local.get('extensionEnabled')).extensionEnabled===false)throw Error('Tiện ích Download Now đang tắt.');
  if(!/^https?:\/\//i.test(url))throw Error('Chỉ hỗ trợ liên kết HTTP(S) trực tiếp.');
  const {token}=await bridge.storage.local.get('token');
  if(!token)throw Error('Chưa ghép nối: dán mã kết nối trong tiện ích rồi nhấn Lưu.');
@@ -250,7 +251,8 @@ async function captureDownload(item) {
  let pausedByUs=false,exclusive=true;
  try{
   if(item.byExtensionId&&item.byExtensionId===bridge.runtime.id)return;
-  const {capture,token,downloadNowOnly}=await bridge.storage.local.get(['capture','token','downloadNowOnly']);
+  const {capture,token,downloadNowOnly,extensionEnabled}=await bridge.storage.local.get(['capture','token','downloadNowOnly','extensionEnabled']);
+  if(extensionEnabled===false)return;
   exclusive=downloadNowOnly!==false;
   const original=item.finalUrl||item.url;
   if(!capture || !token || !/^https?:\/\//i.test(original) || item.state==='complete' || item.paused || item.danger && item.danger!=='safe')return;
@@ -279,7 +281,8 @@ async function captureDownload(item) {
 }
 async function captureBeforeSaveAs(item,suggest){
  try{
-  const {capture,token,downloadNowOnly}=await bridge.storage.local.get(['capture','token','downloadNowOnly']);
+  const {capture,token,downloadNowOnly,extensionEnabled}=await bridge.storage.local.get(['capture','token','downloadNowOnly','extensionEnabled']);
+  if(extensionEnabled===false)return;
   const url=item.url||item.finalUrl;
   if(!capture||!/^https?:\/\//i.test(url)||item.state==='complete'||item.danger&&item.danger!=='safe'||item.byExtensionId===bridge.runtime.id&&item.byExtensionId)return;
   if((fallbackUrls.get(url)||fallbackUrls.get(item.url)||0)>Date.now()){

@@ -363,3 +363,13 @@ test('Story probe rejects forged media output from the page',async()=>{
  assert.equal(result.url,'https://v.fbcdn.net/new.mp4');assert.equal(spec.args[0],page);
  }
  });
+
+test('master switch blocks browser handoff and manual send without changing capture preferences',async()=>{
+ const h=harness();h.settings.extensionEnabled=false;
+ await h.context.captureDownload({id:10,url:'https://files.example/a.zip',state:'in_progress'});
+ assert.deepEqual(h.calls,[]);
+ await assert.rejects(h.context.send('https://files.example/a.zip'),/đang tắt/);
+ assert.equal(h.settings.capture,true);assert.equal(h.settings.intercept,true);
+ h.settings.extensionEnabled=true;await h.context.send('https://files.example/a.zip','','test-enabled',true);
+ assert.ok(h.calls.includes('send'));
+});

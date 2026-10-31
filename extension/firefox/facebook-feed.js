@@ -104,7 +104,8 @@ globalThis.DownloadNowFacebook=(()=>{
   function update(){
    scheduled=false;
    const story=facebook(page())&&new URL(page()).pathname.startsWith('/stories/');
-   if(story&&!storyButton){
+   if(storyButton)storyButton.host.hidden=!enabled();
+   if(story&&enabled()&&!storyButton){
     const host=doc.createElement('div'),shadow=host.attachShadow({mode:'closed'}),button=doc.createElement('button');
     host.setAttribute('data-downloadnow-story','');
     host.style.cssText='position:fixed;right:24px;bottom:88px;z-index:2147483647;';

@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.16.0",
+      "date": "2026-10-31",
+      "title": "Cài đặt tiện ích, chạy nền, khởi động Windows và giao diện",
+      "changes": [
+        "Thêm công tắc bật/tắt hoạt động Download Now trong popup tiện ích, giữ nguyên tùy chọn bắt link.",
+        "Thêm mục Cài đặt: giao diện Sáng, Tối hoặc Theo hệ thống; nhớ lựa chọn trên máy.",
+        "Tùy chọn chạy nền khi đóng giao diện; khi tắt, dừng sau khoảng hai phút không nhận tín hiệu từ tab ứng dụng.",
+        "Bật/tắt khởi động cùng Windows cho bản EXE bằng mục Run của tài khoản hiện tại; chạy ẩn khi đồng thời bật chạy nền."
+      ]
+    },
+    {
       "version": "1.15.7",
       "date": "2026-10-27",
       "title": "Chọn nguồn theo trình phát Tin đang hiển thị",
