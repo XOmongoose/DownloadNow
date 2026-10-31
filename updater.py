@@ -432,6 +432,9 @@ class UpdateService:
             for item in self.staged.rglob('*'):
                 if item.is_file() and not (self.app_home/item.relative_to(self.staged)).resolve().is_relative_to(self.app_home):
                     raise ValueError('Đích cập nhật đi ra ngoài thư mục ứng dụng.')
+            from desktop_window import close_for_update
+            if not close_for_update(self.manager.root):
+                raise ValueError('Cửa sổ cũ chưa đóng. Hãy đóng cửa sổ Download Now rồi thử cập nhật lại.')
             helper=self.work/'DownloadNowUpdater.exe'
             shutil.copy2(sys.executable,helper)
             backup=self.work/('backup-'+uuid.uuid4().hex)

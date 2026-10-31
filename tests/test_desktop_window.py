@@ -21,6 +21,7 @@ class DesktopWindowTests(unittest.TestCase):
         self.assertEqual(args[0],sys.executable)
         self.assertEqual(args[1:3],['--desktop-url','http://127.0.0.1:8765'])
         self.assertIn('--data',args)
+        self.assertEqual(process.call_args.kwargs['env']['PYINSTALLER_RESET_ENVIRONMENT'],'1')
 
     def test_second_frozen_launch_uses_native_window_not_browser(self):
         import app,tempfile
@@ -31,3 +32,10 @@ class DesktopWindowTests(unittest.TestCase):
                 self.assertTrue(app.open_running_app(root,8772))
                 window.assert_called_once_with('http://127.0.0.1:8772',root)
                 browser.assert_not_called()
+
+    def test_update_close_signal_is_written_even_without_native_window(self):
+        import tempfile
+        base=Path(__file__).resolve().parents[1]/'data/test-runs';base.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=base) as folder:
+            self.assertTrue(desktop_window.close_for_update(folder))
+            self.assertTrue((Path(folder)/'desktop-exit.txt').read_text('utf-8').isdigit())

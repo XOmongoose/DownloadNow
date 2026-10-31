@@ -22,6 +22,7 @@ def launch(url,root):
     if not getattr(sys,'frozen',False):command.append(str(Path(__file__).with_name('app.py')))
     command+=['--desktop-url',url,'--data',str(Path(root).resolve())]
     options={'creationflags':subprocess.CREATE_NO_WINDOW} if os.name=='nt' else {}
+    if getattr(sys,'frozen',False):options['env']={**os.environ,'PYINSTALLER_RESET_ENVIRONMENT':'1'}
     return subprocess.Popen(command,**options)
 
 def run(url,root):
@@ -39,7 +40,7 @@ def run(url,root):
     stopped=threading.Event()
     try:
         import webview
-        window=webview.create_window(TITLE,url,width=1320,height=900,min_size=(900,650),text_select=True)
+        window=webview.create_window(TITLE,url,width=1000,height=650,min_size=(480,320),maximized=True,text_select=True)
         window.events.closed+=lambda:stopped.set()
         last=request.stat().st_mtime_ns if request.exists() else 0
         exit_file=root/'desktop-exit.txt'
@@ -62,3 +63,19 @@ def run(url,root):
         return 0
     finally:
         stopped.set();lock.close()
+
+def close_for_update(root,timeout=20):
+    root=Path(root)
+    (root/'desktop-exit.txt').write_text(str(time.time_ns()),encoding='utf-8')
+    lock=root/'desktop-window.lock'
+    if not lock.exists():return True
+    import msvcrt
+    end=time.monotonic()+timeout
+    while time.monotonic()<end:
+        try:
+            with lock.open('r+b') as file:
+                file.seek(0);msvcrt.locking(file.fileno(),msvcrt.LK_NBLCK,1)
+                msvcrt.locking(file.fileno(),msvcrt.LK_UNLCK,1)
+            return True
+        except OSError:time.sleep(.1)
+    return False

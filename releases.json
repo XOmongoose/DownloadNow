@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.17.6",
+      "date": "2026-10-31",
+      "title": "Co giãn cửa sổ nhiều độ phân giải và tách thư mục tạm",
+      "changes": [
+        "Mở cửa sổ ở trạng thái phóng to, bỏ giới hạn chiều rộng và giữ truy cập Cài đặt khi cửa sổ nhỏ.",
+        "Cải thiện bố cục từ 800x600 đến 3840x2160, gồm 3440x1440; chỉ bảng cột co giãn có thể cuộn ngang khi thiếu chỗ.",
+        "Tiến trình cửa sổ dùng môi trường PyInstaller riêng; chờ cửa sổ cũ đóng trước khi cài cập nhật để giảm lỗi giữ thư mục _MEI."
+      ]
+    },
+    {
       "version": "1.17.5",
       "date": "2026-10-31",
       "title": "Giãn giao diện theo toàn bộ cửa sổ",
