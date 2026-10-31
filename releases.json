@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "1.16.1",
+      "date": "2026-10-31",
+      "title": "Chuyển Cài đặt xuống cuối nhóm Công cụ",
+      "changes": [
+        "Đưa nút Cài đặt xuống dưới Tiện ích trình duyệt trong thanh bên, giữ nguyên các tùy chọn và chức năng."
+      ]
+    },
+    {
       "version": "1.16.0",
       "date": "2026-10-31",
       "title": "Cài đặt tiện ích, chạy nền, khởi động Windows và giao diện",
