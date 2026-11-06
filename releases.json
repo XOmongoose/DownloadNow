@@ -1,0 +1,979 @@
+{
+  "releases": [
+    {
+      "version": "1.21.7",
+      "date": "2026-11-05",
+      "title": "Giới hạn đóng ứng dụng khi cài và cập nhật",
+      "changes": [
+        "Bộ cài chỉ yêu cầu đúng bản Download Now lưu trạng thái và thoát; bỏ đường cưỡng bức kết thúc tiến trình. Nếu không thoát an toàn, dừng cài để người dùng đóng Download Now.",
+        "Giữ tắt cơ chế tự đóng và tự khởi động lại ứng dụng của Windows Installer; không đóng theo tên dùng chung hoặc cả cây tiến trình.",
+        "Thêm nhật ký installer-close.log cho yêu cầu đóng từ bộ cài và cập nhật, chỉ ghi bản cài và PID Download Now, không ghi token hay dữ liệu trò chuyện."
+      ]
+    },
+    {
+      "version": "1.21.6",
+      "date": "2026-11-05",
+      "title": "Đưa nút TikTok ra vùng góc trái dưới cửa sổ",
+      "changes": [
+        "Cố định riêng nút TikTok ở góc dưới bên trái cửa sổ, trong vùng thanh bên theo ảnh tham chiếu; bỏ lấy tọa độ từ video.",
+        "Giữ nguyên cách đặt nút Reels và YouTube Shorts, giữ cơ chế cuộn qua nút đã kiểm tra.",
+        "Trước khi đóng gói: đạt 1.440 bố cục WebView2, thêm bố cục thanh bên 256 px/khung phát 536 px với ba tỷ lệ video, kiểm tra cuộn Chromium thật và 142 kiểm thử tiện ích."
+      ]
+    },
+    {
+      "version": "1.21.5",
+      "date": "2026-11-05",
+      "title": "Ổn định nút TikTok góc trái dưới và cuộn qua nút",
+      "changes": [
+        "Nút TikTok bám góc dưới bên trái khung trình phát ngoài, không chạy theo dải hình thực của video ngang.",
+        "Dùng lớp hiển thị nổi theo vùng cuộn và chuyển tiếp cuộn thụ động nếu trình duyệt chưa cuộn, không gọi preventDefault hoặc chặn lan truyền sự kiện bánh xe.",
+        "Gộp cập nhật vị trí khi cuộn theo khung hình để giảm cập nhật DOM liên tục.",
+        "Giữ vị trí cạnh phải cho Reels và YouTube Shorts; bổ sung kiểm thử thay kích thước, bấm tải và cuộn trên nút Shorts.",
+        "Đạt 1.440 bố cục WebView2 trên trang mẫu, hai kiểm thử cuộn Chromium thật qua nút và 142 kiểm thử tiện ích."
+      ]
+    },
+    {
+      "version": "1.21.4",
+      "date": "2026-11-05",
+      "title": "Sửa nút đầy đủ trên màn hình dọc sau kiểm thử mở rộng",
+      "changes": [
+        "Khoảng cách cạnh phải video tự điều chỉnh 8–48 px; không đẩy nút đầy đủ lên trên khi lề vẫn đủ chỗ.",
+        "Đã tái hiện lỗi theo bố cục ảnh được cung cấp và bổ sung kiểm thử hồi quy.",
+        "Đạt 1.440 trường hợp WebView2 trên trang mẫu: 32 độ phân giải, 5 mức hiển thị, 3 tỷ lệ video và 3 kiểu nút; kiểm tra thêm vị trí và kích thước khi bấm tải."
+      ]
+    },
+    {
+      "version": "1.21.3",
+      "date": "2026-11-05",
+      "title": "Nút tải bám cạnh phải khung video",
+      "changes": [
+        "Đặt một nút sát bên phải, ngang mép trên khung video thay vì góc phải cửa sổ; tính vùng hình thực khi video có dải trống.",
+        "Cập nhật vị trí khi đổi độ phân giải, cuộn, thay kích thước video hoặc tải xong metadata; giữ nguyên vị trí trong lúc bấm tải.",
+        "Tiếp tục hỗ trợ đầy đủ, chỉ biểu tượng và tự thích ứng khi lề hẹp.",
+        "Trước khi đóng gói, đã kiểm tra 216 bố cục và thao tác bấm bằng WebView2 trên trang mẫu, cùng toàn bộ kiểm thử tiện ích."
+      ]
+    },
+    {
+      "version": "1.21.2",
+      "date": "2026-11-05",
+      "title": "Một nút tải cố định và khôi phục TikTok trang chủ",
+      "changes": [
+        "Facebook chỉ hiển thị một nút tải cố định ở góc trên bên phải, không tạo nút cho từng thẻ xem trước trong dải Reels.",
+        "Giữ nguyên nhãn và vị trí khi bấm tải để tránh nút nhảy theo kích thước video hoặc trạng thái xử lý.",
+        "TikTok trang chủ hiện nút với video đang hiển thị; bổ sung lấy liên kết từ dữ liệu React của đúng trình phát khi không có permalink trong thẻ.",
+        "Nút video không còn phụ thuộc bật bắt link khi bấm; vẫn cần bật tiện ích, bắt tải, kết nối ứng dụng và quyền trang đã cấp."
+      ]
+    },
+    {
+      "version": "1.21.1",
+      "date": "2026-11-05",
+      "title": "Chuyển nút tải video sang bên phải",
+      "changes": [
+        "Đặt nút tải Facebook bên phải video, chừa khoảng cho cụm tương tác; nút tải TikTok/YouTube/Instagram cũng chuyển về mép phải.",
+        "Giữ tùy chọn hiển thị tự thích ứng, biểu tượng và chữ hoặc chỉ biểu tượng."
+      ]
+    },
+    {
+      "version": "1.21.0",
+      "date": "2026-11-05",
+      "title": "Khôi phục nút TikTok và tùy chọn kiểu hiển thị",
+      "changes": [
+        "Gắn lại nút tải trên tab TikTok, YouTube và Instagram đang mở khi tiện ích nạp; tạo lại nút khi trang thay vùng nội dung.",
+        "TikTok Dành cho bạn lấy liên kết từ thẻ video đang phát, không chọn lẫn các thẻ khác.",
+        "Thêm lựa chọn Nút tải video trong popup: Tự thích ứng, Biểu tượng và chữ, Chỉ biểu tượng; ghi nhớ lựa chọn cho các trang video.",
+        "Đưa nút chung về bên trái, giữ tooltip và nhãn hỗ trợ truy cập khi chỉ hiện biểu tượng."
+      ]
+    },
+    {
+      "version": "1.20.2",
+      "date": "2026-11-05",
+      "title": "Đặt nút tải bên trái video trên màn hình dọc",
+      "changes": [
+        "Ưu tiên đặt nút ngoài mép trái video; khi lề trái hẹp dùng nút biểu tượng 38 px có chú thích Tải video.",
+        "Không còn chuyển nút sang bên phải khi thiếu chỗ; vị trí dự phòng phía trên hoặc dưới cũng căn theo mép trái.",
+        "Kiểm tra lại bố cục màn hình dọc theo ảnh cung cấp cùng ma trận độ phân giải và tỷ lệ hiển thị."
+      ]
+    },
+    {
+      "version": "1.20.1",
+      "date": "2026-11-05",
+      "title": "Căn giữa cửa sổ thông tin tải xuống",
+      "changes": [
+        "Cửa sổ chọn nơi lưu mở giữa vùng làm việc của màn hình dưới con trỏ, có tính thanh tác vụ và viền cửa sổ; không nháy ở góc trái trước khi hiển thị.",
+        "Bỏ mũi tên trước tiêu đề Thông tin tải xuống.",
+        "Tự thu kích thước theo vùng màn hình và thêm cuộn nội dung khi chiều cao không đủ; giữ nút Bắt đầu tải bên dưới.",
+        "Kiểm tra tính vị trí trên 18 độ phân giải, 4 mức hiển thị và nhiều vị trí màn hình; xác minh thêm bằng cửa sổ Tk/Windows thực."
+      ]
+    },
+    {
+      "version": "1.20.0",
+      "date": "2026-11-05",
+      "title": "Tùy chọn 4, 8, 16 kết nối và tải Drive nhiều luồng",
+      "changes": [
+        "Thêm lựa chọn 4, 8 hoặc 16 kết nối mỗi tệp trong Cài đặt; lưu lựa chọn và dùng cho lượt tải mới, bắt link tự động và gói cập nhật.",
+        "Google Drive hỗ trợ Range và tệp từ 8 MiB được chia thành các đoạn dài theo số kết nối đã chọn, thay vì luôn ép tải một luồng.",
+        "Gói cập nhật sử dụng số kết nối đã chọn, vẫn kiểm tra Range, dung lượng và SHA-256 trước khi cài.",
+        "Đo mẫu trên tệp Drive được cung cấp cho thấy 16 kết nối nhanh hơn 1/4/8 trong lần kiểm tra này; tốc độ thực tế phụ thuộc máy chủ và mạng."
+      ]
+    },
+    {
+      "version": "1.19.3",
+      "date": "2026-11-05",
+      "title": "Một nút tải video và bảng thích ứng kích thước cửa sổ",
+      "changes": [
+        "Chỉ giữ nút cho video đang phát khi có các lớp video chồng nhau; ưu tiên nút bên trái và đồng bộ vị trí nút TikTok sang trái.",
+        "Cột danh sách tự thu khi đổi kích thước, giữ giới hạn tối thiểu và có thanh cuộn ngang trong khung lịch sử; tiêu đề cột giữ cố định khi cuộn.",
+        "Sửa màu hàng được chọn trong giao diện tối và bố cục cửa sổ hẹp.",
+        "Đã kiểm tra giao diện thật bằng WebView2 qua 72 trường hợp: 18 độ phân giải và 4 mức hiển thị."
+      ]
+    },
+    {
+      "version": "1.19.2",
+      "date": "2026-11-05",
+      "title": "Ổn định bắt đầu tải video TikTok",
+      "changes": [
+        "Dùng lại nguồn TikTok vừa phân tích thành công khi chọn tên, kiểm tra dung lượng và bắt đầu tải; tránh phân tích trang lặp lại bị chặn ngắt quãng.",
+        "Nguồn chỉ lưu trong bộ nhớ tối đa 5 phút, giới hạn 32 liên kết; dữ liệu chuyển cho bộ tải nằm trong thư mục tạm riêng và tự dọn khi kết thúc.",
+        "Giữ bộ lọc không tải nguồn được đánh dấu có logo và giữ nguyên luồng tải của các nền tảng khác."
+      ]
+    },
+    {
+      "version": "1.19.1",
+      "date": "2026-11-05",
+      "title": "Sửa vị trí nút tải video trên màn hình dọc",
+      "changes": [
+        "Ưu tiên đặt nút tải phía trên vùng video, chừa khoảng cho cụm tương tác bên phải và tránh các nút điều khiển có sẵn.",
+        "Tính lại vị trí khi thay đổi kích thước hoặc cuộn trang; áp dụng cho Facebook Reels, bảng tin và Stories.",
+        "Kiểm tra bố trí tại 18 kích thước phổ biến, gồm 1200×1920, Full HD, 2K, 4K và ultrawide, với tỷ lệ hiển thị 100–200%."
+      ]
+    },
+    {
+      "version": "1.19.0",
+      "date": "2026-11-05",
+      "title": "Tải video TikTok không logo",
+      "changes": [
+        "Nhận liên kết video TikTok và liên kết chia sẻ rút gọn trong ứng dụng và tiện ích.",
+        "Chọn nguồn MP4 không được đánh dấu có logo; báo lỗi khi không có nguồn phù hợp thay vì tải bản có logo.",
+        "Dùng chung chọn nơi lưu, tiến độ, tạm dừng, tiếp tục và lịch sử tải video."
+      ]
+    },
+    {
+      "version": "1.18.11",
+      "date": "2026-11-05",
+      "title": "Sửa màn hình trắng lúc khởi động sau cài đặt",
+      "changes": [
+        "Nén gzip phản hồi giao diện khi trình duyệt hỗ trợ; kiểm tra thực tế đã tái hiện trang lớn bị treo và xác nhận trang nén tải được đầy đủ trong WebView2.",
+        "Hiển thị trạng thái khởi động bằng thành phần Windows ngay cả khi trang web chưa tải; bổ sung nhật ký khởi tạo và lỗi điều hướng.",
+        "Nếu khởi động quá hạn, thử lại riêng tiến trình giao diện với hồ sơ WebView2 mới và chế độ dựng dự phòng; bộ máy tải và lịch sử tiếp tục được giữ.",
+        "Đã kiểm tra hai lần mở WebView2 liên tiếp cùng hồ sơ, mỗi lần hiển thị đủ 14 mục lịch sử mẫu."
+      ]
+    },
+    {
+      "version": "1.18.10",
+      "date": "2026-11-05",
+      "title": "Hiển thị kết nối và thêm nút kết nối dự phòng",
+      "changes": [
+        "Hiển thị trạng thái Đang kết nối, Chưa kết nối hoặc Đã kết nối cùng phiên bản ứng dụng và cổng thực tế ở đầu popup.",
+        "Tiện ích vẫn tự kết nối khi mở; thêm nút Kết nối để thử lại khi tự kết nối chưa thành công, khóa nút trong lúc xử lý.",
+        "Giữ tự tìm cổng ứng dụng và tự ghép nối, không khôi phục nút Kích hoạt & cấp quyền đã bỏ."
+      ]
+    },
+    {
+      "version": "1.18.9",
+      "date": "2026-11-05",
+      "title": "Tự kết nối lại tiện ích khi thay đổi cổng",
+      "changes": [
+        "Giữ cơ chế ứng dụng chọn cổng trống và xác minh đúng Download Now trước khi tiện ích gửi mã hoặc liên kết tải.",
+        "Tiện ích tự kiểm tra kết nối lúc khởi động; khi mở popup, tự mở hoặc nạp lại trang ghép nối nếu thiếu hoặc hết hạn mã, không cần nút kết nối.",
+        "Khôi phục bắt link nếu quyền đã được cấp; giữ nguyên tùy chọn tắt do người dùng chọn và không tự xin quyền ở nền.",
+        "Thêm kiểm thử đổi cổng, bỏ qua phần mềm khác, mã hết hạn, ghép nối không trùng tab và các tùy chọn tắt."
+      ]
+    },
+    {
+      "version": "1.18.8",
+      "date": "2026-11-05",
+      "title": "Kiểm tra khởi động cửa sổ và đơn giản hóa tiện ích",
+      "changes": [
+        "Kiểm tra giao diện đã khởi tạo sau điều hướng WebView2; tự nạp lại tối đa hai lần, báo lỗi rõ nếu vẫn chưa tải xong thay vì để danh sách trống.",
+        "Xóa bộ lọc tìm kiếm cũ khi mở lại để lịch sử không bị ẩn; thêm kiểm thử toàn bộ trang với 14 mục lịch sử khi API ngoại tuyến.",
+        "Bỏ phần Tự tìm cổng, nút Kích hoạt & cấp quyền và Mở Download Now / Kết nối khỏi popup; bỏ tab cấp quyền tự mở.",
+        "Thêm kiểm thử toàn bộ popup sau khi bỏ các nút, giữ quyền bắt link ở tùy chọn Bắt link tệp ngay khi bấm."
+      ]
+    },
+    {
+      "version": "1.18.7",
+      "date": "2026-11-05",
+      "title": "Mở sẵn thư mục tiện ích sau khi cài đặt",
+      "changes": [
+        "Bộ cài mở sẵn thư mục extension/chromium trong File Explorer khi hoàn tất thiết lập tiện ích.",
+        "Hiển thị tùy chọn mở thư mục ngay trên trang hoàn tất, cùng màn hình hướng dẫn thiết lập của ứng dụng."
+      ]
+    },
+    {
+      "version": "1.18.6",
+      "date": "2026-11-05",
+      "title": "Khôi phục lịch sử ngay khi mở và hướng dẫn cấp quyền tiện ích",
+      "changes": [
+        "Đưa lịch sử tải và nơi lưu vào dữ liệu khởi tạo trang để hiển thị ngay, không phụ thuộc yêu cầu API đầu tiên.",
+        "Tự gợi ý thiết lập khi chưa nhận tiện ích kết nối; sao chép sẵn đường dẫn và mở trang quản lý của trình duyệt đã chọn.",
+        "Thêm nút Kích hoạt & cấp quyền trong tiện ích để trình duyệt hỏi quyền HTTP/HTTPS rồi bật bắt link; tự mở trang này sau lần cài tiện ích đầu tiên.",
+        "Ngừng nhắc thiết lập sau khi tiện ích đã kết nối hoặc người dùng chọn để sau. Cài tiện ích chưa lên cửa hàng vẫn cần bước xác nhận/nạp thư mục lần đầu của trình duyệt."
+      ]
+    },
+    {
+      "version": "1.18.5",
+      "date": "2026-11-04",
+      "title": "Tải đầy đủ giao diện ngay lần mở đầu",
+      "changes": [
+        "Gộp HTML, CSS và JavaScript trong một phản hồi để tránh giao diện mất định dạng khi yêu cầu tài nguyên riêng bị lỗi lúc mở lần đầu sau cập nhật.",
+        "Dùng nonce riêng cho mỗi trang để giữ chính sách CSP chặt chẽ, không bật unsafe-inline; giới hạn kích thước mặc định của icon."
+      ]
+    },
+    {
+      "version": "1.18.4",
+      "date": "2026-11-04",
+      "title": "Tải cập nhật tám kết nối và hiển thị tiến độ cài",
+      "changes": [
+        "Tăng tải gói hỗ trợ HTTP Range lên tám kết nối; giữ kiểm tra từng phần, thử lại và SHA-256 trước khi cài.",
+        "Thêm cửa sổ tiến độ riêng trong lúc ứng dụng đóng để nâng cấp: xác minh, sao lưu, cài và mở lại; hiển thị phần trăm và thời gian ước tính.",
+        "Đã kiểm tra tải toàn bộ gói GitHub 106,7 MB đến trạng thái sẵn sàng cài trước khi đóng gói bản này."
+      ]
+    },
+    {
+      "version": "1.18.3",
+      "date": "2026-11-04",
+      "title": "Nút tải video nằm ngoài vùng phát",
+      "changes": [
+        "Đưa nút tải Facebook sang khoảng trống cạnh video; tự chọn phía khác khi thiếu chỗ và không che vùng phát.",
+        "Thống nhất nhãn Tải video và icon mũi tên xuống khay dạng nét, giữ icon sau khi gửi lượt tải."
+      ]
+    },
+    {
+      "version": "1.18.2",
+      "date": "2026-11-02",
+      "title": "Củng cố luồng cập nhật và mở cửa sổ nền",
+      "changes": [
+        "Gửi yêu cầu trực tiếp tới cửa sổ đang chạy, tránh khởi tạo lại EXE khi mở cập nhật từ tiện ích.",
+        "Giữ xác nhận cập nhật khi yêu cầu kiểm tra trùng bị từ chối; không bỏ gói đã xác minh khi mở lại hộp cập nhật.",
+        "Chuẩn bị helper trước khi đóng giao diện và mở lại cửa sổ nếu không khởi chạy được helper.",
+        "Cô lập lỗi mở cửa sổ để không làm dừng luồng nhận yêu cầu tiếp theo; bỏ yêu cầu mở tiện ích lặp."
+      ]
+    },
+    {
+      "version": "1.18.1",
+      "date": "2026-11-02",
+      "title": "Sửa mở cập nhật từ khay hệ thống",
+      "changes": [
+        "Hiện cửa sổ trước khi chờ WebView2 khởi tạo và mở hộp cập nhật trong giao diện hiện có, tránh tải lại trang khi cửa sổ còn ẩn.",
+        "Giữ trạng thái phóng to khi mở lại từ tiện ích."
+      ]
+    },
+    {
+      "version": "1.18.0",
+      "date": "2026-11-01",
+      "title": "Thu xuống khay hệ thống khi bấm X",
+      "changes": [
+        "Thêm biểu tượng Download Now trong khay hệ thống; khi bật chạy nền, bấm X để ẩn cửa sổ và tiếp tục tải.",
+        "Nhấp đúp biểu tượng hoặc chọn Mở Download Now để trở lại; menu Thoát ứng dụng lưu và dừng bộ máy tải.",
+        "Khởi động cùng Windows ở chế độ nền vẫn tạo biểu tượng khay; lệnh thoát và cập nhật không bị chuyển thành ẩn cửa sổ."
+      ]
+    },
+    {
+      "version": "1.17.6",
+      "date": "2026-10-31",
+      "title": "Co giãn cửa sổ nhiều độ phân giải và tách thư mục tạm",
+      "changes": [
+        "Mở cửa sổ ở trạng thái phóng to, bỏ giới hạn chiều rộng và giữ truy cập Cài đặt khi cửa sổ nhỏ.",
+        "Cải thiện bố cục từ 800x600 đến 3840x2160, gồm 3440x1440; chỉ bảng cột co giãn có thể cuộn ngang khi thiếu chỗ.",
+        "Tiến trình cửa sổ dùng môi trường PyInstaller riêng; chờ cửa sổ cũ đóng trước khi cài cập nhật để giảm lỗi giữ thư mục _MEI."
+      ]
+    },
+    {
+      "version": "1.17.5",
+      "date": "2026-10-31",
+      "title": "Giãn giao diện theo toàn bộ cửa sổ",
+      "changes": [
+        "Bỏ giới hạn chiều rộng 1800px của nội dung để thống kê, biểu đồ và danh sách tải lấp đầy cửa sổ khi phóng to trên màn hình rộng."
+      ]
+    },
+    {
+      "version": "1.17.4",
+      "date": "2026-10-31",
+      "title": "Thoát an toàn qua yêu cầu cục bộ có xác thực",
+      "changes": [
+        "Thêm yêu cầu thoát ký HMAC trong thư mục dữ liệu, không phụ thuộc HTTP để bộ cài đóng bộ máy tải.",
+        "Từ chối yêu cầu thoát cũ hoặc chữ ký sai; giữ xác nhận riêng khi cần dừng bản cũ chưa hỗ trợ."
+      ]
+    },
+    {
+      "version": "1.17.3",
+      "date": "2026-10-31",
+      "title": "Thoát tiến trình nền trước khi nâng cấp",
+      "changes": [
+        "Bộ cài tương tác dùng helper yêu cầu thoát qua kết nối cục bộ có xác thực và đợi tiến trình kết thúc trước khi thay EXE.",
+        "Với bản cũ không hỗ trợ thoát, hỏi xác nhận riêng trước khi dừng tiến trình có đường dẫn EXE đúng thư mục cài đặt.",
+        "Thêm Cài đặt > Thoát ứng dụng; đóng cả cửa sổ riêng và bộ máy tải, giữ lượt tải dở."
+      ]
+    },
+    {
+      "version": "1.17.2",
+      "date": "2026-10-31",
+      "title": "Bộ cài thay thế phiên bản cũ và nhắc đóng ứng dụng",
+      "changes": [
+        "Bộ cài nhận diện bản đã cài, thông báo nâng cấp và dùng lại thư mục cũ để thay thế tệp ứng dụng.",
+        "Bật Windows Restart Manager trong bộ cài tương tác để liệt kê và hỏi đóng Download Now đang dùng tệp cần cập nhật.",
+        "Giữ lịch sử, cài đặt và tệp tải; không xóa các thư mục portable khác trên máy."
+      ]
+    },
+    {
+      "version": "1.17.1",
+      "date": "2026-10-31",
+      "title": "Ẩn nút tải video trang hiện tại trong popup",
+      "changes": [
+        "Ẩn nút Tải video trang hiện tại và mô tả của nút trong popup tiện ích.",
+        "Giữ cửa sổ Windows độc lập và kết nối tiện ích của v1.17.0."
+      ]
+    },
+    {
+      "version": "1.17.0",
+      "date": "2026-10-31",
+      "title": "Cửa sổ Windows độc lập bằng WebView2",
+      "changes": [
+        "Mở Download Now trong cửa sổ Windows riêng, không tự mở tab trình duyệt khi chạy bản EXE.",
+        "Mở lại ứng dụng sẽ đưa cửa sổ hiện có lên; đóng cửa sổ vẫn giữ bộ máy tải khi bật chạy nền.",
+        "Giữ tiện ích trình duyệt, dữ liệu tải và cập nhật; cần Microsoft Edge WebView2 Runtime."
+      ]
+    },
+    {
+      "version": "1.16.1",
+      "date": "2026-10-31",
+      "title": "Chuyển Cài đặt xuống cuối nhóm Công cụ",
+      "changes": [
+        "Đưa nút Cài đặt xuống dưới Tiện ích trình duyệt trong thanh bên, giữ nguyên các tùy chọn và chức năng."
+      ]
+    },
+    {
+      "version": "1.16.0",
+      "date": "2026-10-31",
+      "title": "Cài đặt tiện ích, chạy nền, khởi động Windows và giao diện",
+      "changes": [
+        "Thêm công tắc bật/tắt hoạt động Download Now trong popup tiện ích, giữ nguyên tùy chọn bắt link.",
+        "Thêm mục Cài đặt: giao diện Sáng, Tối hoặc Theo hệ thống; nhớ lựa chọn trên máy.",
+        "Tùy chọn chạy nền khi đóng giao diện; khi tắt, dừng sau khoảng hai phút không nhận tín hiệu từ tab ứng dụng.",
+        "Bật/tắt khởi động cùng Windows cho bản EXE bằng mục Run của tài khoản hiện tại; chạy ẩn khi đồng thời bật chạy nền."
+      ]
+    },
+    {
+      "version": "1.15.7",
+      "date": "2026-10-27",
+      "title": "Chọn nguồn theo trình phát Tin đang hiển thị",
+      "changes": [
+        "Mỗi lần bấm Tải Tin, đánh dấu và dò đúng trình phát đang hiển thị thay vì ưu tiên JSON của Tin đầu tiên theo địa chỉ trang.",
+        "Không dùng nguồn của trình phát cũ hoặc Tin nạp trước; kiểm tra lại trình phát và nguồn sau khi dò.",
+        "Bổ sung kiểm thử chuyển Tin khi URL không đổi, tái sử dụng trình phát blob, nguồn HD/SD và từ chối nguồn mơ hồ."
+      ]
+    },
+    {
+      "version": "1.15.6",
+      "date": "2026-10-27",
+      "title": "Bổ sung dò nguồn video trong thành phần Tin Facebook",
+      "changes": [
+        "Dò thêm dữ liệu children của thành phần Tin Facebook để tìm video theo đúng mã Tin hiện tại.",
+        "Giữ giới hạn dò, chống vòng lặp, bỏ qua getter và không chọn nguồn của Tin bên cạnh; bổ sung kiểm thử cấu trúc lồng nhau."
+      ]
+    },
+    {
+      "version": "1.15.5",
+      "date": "2026-10-27",
+      "title": "Hiển thị giờ và ngày tải tệp",
+      "changes": [
+        "Thêm cột Thời gian tải có thể chỉnh độ rộng, hiển thị giờ phút giây và ngày tháng năm theo giờ trên máy.",
+        "Lưu thời điểm hoàn tất của tệp và video; lịch sử cũ hiển thị thời điểm thêm lượt tải nếu có, không suy đoán thời điểm hoàn tất."
+      ]
+    },
+    {
+      "version": "1.15.4",
+      "date": "2026-10-27",
+      "title": "Sửa tải Tin Facebook khi chuyển người xem",
+      "changes": [
+        "Cho phép nhận Tin hiện tại khi Facebook chuyển người hoặc mở Tin từ bảng tin mà không tải lại trang; kiểm tra lại đúng đường dẫn trong trang trước khi lấy nguồn.",
+        "Không dùng nguồn MP4 còn lưu trên trình phát của Tin trước khi chưa xác nhận được nguồn của Tin hiện tại."
+      ]
+    },
+    {
+      "version": "1.15.3",
+      "date": "2026-10-27",
+      "title": "Dời xóa lịch sử cạnh tìm kiếm và rút gọn chú thích xóa",
+      "changes": [
+        "Đưa Xóa lịch sử sang sát bên trái ô tìm kiếm, bỏ khung và nền nút; đổi màu, gạch chân khi rê chuột và có viền khi dùng bàn phím.",
+        "Icon thùng rác trong từng dòng chỉ hiển thị chú thích Xóa; vẫn mở hộp xác nhận và giữ các tùy chọn xóa lịch sử hoặc xóa kèm tệp."
+      ]
+    },
+    {
+      "version": "1.15.2",
+      "date": "2026-10-26",
+      "title": "Chia khung trên theo ba phần tư và rút gọn chú thích icon",
+      "changes": [
+        "Khung tốc độ rộng bằng ba ô trạng thái phía dưới; ô Đang tải xuống thẳng hàng và rộng bằng ô Cần kiểm tra.",
+        "Chú thích và nhãn của icon trong cột Thao tác chỉ ghi chức năng, không kèm tên tệp."
+      ]
+    },
+    {
+      "version": "1.15.1",
+      "date": "2026-10-26",
+      "title": "Bố cục trạng thái tải và nút thao tác bằng icon",
+      "changes": [
+        "Hàng trên gồm tốc độ và biểu đồ chiếm hai phần ba chiều rộng, ô Đang tải xuống nằm bên phải.",
+        "Hàng dưới gồm bốn ô Hàng đợi, Đã hoàn tất, Tạm dừng và Cần kiểm tra. Đồng bộ số lượng, bộ lọc và các tab tương ứng.",
+        "Toàn bộ nút trong cột Thao tác dùng icon cùng kích thước, có chú thích khi rê chuột và nhãn cho trình đọc màn hình. Bố cục tự xếp lại trên màn hình nhỏ."
+      ]
+    },
+    {
+      "version": "1.15.0",
+      "date": "2026-10-26",
+      "title": "Thiết lập tiện ích ngay sau khi cài ứng dụng",
+      "changes": [
+        "Bộ cài có lựa chọn mở thiết lập tiện ích sau khi cài, thêm lối tắt thiết lập trong Start menu và hỗ trợ tham số --setup-browser.",
+        "Nhận diện Chrome, Edge, Opera đã cài; mở đúng trang quản lý tiện ích cùng trang ghép nối và hiển thị đường dẫn thư mục có nút sao chép.",
+        "Kiểm tra kết nối và phiên bản tự động khi mở cửa sổ thiết lập. Bản tiện ích chưa lên cửa hàng vẫn cần người dùng nạp/xác nhận lần đầu trong trình duyệt; bộ cài không ép cài bằng chính sách.",
+        "Tiếp tục phát hành bộ cài và các gói ứng dụng, tiện ích qua GitHub Releases."
+      ]
+    },
+    {
+      "version": "1.14.3",
+      "date": "2026-10-26",
+      "title": "Giảm chia nhỏ các lượt tải Google Drive",
+      "changes": [
+        "Các lượt Google Drive mới dùng một kết nối dài thay vì liên tục mở yêu cầu mới cho từng đoạn 4 MB; các nguồn HTTP khác vẫn dùng tải phân đoạn.",
+        "Giữ kiểm tra Range, số byte và điều kiện nhận diện tệp khi tiếp tục. Hiển thị 1 kết nối dài trên lượt Google Drive đang tải.",
+        "Phép đo lặp trên mẫu 128 MB của tệp Drive được cung cấp cho thấy luồng dài nhanh hơn cấu hình cũ trên máy kiểm thử; chưa xác nhận vượt Chrome trên máy người dùng."
+      ]
+    },
+    {
+      "version": "1.14.2",
+      "date": "2026-10-26",
+      "title": "Tải gói cập nhật qua nhiều kết nối",
+      "changes": [
+        "Gói cập nhật từ 8 MB có dung lượng xác định dùng bốn kết nối khi máy chủ xác nhận hỗ trợ Range. Máy chủ không hỗ trợ sẽ dùng một kết nối.",
+        "Khi gián đoạn, thử lại tối đa ba lần từ byte còn thiếu của đoạn; kiểm tra Content-Range, ETag và SHA-256 toàn bộ gói trước khi giải nén và cài.",
+        "Hộp cập nhật hiển thị số kết nối thực tế. Tốc độ vẫn phụ thuộc đường truyền tới GitHub; chưa xác nhận mức tăng tốc trên máy người dùng."
+      ]
+    },
+    {
+      "version": "1.14.1",
+      "date": "2026-10-26",
+      "title": "Tốc độ ở hàng riêng và ba ô trạng thái tải",
+      "changes": [
+        "Đưa tốc độ hiện tại và biểu đồ lên một hàng riêng phủ chiều ngang phía trên.",
+        "Ba ô bên dưới lần lượt là Đang tải xuống, Hàng đợi và Đã hoàn tất; bấm từng ô để đồng bộ bộ lọc và tab danh sách.",
+        "Thêm tab Hàng đợi và số tệp đang chờ; tiếp tục hỗ trợ chọn tệp để xem tốc độ riêng."
+      ]
+    },
+    {
+      "version": "1.14.0",
+      "date": "2026-10-26",
+      "title": "Chọn tệp xem tốc độ riêng và đồng bộ ô thống kê",
+      "changes": [
+        "Bấm ô Đang tải xuống hoặc Đã hoàn tất để chọn cùng bộ lọc và tab bên dưới; ô tốc độ trở về Tất cả và tổng tốc độ.",
+        "Bấm tên hoặc dòng tệp để xem tốc độ hiện tại, biểu đồ và đỉnh tốc độ 60 giây của riêng tệp đó. Lựa chọn được giữ khi danh sách tự làm mới.",
+        "Tên tệp có hiệu ứng liên kết khi rê chuột; dòng đang chọn được tô nền. Các nút Dừng, Tiếp tục, Hủy và ô chọn lịch sử vẫn thực hiện thao tác riêng."
+      ]
+    },
+    {
+      "version": "1.13.5",
+      "date": "2026-10-26",
+      "title": "Canh giữa tiêu đề cửa sổ cập nhật",
+      "changes": [
+        "Canh giữa dòng Cập nhật ứng dụng & tiện ích; giữ nút đóng ở góc phải và chừa khoảng trống để không đè lên tiêu đề."
+      ]
+    },
+    {
+      "version": "1.13.4",
+      "date": "2026-10-26",
+      "title": "Chỉ hiện tiến độ sau khi đồng ý cập nhật",
+      "changes": [
+        "Ẩn phần trăm và thanh tiến độ khi kiểm tra phiên bản, khi có bản mới chưa đồng ý tải hoặc đang dùng bản mới nhất.",
+        "Sau khi đồng ý tải cập nhật, hiển thị thanh tiến độ theo dung lượng thực, tốc độ và thời gian còn lại; giữ tiến độ khi xác minh và cài đặt."
+      ]
+    },
+    {
+      "version": "1.13.3",
+      "date": "2026-10-26",
+      "title": "Tải nhiều tệp và nhận link liên tiếp không cần mở lại",
+      "changes": [
+        "Cho phép bốn tệp tải đồng thời, tối đa tám kết nối mỗi tệp. Các tệp chờ tự bắt đầu khi có chỗ trống.",
+        "Các hộp chọn nơi lưu dùng chung một luồng giao diện; dọn tài nguyên Tk trên đúng luồng sở hữu để tránh ảnh hưởng các luồng nhận link và tải nền khi mở nhiều hộp liên tiếp.",
+        "Bổ sung kiểm thử bốn tệp đang chạy, tệp thứ năm tự khởi động khi rảnh, hộp lưu liên tiếp cùng luồng và nhận link tiếp theo sau lỗi hộp thoại."
+      ]
+    },
+    {
+      "version": "1.13.2",
+      "date": "2026-10-25",
+      "title": "Ổn định thao tác dừng tải và kết nối giao diện",
+      "changes": [
+        "Tự thử lại tối đa ba lần khi đọc trạng thái hoặc gửi lệnh Dừng/Hủy gặp lỗi kết nối tạm thời; có giới hạn thời gian chờ và thông báo tiếng Việt.",
+        "Giữ các nút thao tác ở trạng thái chờ xuyên suốt những lần làm mới danh sách, phản hồi ngay khi đang gửi lệnh và khi ứng dụng đã nhận lệnh.",
+        "Tiện ích tự gửi lại yêu cầu bắt link khi mất phản hồi, dùng nguyên mã chuyển tải để nhận lại cùng hộp lưu hoặc lượt tải, không tạo trùng.",
+        "Tăng hàng đợi kết nối cục bộ cho các yêu cầu đồng thời từ giao diện và tiện ích. Không tự gửi lại lệnh thêm lượt tải, tiếp tục, xóa hoặc cài cập nhật để tránh thao tác trùng."
+      ]
+    },
+    {
+      "version": "1.13.1",
+      "date": "2026-10-25",
+      "title": "Luôn hiển thị thanh tiến độ cập nhật",
+      "changes": [
+        "Thanh tiến độ hiển thị ngay khi mở thông báo cập nhật, bắt đầu từ 0% trước khi đồng ý tải.",
+        "Cập nhật tiến độ mỗi 0,75 giây khi hộp thoại mở, không còn chờ chu kỳ nền 10 giây; hiển thị rõ 100% khi tải xong.",
+        "Phần trăm tính từ dung lượng thực. Khi máy chủ chưa cung cấp tổng dung lượng, thanh chạy chờ và thông báo rõ thay vì tạo phần trăm giả."
+      ]
+    },
+    {
+      "version": "1.13.0",
+      "date": "2026-10-25",
+      "title": "Tiến độ cập nhật trực quan và tối ưu bộ đệm tải",
+      "changes": [
+        "Thanh tải gói cập nhật có phần trăm theo byte thực, dung lượng đã tải/tổng, tốc độ và thời gian còn lại; hiển thị riêng các bước Tải về, Xác minh và Cài đặt.",
+        "Nếu chưa biết tổng dung lượng, hiển thị trạng thái đang tải thay vì tự tạo phần trăm. Gói thiếu byte hoặc sai SHA-256 không được cài.",
+        "Tăng bộ đệm tải tệp lên 1 MB, gom ghi đĩa và xả định kỳ; đọc dữ liệu mạng sẵn có để vẫn kiểm tra dừng/hủy trên kết nối chậm.",
+        "Đã kiểm tra toàn vẹn dữ liệu và dừng/tiếp tục trong bộ kiểm thử. Chưa có phép đo cùng liên kết trên máy người dùng để khẳng định nhanh hơn Chrome."
+      ]
+    },
+    {
+      "version": "1.12.1",
+      "date": "2026-10-25",
+      "title": "Dung lượng tệp trong cửa sổ tải xuống",
+      "changes": [
+        "Căn giữa tiêu đề Thông tin tải xuống và dòng hướng dẫn trong cửa sổ chọn nơi lưu.",
+        "Hiển thị dung lượng tệp dưới tên tệp; đọc tổng dung lượng từ máy chủ, không nhầm một byte của phản hồi phân đoạn thành kích thước tệp.",
+        "Kiểm tra dung lượng ở nền để không chặn chọn thư mục hoặc bắt đầu tải; ghi rõ Chưa xác định hoặc ước tính khi cần."
+      ]
+    },
+    {
+      "version": "1.12.0",
+      "date": "2026-10-25",
+      "title": "Tự chọn cổng trống và tìm đúng ứng dụng",
+      "changes": [
+        "Ứng dụng thử cổng ưu tiên, chuyển qua dải 8765–8774 nếu bị chiếm; nếu cả dải bận thì để Windows cấp cổng trống. Không đóng hay chiếm cổng của phần mềm khác.",
+        "Ghi nhớ cổng thực tế để mở lại đúng phiên ứng dụng; bộ cập nhật khởi động lại với cổng đã chọn.",
+        "Tiện ích tìm Download Now trong dải cổng cục bộ hoặc cổng đã ghép nối, xác minh giao thức trước khi gửi mã kết nối và liên kết tải.",
+        "Tự ghép nối theo địa chỉ trang ứng dụng, hỗ trợ cả cổng Windows cấp; không quét mạng LAN hay toàn bộ cổng trên máy."
+      ]
+    },
+    {
+      "version": "1.11.1",
+      "date": "2026-10-25",
+      "title": "Bộ cài Windows cho máy khác",
+      "changes": [
+        "Thêm bộ cài Windows x64 tự chứa ứng dụng, bộ xử lý video và tiện ích; không yêu cầu cài Python hoặc Node.js trên máy đích.",
+        "Cài cho tài khoản hiện tại, tạo lối tắt Desktop/Start menu và mục gỡ cài đặt; giữ thư mục dữ liệu khi gỡ ứng dụng.",
+        "Đổi tên tác giả hiển thị và nhà phát hành trong bộ cài thành XOmongoose.",
+        "Gói phát hành không chứa lịch sử, tệp tải hoặc mã kết nối của máy đóng gói. Tiện ích vẫn cần được cho phép cài trong trình duyệt."
+      ]
+    },
+    {
+      "version": "1.10.18",
+      "date": "2026-10-24",
+      "title": "Thông tin tác giả",
+      "changes": [
+        "Thêm dòng Tác giả: XOmongoose - ChatGPT ở cuối giao diện, làm nổi bật tên XOmongoose."
+      ]
+    },
+    {
+      "version": "1.10.17",
+      "date": "2026-10-24",
+      "title": "Logo tia sét trên giao diện",
+      "changes": [
+        "Đổi biểu tượng trong ô màu vàng cam cạnh tên DownloadNow thành hình tia sét."
+      ]
+    },
+    {
+      "version": "1.10.16",
+      "date": "2026-10-24",
+      "title": "Làm mờ đường phân chia cột",
+      "changes": [
+        "Dùng một nét xám nhạt 1 px cho đường phân chia cột từ tiêu đề đến cuối bảng, giảm độ tương phản để giao diện nhẹ mắt."
+      ]
+    },
+    {
+      "version": "1.10.15",
+      "date": "2026-10-24",
+      "title": "Đường kẻ cột liền từ tiêu đề đến cuối bảng",
+      "changes": [
+        "Thêm đường kẻ dọc xuyên suốt các hàng tải, nối với vạch phân chia ở tiêu đề đến chân bảng.",
+        "Đường kẻ đi theo độ rộng cột khi kéo chỉnh; giữ cột cuối sát lề phải."
+      ]
+    },
+    {
+      "version": "1.10.14",
+      "date": "2026-10-24",
+      "title": "Giữ mép cuối bảng sát lề phải",
+      "changes": [
+        "Cột Thao tác tự lấp đầy phần còn lại đến lề phải của bảng, không để khoảng trắng khi thu hẹp các cột.",
+        "Cố định mép ngoài cùng bên phải; điều chỉnh các cột bằng vạch phân chia bên trong, tự cân lại khi đổi kích thước cửa sổ."
+      ]
+    },
+    {
+      "version": "1.10.13",
+      "date": "2026-10-24",
+      "title": "Điều chỉnh độ rộng cột danh sách tải",
+      "changes": [
+        "Kéo vạch bên phải tiêu đề để thay đổi độ rộng cột tên tệp, kích thước, trạng thái, tốc độ và thao tác.",
+        "Ghi nhớ độ rộng trên trình duyệt; nhấp đúp vạch để đặt lại từng cột, hoặc dùng phím mũi tên khi chọn vạch.",
+        "Tên tệp và đường dẫn tận dụng độ rộng cột đã chỉnh; bảng cuộn ngang khi vượt khung."
+      ]
+    },
+    {
+      "version": "1.10.12",
+      "date": "2026-10-24",
+      "title": "Hiện cửa sổ tải xuống phía trước ứng dụng khác",
+      "changes": [
+        "Giữ cửa sổ chọn nơi lưu ở trên cùng cho đến khi bấm Bắt đầu tải hoặc Hủy, thay vì bỏ chế độ này sau nửa giây.",
+        "Đưa cửa sổ lên phía trước và nhận tiêu điểm sau khi Windows đã hiển thị cửa sổ."
+      ]
+    },
+    {
+      "version": "1.10.11",
+      "date": "2026-10-24",
+      "title": "Sửa chuyển tải YouTube Shorts từ tiện ích",
+      "changes": [
+        "Chuyển trang video được hỗ trợ sang bộ xử lý video, không từ chối trang YouTube như tệp HTML sau khi chọn nơi lưu.",
+        "Tiếp tục kiểm tra hộp thoại lưu khi kết nối bị gián đoạn tạm thời, không gửi lại lượt tải; thông báo rõ khi không kết nối được ứng dụng.",
+        "Đã tải thử hoàn chỉnh video YouTube Shorts 3LPWhCK537I thành MP4; 130 kiểm thử ứng dụng và 76 kiểm thử tiện ích đã qua."
+      ]
+    },
+    {
+      "version": "1.10.10",
+      "date": "2026-10-23",
+      "title": "Sửa tài nguyên TLS của bản EXE và tải Google Drive",
+      "changes": [
+        "Đóng gói tài nguyên chính sách CA khi môi trường Python yêu cầu, khắc phục lỗi thiếu tệp khi tạo kết nối HTTPS trong EXE.",
+        "Kiểm tra TLS ngay trên EXE sau đóng gói; bản phát hành bị chặn nếu không tạo được ngữ cảnh TLS với xác minh chứng thư và tên miền.",
+        "Giữ xử lý xác nhận tệp lớn Google Drive và ghi lượt lỗi vào danh sách sau khi đã chọn nơi lưu."
+      ]
+    },
+    {
+      "version": "1.10.9",
+      "date": "2026-10-23",
+      "title": "Sửa tải tệp lớn Google Drive và lưu lượt tải lỗi",
+      "changes": [
+        "Nhận diện liên kết tệp Google Drive và xử lý biểu mẫu xác nhận tải tệp lớn công khai, giữ tên RAR từ máy chủ.",
+        "Chỉ theo biểu mẫu Google hợp lệ của cùng mã tệp; không lưu trang đăng nhập hoặc trang vượt hạn mức thành tệp nén.",
+        "Sau khi bấm Bắt đầu tải, nếu kiểm tra chuyển tải thất bại, vẫn ghi mục Cần kiểm tra trong danh sách cùng lỗi và nơi lưu đã chọn.",
+        "Đã kiểm tra Range, tên tệp và chữ ký RAR của office 2010 professional plus.rar; thử nhận vào hàng đợi và tạm dừng, chưa tải toàn bộ 650 MB."
+      ]
+    },
+    {
+      "version": "1.10.8",
+      "date": "2026-10-23",
+      "title": "Ổn định mở lại ứng dụng chạy nền",
+      "changes": [
+        "Giữ EXE Windows chạy nền không hiện CMD và ghi log UTF-8.",
+        "Thử lại xác nhận phiên đang chạy khi kết nối cục bộ bị ngắt tạm thời, tránh báo nhầm rằng cần đóng ứng dụng."
+      ]
+    },
+    {
+      "version": "1.10.7",
+      "date": "2026-10-23",
+      "title": "Mở ứng dụng không hiện cửa sổ CMD",
+      "changes": [
+        "Đóng gói EXE Windows dạng chạy nền, không hiện CMD khi mở hoặc khởi động lại sau cập nhật.",
+        "Mở lại DownloadNow.exe sẽ mở giao diện của phiên đang chạy, không tạo hàng đợi thứ hai.",
+        "Ghi nhật ký UTF-8 vào data/application.log khi không có console; lỗi khởi động hiển thị bằng hộp thoại."
+      ]
+    },
+    {
+      "version": "1.10.6",
+      "date": "2026-10-23",
+      "title": "Bổ sung nguồn Tin Facebook nạp động",
+      "changes": [
+        "Khi nguồn HTML ban đầu không có, kiểm tra dữ liệu thành phần của đúng Tin đang mở sau thao tác bấm tải, hỗ trợ trường progressive_url.",
+        "Đối chiếu mã Tin và từ chối kết quả khi chuyển Tin trong lúc tìm nguồn; không chọn nguồn của Tin tải sẵn bên cạnh.",
+        "Bỏ thông báo suy đoán Tin ảnh/nhạc khi chưa tìm được nguồn. Video nhận diện được vẫn đi qua hộp chọn nơi lưu và lịch sử tải của ứng dụng.",
+        "Không thêm quyền trình duyệt, không đọc cookie, mật khẩu hoặc kho lưu trữ đăng nhập. Cần thử lại Tin thực tế trong trình duyệt đã đăng nhập."
+      ]
+    },
+    {
+      "version": "1.10.5",
+      "date": "2026-10-22",
+      "title": "Mở tệp và xóa nhanh từng lượt tải",
+      "changes": [
+        "Thêm nút Mở tệp trên dòng hoàn tất, mở đúng tệp đã lưu bằng ứng dụng mặc định.",
+        "Thêm biểu tượng thùng rác cho từng lượt hoàn tất hoặc đã hủy, mở xác nhận xóa riêng mục đó.",
+        "Mặc định chỉ xóa lịch sử; tùy chọn Xóa luôn tệp trên máy phải được chọn trong hộp xác nhận."
+      ]
+    },
+    {
+      "version": "1.10.4",
+      "date": "2026-10-22",
+      "title": "Hiện rõ nút tải Tin Facebook",
+      "changes": [
+        "Thêm nút Tải Tin Facebook cố định ở góc dưới bên phải, không phụ thuộc thẻ video hoặc lớp phủ của trình phát.",
+        "Tự gắn nút vào các trang Facebook đang mở sau khi cập nhật hoặc bật bắt link; tránh tạo trùng nút và bộ xử lý.",
+        "Nút Tin vẫn hiển thị khi chưa kết nối, hướng dẫn bật bắt link và mở ứng dụng; giải thích khi Tin ảnh/nhạc hoặc chưa có nguồn video."
+      ]
+    },
+    {
+      "version": "1.10.3",
+      "date": "2026-10-22",
+      "title": "Tải video trong bảng tin và nhận diện Tin Facebook",
+      "changes": [
+        "Thêm nút Tải video / Tin cạnh từng video đang hiển thị trên Facebook, chọn đúng bài thay vì URL trang chủ.",
+        "Nhận diện liên kết video.php, watch, bài đăng và video trong bảng tin; popup lấy video đang phát khi xác định được duy nhất.",
+        "Tin Facebook: tìm nguồn MP4 của đúng Tin đang mở từ dữ liệu trang hoặc nguồn phát trực tiếp; không đọc cookie/mật khẩu và không chọn Tin nạp trước.",
+        "Báo rõ khi Tin cần đăng nhập hoặc chưa lấy được nguồn, không lưu trang HTML thay video. Tải lại Facebook một lần sau nâng cấp."
+      ]
+    },
+    {
+      "version": "1.10.2",
+      "date": "2026-10-22",
+      "title": "Một lần cập nhật cho ứng dụng và tiện ích",
+      "changes": [
+        "Dùng chung một nút và một lần đồng ý để cập nhật ứng dụng và tiện ích; không tải ZIP tiện ích riêng.",
+        "Kiểm tra gói chứa ứng dụng, Chrome/Edge/Opera và Firefox cùng phiên bản trước khi cài.",
+        "Tiện ích trong thư mục ứng dụng tự nạp lại sau khi khởi động lại, gửi xác nhận phiên bản đang chạy.",
+        "Hộp cập nhật hiển thị rõ đã đồng bộ hoặc đang chờ trình duyệt xác nhận, không báo thành công khi chỉ mới thay tệp."
+      ]
+    },
+    {
+      "version": "1.10.1",
+      "date": "2026-10-22",
+      "title": "Giữ đúng tên tệp khi tải qua chuyển hướng GitHub",
+      "changes": [
+        "Tiện ích giữ liên kết tải gốc thay vì URL CDN chứa mã UUID.",
+        "Đọc tên từ response-content-disposition/rscd và Content-Disposition trước hộp chọn lưu; không coi mã không có đuôi là tên tệp cuối.",
+        "Khắc phục tải ZIP GitHub thành tệp không có đuôi; giữ nguyên tên người dùng nhập."
+      ]
+    },
+    {
+      "version": "1.10.0",
+      "date": "2026-10-22",
+      "title": "Biểu đồ tốc độ trực tiếp và tải Reels / Shorts",
+      "changes": [
+        "Biểu đồ tốc độ tải 60 giây theo dữ liệu thực, hiển thị tốc độ đỉnh và trạng thái trực tiếp.",
+        "Tải Facebook / Instagram Reels và YouTube Shorts công khai bằng bộ xử lý video đi kèm, ghép hình và âm thanh thành MP4.",
+        "Thêm nút Tải video này trên trang và Tải video trang hiện tại trong tiện ích; vẫn chọn nơi lưu và nhớ thư mục.",
+        "Hỗ trợ dừng, tiếp tục và hủy video; báo rõ lỗi khi video không truy cập được."
+      ]
+    },
+    {
+      "version": "1.9.5",
+      "date": "2026-10-20",
+      "title": "Cập nhật có xác nhận và tiện ích theo ứng dụng",
+      "changes": [
+        "Một nút Cập nhật: kiểm tra, thông báo phiên bản mới và chỉ tải/cài khi đồng ý.",
+        "Tắt tự tải/cài nền từ tùy chọn cũ; giữ hàng đợi và dữ liệu khi cập nhật.",
+        "Chrome/Edge/Opera: nạp thư mục tiện ích cạnh EXE một lần để cập nhật cùng ứng dụng và tự nạp lại; không cần gỡ/cài mỗi lần. Firefox vẫn cần gói được Mozilla ký để cập nhật chính thức."
+      ]
+    },
+    {
+      "version": "1.9.4",
+      "date": "2026-10-20",
+      "title": "Gom quản lý xóa lịch sử vào một nút",
+      "changes": [
+        "Chỉ giữ một nút Xóa lịch sử trên thanh công cụ, bỏ các nút xóa lặp lại ở từng dòng.",
+        "Chọn xóa các mục đã đánh dấu hoặc tất cả mục hoàn tất/đã hủy trong cùng hộp thoại, hiển thị số lượng trước khi xác nhận.",
+        "Tùy chọn xóa luôn tệp nằm trong hộp thoại và luôn bỏ chọn khi mở lại."
+      ]
+    },
+    {
+      "version": "1.9.3",
+      "date": "2026-10-20",
+      "title": "Chỉ hiện cửa sổ tải của Download Now",
+      "changes": [
+        "Chrome/Edge/Opera giữ bước xác định tên, chuyển sang cửa sổ Download Now rồi hủy lượt trình duyệt trước khi giải phóng bước đó.",
+        "Thêm chế độ Chỉ dùng cửa sổ Download Now, mặc định bật; chuyển lỗi sẽ báo lỗi thay vì tự mở Save As của trình duyệt.",
+        "Bắt sớm liên kết tải Google Drive dạng download?id hoặc uc?export=download; có thể tắt chế độ riêng để khôi phục chuyển về trình duyệt."
+      ]
+    },
+    {
+      "version": "1.9.2",
+      "date": "2026-10-20",
+      "title": "Tải lại và tự tìm gói tiện ích mới",
+      "changes": [
+        "Thêm Tải lại cho lượt hoàn tất hoặc đã hủy, dùng thư mục cũ và giữ nguyên tệp trước đó.",
+        "Tiện ích tự kiểm tra GitHub mỗi 6 giờ và hiển thị đường dẫn gói đúng trình duyệt.",
+        "Thêm tải gói tiện ích một bước và tùy chọn tự tải khi có bản mới; không tự bắt lại gói cập nhật của chính tiện ích.",
+        "Phát hành thêm ZIP riêng cho Chrome, Edge, Opera và Firefox để truy cập trực tiếp từ tiện ích."
+      ]
+    },
+    {
+      "version": "1.9.0",
+      "date": "2026-10-19",
+      "title": "Cập nhật một bước và tự ghép nối tiện ích",
+      "changes": [
+        "Kiểm tra, tải, xác minh và chờ cài cập nhật trong ứng dụng, không phụ thuộc hộp thoại web còn mở.",
+        "Khởi động bộ cập nhật và ứng dụng mới trong môi trường PyInstaller độc lập, giữ đúng cổng và dữ liệu.",
+        "Tiện ích tự xác minh và ghép nối khi mở trang ứng dụng cục bộ; mã thủ công chỉ dùng dự phòng.",
+        "Bổ sung biểu tượng và bộ hồ sơ ZIP nộp Chrome Web Store, Edge Add-ons và Firefox Add-ons."
+      ]
+    },
+    {
+      "version": "1.8.2",
+      "date": "2026-10-19",
+      "title": "Hoàn thiện xóa đồng loạt và cập nhật tự động",
+      "changes": [
+        "Bao gồm chọn nhiều mục lịch sử và hộp thoại tùy chọn xóa luôn tệp, mặc định giữ tệp.",
+        "Đóng máy chủ khi cài tự động để bộ cập nhật thay tệp và mở lại ứng dụng thành công."
+      ]
+    },
+    {
+      "version": "1.8.1",
+      "date": "2026-10-19",
+      "title": "Xóa lịch sử đồng loạt và tùy chọn xóa tệp",
+      "changes": [
+        "Chọn từng mục hoặc tất cả mục đang hiển thị để xóa lịch sử đồng loạt.",
+        "Hộp thoại xác nhận có tùy chọn xóa luôn tệp đã tải trên máy, mặc định bỏ chọn.",
+        "Giữ mục lịch sử khi không xóa được tệp và bảo vệ các lượt còn có thể tiếp tục.",
+        "Chặn hai bản ứng dụng cùng dùng một cổng trên Windows để tránh giao diện nối nhầm bản cũ."
+      ]
+    },
+    {
+      "version": "1.8.0",
+      "date": "2026-10-19",
+      "title": "Điều khiển tải và xóa lịch sử",
+      "changes": [
+        "Hiển thị nút Dừng, Tiếp tục và Hủy kèm biểu tượng trên từng lượt tải.",
+        "Hủy kết nối, dọn phần tải dở và ghi nhớ trạng thái đã hủy qua lần khởi động lại.",
+        "Xóa từng mục hoặc toàn bộ lịch sử hoàn tất và đã hủy, giữ nguyên tệp trên máy và lượt còn có thể tiếp tục."
+      ]
+    },
+    {
+      "version": "1.7.0",
+      "date": "2026-10-19",
+      "title": "Tự phát hành và cập nhật qua GitHub",
+      "changes": [
+        "Thêm GitHub Actions kiểm thử, đóng gói Windows và tiện ích, phát hành khi đẩy tag phiên bản.",
+        "Thêm tùy chọn tự tải, xác minh và cài bản mới khi hàng đợi đã dừng, không còn hộp thoại chờ.",
+        "Giữ dữ liệu và cơ chế sao lưu, tự mở lại sau cập nhật; có thể tắt tự cài trong tùy chọn."
+      ]
+    },
+    {
+      "version": "1.6.3",
+      "date": "2026-10-19",
+      "title": "Giữ đúng tên tệp từ link tải chung",
+      "changes": [
+        "Lấy tên tệp thật từ trình duyệt, Content-Disposition hoặc link chuyển hướng trước khi mở hộp thoại lưu.",
+        "Ưu tiên tên Unicode filename* để giữ tên tiếng Việt, phần mở rộng và khoảng trắng.",
+        "Không tự lưu thành download khi máy chủ chưa cung cấp tên; giữ tên người dùng chủ động nhập."
+      ]
+    },
+    {
+      "version": "1.6.2",
+      "date": "2026-10-19",
+      "title": "Gắn kho cập nhật XOmongoose",
+      "changes": [
+        "Cấu hình nguồn mặc định XOmongoose/DownloadNow cho bản cài mới.",
+        "Hiển thị hướng dẫn khi kho chưa công khai hoặc chưa có Release."
+      ]
+    },
+    {
+      "version": "1.6.1",
+      "date": "2026-10-19",
+      "title": "Cập nhật qua GitHub Releases",
+      "changes": [
+        "Nhận địa chỉ kho GitHub để kiểm tra Release ổn định mới nhất.",
+        "Tự chọn đúng gói Windows x64 và SHA-256 do GitHub cung cấp hoặc tệp checksum kèm theo.",
+        "Chặn bản thử nghiệm, gói sai kho và gói thiếu kiểm tra toàn vẹn."
+      ]
+    },
+    {
+      "version": "1.6.0",
+      "date": "2026-10-19",
+      "title": "Hộp thoại tải & cập nhật",
+      "changes": [
+        "Thêm cửa sổ thông tin tải kiểu IDM: địa chỉ, tên tệp, thư mục, Duyệt và Bắt đầu tải.",
+        "Giữ tên tệp trong link và ghi nhớ thư mục lưu theo lựa chọn người dùng.",
+        "Thêm nút cập nhật, kiểm tra tự động hằng ngày, nguồn HTTPS và nhập gói ZIP.",
+        "Xác minh gói, sao lưu tệp ứng dụng, giữ dữ liệu và chặn cài khi đang tải."
+      ]
+    },
+    {
+      "version": "1.5.0",
+      "date": "2026-10-19",
+      "title": "Chọn nơi lưu trước khi tải",
+      "changes": [
+        "Mở hộp thoại Windows Lưu thành để chọn thư mục và tên tệp khi bấm tải.",
+        "Áp dụng cả tải thủ công và link bắt từ tiện ích; hủy chọn thì không tạo lượt tải.",
+        "Lưu đường dẫn riêng cho từng tệp và hỗ trợ ghép tệp sang ổ đĩa khác."
+      ]
+    },
+    {
+      "version": "1.4.0",
+      "date": "2026-10-19",
+      "title": "Bắt link tải tự động",
+      "changes": [
+        "Bắt link tệp khi bấm qua quyền truy cập trang tùy chọn.",
+        "Tạm dừng lượt tải trình duyệt, chỉ hủy sau khi ứng dụng xác nhận nhận tải; thử tiếp tục khi chuyển lỗi.",
+        "Kiểm tra link truy cập được trước khi chuyển, chống tạo trùng và hiển thị trạng thái kết nối."
+      ]
+    },
+    {
+      "version": "1.3.0",
+      "date": "2026-10-19",
+      "title": "Vị trí tệp & tên tải chính xác",
+      "changes": [
+        "Thêm nút mở thư mục, xem và sao chép đường dẫn cho tệp hoàn tất.",
+        "Hiển thị đường dẫn lưu thực tế.",
+        "Giữ tên tệp từ link, giải mã tên tiếng Việt và tham số filename; lấy tên máy chủ cho link tải chung."
+      ]
+    },
+    {
+      "version": "1.2.3",
+      "date": "2026-10-19",
+      "title": "Hướng dẫn dễ mở trên Windows",
+      "changes": [
+        "Bổ sung BAT-DAU.txt để mở bằng Notepad.",
+        "Bổ sung BAT-DAU.html và hướng dẫn từng trình duyệt dạng HTML/TXT."
+      ]
+    },
+    {
+      "version": "1.2.2",
+      "date": "2026-10-19",
+      "title": "Gói tiện ích trình duyệt",
+      "changes": [
+        "Đóng gói ZIP riêng cho Chrome, Edge và Opera.",
+        "Đóng gói Firefox ZIP/XPI chưa ký để thử nghiệm và nộp ký Mozilla.",
+        "Bổ sung hướng dẫn cài, ghép nối, nâng cấp và kiểm tra toàn vẹn gói tiện ích."
+      ]
+    },
+    {
+      "version": "1.2.1",
+      "date": "2026-10-19",
+      "title": "Gói Windows portable",
+      "changes": [
+        "Đóng gói EXE Windows x64 chạy không cần cài Python.",
+        "Tự mở trình duyệt và lưu dữ liệu cạnh tệp EXE.",
+        "Bổ sung biểu tượng ứng dụng, thông tin phiên bản Windows và mã SHA-256 cho gói phát hành."
+      ]
+    },
+    {
+      "version": "1.2.0",
+      "date": "2026-10-19",
+      "title": "Biểu tượng & lịch sử phiên bản",
+      "changes": [
+        "Thêm bộ icon SVG đồng bộ cho nút, menu và thao tác tải.",
+        "Hiển thị phiên bản hiện tại và hộp thoại lịch sử nâng cấp.",
+        "Đồng bộ số phiên bản giữa ứng dụng và tiện ích trình duyệt."
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-10-19",
+      "title": "Giao diện vàng",
+      "changes": [
+        "Đổi màu chủ đạo sang #F1AF00.",
+        "Điều chỉnh màu chữ và trạng thái rê chuột để dễ đọc."
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-10-19",
+      "title": "Phiên bản đầu tiên",
+      "changes": [
+        "Bổ sung bộ máy tải nhiều kết nối, khôi phục, hàng đợi và lịch tải.",
+        "Tạo giao diện tiếng Việt và mã tiện ích trình duyệt."
+      ]
+    }
+  ],
+  "update_repository": "XOmongoose/DownloadNow"
+}
