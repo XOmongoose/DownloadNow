@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.22.0",
+      "date": "2026-11-07",
+      "title": "Cửa sổ tiến độ riêng cho từng lượt tải",
+      "changes": [
+        "Khi bắt đầu tải, mở cửa sổ nhỏ hiển thị tên tệp, tốc độ, kích thước, tiến độ và đường dẫn lưu.",
+        "Nút Dừng tạm dừng lượt tải. Nút Thoát và dấu X báo không thể thoát khi lượt tải vẫn đang chạy; cho phép đóng sau khi dừng xong hoặc hoàn tất.",
+        "Cửa sổ tiến độ không chặn hộp chọn lưu tệp tiếp theo và không thay đổi dữ liệu đo tốc độ của giao diện chính."
+      ]
+    },
+    {
       "version": "1.21.7",
       "date": "2026-11-05",
       "title": "Giới hạn đóng ứng dụng khi cài và cập nhật",
