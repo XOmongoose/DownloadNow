@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.22.1",
+      "date": "2026-11-07",
+      "title": "Biểu đồ tải trong cửa sổ nhỏ và tên Download Now S",
+      "changes": [
+        "Thêm biểu đồ tốc độ thực tế trong 60 giây gần nhất cho từng cửa sổ tải nhỏ, kèm tốc độ đỉnh.",
+        "Biểu đồ co giãn khi đổi kích thước cửa sổ và tiếp tục hiển thị khi dừng hoặc hoàn tất.",
+        "Đổi tên hiển thị ứng dụng, khay hệ thống, bộ cài và tiện ích thành Download Now S; giữ nguyên dữ liệu và nguồn cập nhật."
+      ]
+    },
+    {
       "version": "1.22.0",
       "date": "2026-11-07",
       "title": "Cửa sổ tiến độ riêng cho từng lượt tải",
