@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "1.22.2",
+      "date": "2026-11-07",
+      "title": "Mở tệp sau khi tải và giữ tên ứng dụng trên một hàng",
+      "changes": [
+        "Thêm nút Mở tệp vào cửa sổ tải nhỏ: chỉ bật và sáng màu vàng khi lượt tải hoàn tất.",
+        "Thêm nút Thư mục để mở nơi lưu; các nút tự xếp hai hàng khi cửa sổ hẹp.",
+        "Chỉnh nhãn Download Now S nằm cùng một hàng ở thanh bên."
+      ]
+    },
+    {
       "version": "1.22.1",
       "date": "2026-11-07",
       "title": "Biểu đồ tải trong cửa sổ nhỏ và tên Download Now S",
